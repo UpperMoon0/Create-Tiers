@@ -68,11 +68,13 @@ public class DynamicResourcePack implements PackResources {
                 for (String key : textures.keySet()) {
                     String texPath = textures.get(key).getAsString();
                     if (texPath.contains("block/grayscale/")) {
-                        ResourceLocation texLoc = new ResourceLocation(texPath);
+                        ResourceLocation texLoc = ResourceLocation.parse(texPath);
                         // Convert to full asset path if it's just a shorthand
-                        if (!texLoc.getPath().startsWith("textures/")) {
-                            texLoc = new ResourceLocation(texLoc.getNamespace(),
-                                    "textures/" + texLoc.getPath() + ".png");
+                        String texLocPath = texLoc.toString().split(":")[1];
+                        if (!texLocPath.startsWith("textures/")) {
+                            String texLocNamespace = texLoc.toString().split(":")[0];
+                            texLoc = ResourceLocation.fromNamespaceAndPath(texLocNamespace,
+                                    "textures/" + texLocPath + ".png");
                         }
                         GRAYSCALE_TEXTURES.add(texLoc);
                     }
@@ -160,8 +162,8 @@ public class DynamicResourcePack implements PackResources {
         if (type != PackType.CLIENT_RESOURCES)
             return null;
 
-        String namespace = location.getNamespace();
-        String path = location.getPath();
+        String namespace = location.toString().split(":")[0];
+        String path = location.toString().split(":")[1];
 
         // Handle pack.mcmeta request
         if (path.equals(PackResources.PACK_META)) {
@@ -182,7 +184,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("models/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String modelPath = path.substring(0, path.length() - 5);
-            ResourceLocation modelLoc = new ResourceLocation(namespace, modelPath);
+            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(namespace, modelPath);
             JsonElement modelJson = MODELS.get(modelLoc);
             if (modelJson != null) {
                 CreateTiers.LOGGER.debug("Serving dynamic model: {}", modelLoc);
@@ -198,7 +200,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("blockstates/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String statePath = path.substring(0, path.length() - 5);
-            ResourceLocation stateLoc = new ResourceLocation(namespace, statePath);
+            ResourceLocation stateLoc = ResourceLocation.fromNamespaceAndPath(namespace, statePath);
             JsonElement stateJson = BLOCKSTATES.get(stateLoc);
             if (stateJson != null) {
                 return () -> new ByteArrayInputStream(stateJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -255,7 +257,7 @@ public class DynamicResourcePack implements PackResources {
                 ResourceLocation usedLoc = null;
 
                 for (String p : possiblePaths) {
-                    ResourceLocation loc = new ResourceLocation("create", p);
+                    ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("create", p);
                     java.util.Optional<net.minecraft.server.packs.resources.Resource> res = rm.getResource(loc);
                     if (res.isPresent()) {
                         originalResource = res.get();
@@ -337,7 +339,7 @@ public class DynamicResourcePack implements PackResources {
             LANGUAGES.forEach((lang, json) -> {
                 String langPath = "lang/" + lang + ".json";
                 if (langPath.startsWith(path)) {
-                    ResourceLocation outputLoc = new ResourceLocation(namespace, langPath);
+                    ResourceLocation outputLoc = ResourceLocation.fromNamespaceAndPath(namespace, langPath);
                     output.accept(outputLoc,
                             () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }

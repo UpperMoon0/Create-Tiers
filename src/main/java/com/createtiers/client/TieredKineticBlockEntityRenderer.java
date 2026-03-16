@@ -78,7 +78,7 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
             VertexConsumer vc = buffer.getBuffer(RenderType.solid());
             
             // Render gear part
-            dev.engine_room.flywheel.lib.model.baked.PartialModel gearModel = dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new net.minecraft.resources.ResourceLocation(com.createtiers.CreateTiers.MOD_ID, "block/" + tier.getName() + "/cogwheel_shaftless"));
+            dev.engine_room.flywheel.lib.model.baked.PartialModel gearModel = dev.engine_room.flywheel.lib.model.baked.PartialModel.of(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.createtiers.CreateTiers.MOD_ID, "block/" + tier.getName() + "/cogwheel_shaftless"));
             SuperByteBuffer gear = CachedBuffers.partial(gearModel, be.getBlockState());
             float gearAngle = getAngleForBe(be, be.getBlockPos(), axis);
             transformAndRender(be, gear, axis, gearAngle, light, tier.getCogwheelColor(), ms, vc);

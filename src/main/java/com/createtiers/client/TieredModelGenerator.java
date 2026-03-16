@@ -12,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -81,11 +80,11 @@ public class TieredModelGenerator {
     }
 
     private static void generateItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
-        models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/item/shaft_" + tierName),
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/shaft_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/shaft"));
-        models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/item/cogwheel_" + tierName),
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/cogwheel"));
-        models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/item/large_cogwheel_" + tierName),
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/large_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/large_cogwheel"));
     }
 
@@ -102,14 +101,14 @@ public class TieredModelGenerator {
                 "particle", CreateTiers.MOD_ID + ":block/grayscale/axis");
         Map<String, Integer> tintMap = Map.of("Axis", 0);
 
-        models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft"),
-                mutateModel(new ResourceLocation("create", "block/shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft"),
+                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
         models.put(
-                new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
-                mutateModel(new ResourceLocation("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
+                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
         
         // Register as PartialModel
-        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new ResourceLocation(CreateTiers.MOD_ID, "block/" + tierName + "/shaft_half"));
+        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "block/" + tierName + "/shaft_half"));
     }
 
     private static void generateCogwheelModels(String tierName, boolean isLarge,
@@ -137,23 +136,26 @@ public class TieredModelGenerator {
         tintMap.put("GearCaseInnerRotated", 1);
         tintMap.put("GearCaseOuter", 1);
 
-        models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix),
-                mutateModel(new ResourceLocation("create", "block/" + suffix), textures, tintMap, 1, Collections.emptySet(), resourceManager));
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix),
+                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/" + suffix), textures, tintMap, 1, Collections.emptySet(), resourceManager));
 
-        ResourceLocation shaftlessModelLoc = new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix + "_shaftless");
+        ResourceLocation shaftlessModelLoc = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix + "_shaftless");
         models.put(shaftlessModelLoc,
-                mutateModel(new ResourceLocation("create", "block/" + suffix + "_shaftless"), textures,
+                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/" + suffix + "_shaftless"), textures,
                         tintMap, 1, Collections.emptySet(), resourceManager));
         
         // Proactively register as PartialModel so it's loaded by the model manager
         // We use the path without 'models/' prefix as PartialModel adds it
-        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new ResourceLocation(CreateTiers.MOD_ID, "block/" + tierName + "/" + suffix + "_shaftless"));
+        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "block/" + tierName + "/" + suffix + "_shaftless"));
     }
 
     private static JsonObject mutateModel(ResourceLocation baseModel, Map<String, String> textures,
             Map<String, Integer> tintMap, int defaultTint, Set<String> excludeElements, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         try {
-            ResourceLocation modelLoc = new ResourceLocation(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
+            String[] parts = baseModel.toString().split(":");
+            String namespace = parts[0];
+            String path = parts[1];
+            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(namespace, "models/" + path + ".json");
             java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = resourceManager.getResource(modelLoc);
             if (resource.isEmpty()) {
                 CreateTiers.LOGGER.error("Could not find base model to mutate: {}", modelLoc);
@@ -197,19 +199,19 @@ public class TieredModelGenerator {
     }
 
     private static void generateShaftBlockstate(String tierName, Map<ResourceLocation, JsonObject> blockstates) {
-        ResourceLocation modelLocation = new ResourceLocation(CreateTiers.MOD_ID,
+        ResourceLocation modelLocation = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
                 "block/" + tierName + "/shaft");
-        blockstates.put(new ResourceLocation(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
+        blockstates.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
                 createAxisBlockstate(modelLocation));
     }
 
     private static void generateCogwheelBlockstate(String tierName, boolean isLarge,
             Map<ResourceLocation, JsonObject> blockstates) {
         String suffix = isLarge ? "large_cogwheel" : "cogwheel";
-        ResourceLocation modelLocation = new ResourceLocation(CreateTiers.MOD_ID,
+        ResourceLocation modelLocation = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
                 "block/" + tierName + "/" + suffix);
         blockstates.put(
-                new ResourceLocation(CreateTiers.MOD_ID, "blockstates/" + suffix + "_" + tierName),
+                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/" + suffix + "_" + tierName),
                 createAxisBlockstate(modelLocation));
     }
 
