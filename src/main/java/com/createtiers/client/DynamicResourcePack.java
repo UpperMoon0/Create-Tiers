@@ -68,10 +68,10 @@ public class DynamicResourcePack implements PackResources {
                 for (String key : textures.keySet()) {
                     String texPath = textures.get(key).getAsString();
                     if (texPath.contains("block/grayscale/")) {
-                        ResourceLocation texLoc = ResourceLocation.parse(texPath);
+                        ResourceLocation texLoc = new ResourceLocation(texPath);
                         // Convert to full asset path if it's just a shorthand
                         if (!texLoc.getPath().startsWith("textures/")) {
-                            texLoc = ResourceLocation.fromNamespaceAndPath(texLoc.getNamespace(), "textures/" + texLoc.getPath() + ".png");
+                            texLoc = new ResourceLocation(texLoc.getNamespace(), "textures/" + texLoc.getPath() + ".png");
                         }
                         GRAYSCALE_TEXTURES.add(texLoc);
                     }
@@ -171,7 +171,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("models/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String modelPath = path.substring(0, path.length() - 5);
-            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(namespace, modelPath);
+            ResourceLocation modelLoc = new ResourceLocation(namespace, modelPath);
             JsonElement modelJson = MODELS.get(modelLoc);
             if (modelJson != null) {
                 return () -> new ByteArrayInputStream(modelJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -182,7 +182,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("blockstates/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String statePath = path.substring(0, path.length() - 5);
-            ResourceLocation stateLoc = ResourceLocation.fromNamespaceAndPath(namespace, statePath);
+            ResourceLocation stateLoc = new ResourceLocation(namespace, statePath);
             JsonElement stateJson = BLOCKSTATES.get(stateLoc);
             if (stateJson != null) {
                 return () -> new ByteArrayInputStream(stateJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -310,7 +310,7 @@ public class DynamicResourcePack implements PackResources {
             LANGUAGES.forEach((lang, json) -> {
                 String langPath = "lang/" + lang + ".json";
                 if (langPath.startsWith(path)) {
-                    ResourceLocation outputLoc = ResourceLocation.fromNamespaceAndPath(namespace, langPath);
+                    ResourceLocation outputLoc = new ResourceLocation(namespace, langPath);
                     output.accept(outputLoc, () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }
             });

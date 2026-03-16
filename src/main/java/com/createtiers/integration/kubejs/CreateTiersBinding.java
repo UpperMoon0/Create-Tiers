@@ -20,7 +20,7 @@ public class CreateTiersBinding {
      * Register a tier with full customization including dual colors.
      */
     public static void registerTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor, String displayName) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("createtiers", name);
+        ResourceLocation id = new ResourceLocation("createtiers", name);
         
         Tier tier = Tier.builder()
                 .tier(level)
@@ -49,7 +49,7 @@ public class CreateTiersBinding {
      * Register a tier with a resource location from another mod and dual colors.
      */
     public static void registerCustomTier(String namespace, String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace, name);
+        ResourceLocation id = new ResourceLocation(namespace, name);
         
         Tier tier = Tier.builder()
                 .tier(level)
@@ -74,7 +74,7 @@ public class CreateTiersBinding {
     }
     
     public static Tier getTier(String name) {
-        return TierRegistry.get(ResourceLocation.fromNamespaceAndPath("createtiers", name));
+        return TierRegistry.get(new ResourceLocation("createtiers", name));
     }
     
     public static Tier getTierByLevel(int level) {
@@ -86,6 +86,6 @@ public class CreateTiersBinding {
     }
     
     public static boolean tierExists(String name) {
-        return TierRegistry.exists(ResourceLocation.fromNamespaceAndPath("createtiers", name));
+        return TierRegistry.exists(new ResourceLocation("createtiers", name));
     }
 }
