@@ -38,9 +38,8 @@ public class ClientEventHandler {
             // Clear any existing resources and reset generation flag
             DynamicResourcePack.clear();
             
-            // Generate models and blockstates (using Create's textures)
-            // This will also call markGenerated() when done
-            TieredModelGenerator.generateAllModels();
+            // Models and blockstates will be generated lazily by the DynamicResourcePack
+            // when they are first requested by Minecraft.
             
             CreateTiers.LOGGER.info("Create-Tiers dynamic models generated successfully!");
             

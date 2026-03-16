@@ -74,9 +74,19 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
             transformAndRender(be, shaft, axis, shaftAngle, light, tier.getShaftColor(), ms, vc);
         } else {
             // Small cogwheel
-            SuperByteBuffer superBuffer = getRotatedModel(be, be.getBlockState());
-            float angle = getAngleForBe(be, be.getBlockPos(), axis);
-            transformAndRender(be, superBuffer, axis, angle, light, tier.getCogwheelColor(), ms, buffer.getBuffer(getRenderType(be, be.getBlockState())));
+            Direction facing = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
+            VertexConsumer vc = buffer.getBuffer(RenderType.solid());
+            
+            // Render gear part
+            dev.engine_room.flywheel.lib.model.baked.PartialModel gearModel = dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new net.minecraft.resources.ResourceLocation(com.createtiers.CreateTiers.MOD_ID, "block/" + tier.getName() + "/cogwheel_shaftless"));
+            SuperByteBuffer gear = CachedBuffers.partial(gearModel, be.getBlockState());
+            float gearAngle = getAngleForBe(be, be.getBlockPos(), axis);
+            transformAndRender(be, gear, axis, gearAngle, light, tier.getCogwheelColor(), ms, vc);
+            
+            // Render shaft part
+            SuperByteBuffer shaft = CachedBuffers.partialFacingVertical(AllPartialModels.COGWHEEL_SHAFT, be.getBlockState(), facing);
+            float shaftAngle = getAngleForBe(be, be.getBlockPos(), axis);
+            transformAndRender(be, shaft, axis, shaftAngle, light, tier.getShaftColor(), ms, vc);
         }
     }
 

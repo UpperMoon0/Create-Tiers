@@ -37,7 +37,7 @@ public class ModelManagerMixin {
         
         // Regenerate models and blockstates (using Create's textures)
         // This will also call markGenerated() when done
-        TieredModelGenerator.generateAllModels();
+        TieredModelGenerator.generateAllModels(resourceManager);
         
         CreateTiers.LOGGER.info("Create-Tiers dynamic resources reinitialized!");
     }

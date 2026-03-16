@@ -130,18 +130,28 @@ jar {
         ])
     }
 }
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: "[1.20.1,1.21)",
+            forge_version          : forge_version,
+            forge_version_range    : "[47,)",
+            loader_version_range   : "[47,)",
+            mod_id                 : "createtiers",
+            mod_name               : "Create Tiers",
+            mod_license            : "MIT",
+            mod_version            : mod_version,
+            mod_authors            : "NsTut",
+            mod_description        : "A mod for Create that introduces a dynamic tiering system for kinetic components (shafts and cogwheels). It provides a flexible way to customize Max RPM and Stress Units. Tiers can be fully customized via KubeJS or datapacks, with automatic resource generation for all registered tiers.",
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
     }
 }
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

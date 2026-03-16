@@ -17,6 +17,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * Generates tiered blockstates and models dynamically.
@@ -26,7 +28,7 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class TieredModelGenerator {
 
-    public static void generateAllModels() {
+    public static void generateAllModels(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         CreateTiers.LOGGER.info("Generating tiered models with grayscale textures and tinting...");
 
         DynamicResourcePack.clear();
@@ -35,7 +37,7 @@ public class TieredModelGenerator {
         Map<ResourceLocation, JsonObject> blockstates = new HashMap<>();
 
         for (Tier tier : TierRegistry.getAllTiers()) {
-            generateTierModels(tier, models, blockstates);
+            generateTierModels(tier, models, blockstates, resourceManager);
         }
 
         models.forEach(DynamicResourcePack::addModel);
@@ -52,11 +54,11 @@ public class TieredModelGenerator {
     }
 
     public static void generateTierModels(Tier tier, Map<ResourceLocation, JsonElement> models,
-            Map<ResourceLocation, JsonObject> blockstates) {
+            Map<ResourceLocation, JsonObject> blockstates, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String tierName = tier.getName();
-        generateShaftModels(tierName, models);
-        generateCogwheelModels(tierName, false, models);
-        generateCogwheelModels(tierName, true, models);
+        generateShaftModels(tierName, models, resourceManager);
+        generateCogwheelModels(tierName, false, models, resourceManager);
+        generateCogwheelModels(tierName, true, models, resourceManager);
         generateItemModels(tierName, models);
         generateShaftBlockstate(tierName, blockstates);
         generateCogwheelBlockstate(tierName, false, blockstates);
@@ -93,7 +95,7 @@ public class TieredModelGenerator {
         return model;
     }
 
-    private static void generateShaftModels(String tierName, Map<ResourceLocation, JsonElement> models) {
+    private static void generateShaftModels(String tierName, Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         Map<String, String> textures = Map.of(
                 "0", CreateTiers.MOD_ID + ":block/grayscale/axis",
                 "1", CreateTiers.MOD_ID + ":block/grayscale/axis_top",
@@ -101,14 +103,17 @@ public class TieredModelGenerator {
         Map<String, Integer> tintMap = Map.of("Axis", 0);
 
         models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft"),
-                mutateModel(new ResourceLocation("create", "block/shaft"), textures, tintMap, 0));
+                mutateModel(new ResourceLocation("create", "block/shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
         models.put(
                 new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
-                mutateModel(new ResourceLocation("create", "block/shaft_half"), textures, tintMap, 0));
+                mutateModel(new ResourceLocation("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+        
+        // Register as PartialModel
+        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new ResourceLocation(CreateTiers.MOD_ID, "block/" + tierName + "/shaft_half"));
     }
 
     private static void generateCogwheelModels(String tierName, boolean isLarge,
-            Map<ResourceLocation, JsonElement> models) {
+            Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String suffix = isLarge ? "large_cogwheel" : "cogwheel";
         String gearTextureKey = isLarge ? "4" : "1_2";
 
@@ -133,25 +138,29 @@ public class TieredModelGenerator {
         tintMap.put("GearCaseOuter", 1);
 
         models.put(new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix),
-                mutateModel(new ResourceLocation("create", "block/" + suffix), textures, tintMap, 1));
+                mutateModel(new ResourceLocation("create", "block/" + suffix), textures, tintMap, 1, Collections.emptySet(), resourceManager));
 
-        models.put(
-                new ResourceLocation(CreateTiers.MOD_ID,
-                        "models/block/" + tierName + "/" + suffix + "_shaftless"),
+        ResourceLocation shaftlessModelLoc = new ResourceLocation(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix + "_shaftless");
+        models.put(shaftlessModelLoc,
                 mutateModel(new ResourceLocation("create", "block/" + suffix + "_shaftless"), textures,
-                        tintMap, 1));
+                        tintMap, 1, Collections.emptySet(), resourceManager));
+        
+        // Proactively register as PartialModel so it's loaded by the model manager
+        // We use the path without 'models/' prefix as PartialModel adds it
+        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(new ResourceLocation(CreateTiers.MOD_ID, "block/" + tierName + "/" + suffix + "_shaftless"));
     }
 
     private static JsonObject mutateModel(ResourceLocation baseModel, Map<String, String> textures,
-            Map<String, Integer> tintMap, int defaultTint) {
-        String resourcePath = "assets/" + baseModel.getNamespace() + "/models/" + baseModel.getPath() + ".json";
-        try (InputStream is = CreateTiers.class.getClassLoader().getResourceAsStream(resourcePath)) {
-            if (is == null) {
-                CreateTiers.LOGGER.error("Could not find base model to mutate: {}", resourcePath);
+            Map<String, Integer> tintMap, int defaultTint, Set<String> excludeElements, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        try {
+            ResourceLocation modelLoc = new ResourceLocation(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
+            java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = resourceManager.getResource(modelLoc);
+            if (resource.isEmpty()) {
+                CreateTiers.LOGGER.error("Could not find base model to mutate: {}", modelLoc);
                 return new JsonObject();
             }
 
-            JsonObject model = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8))
+            JsonObject model = JsonParser.parseReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))
                     .getAsJsonObject();
 
             JsonObject texturesObj = new JsonObject();
@@ -160,9 +169,13 @@ public class TieredModelGenerator {
 
             if (model.has("elements")) {
                 JsonArray elements = model.getAsJsonArray("elements");
+                JsonArray newElements = new JsonArray();
                 for (JsonElement el : elements) {
                     JsonObject element = el.getAsJsonObject();
                     String name = element.has("name") ? element.get("name").getAsString() : "";
+                    
+                    if (excludeElements.contains(name)) continue;
+                    
                     int tintIndex = tintMap.getOrDefault(name, defaultTint);
 
                     if (element.has("faces")) {
@@ -171,7 +184,9 @@ public class TieredModelGenerator {
                             faces.getAsJsonObject(faceName).addProperty("tintindex", tintIndex);
                         }
                     }
+                    newElements.add(element);
                 }
+                model.add("elements", newElements);
             }
 
             return model;

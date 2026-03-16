@@ -131,29 +131,67 @@ public class ModClient {
         }
 
         public static class SmallTieredCogwheelVisual extends SingleAxisRotatingVisual<TieredCogwheelBlockEntity> {
+            protected final RotatingInstance additionalShaft;
+
             public SmallTieredCogwheelVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllPartialModels.COGWHEEL));
+                super(context, blockEntity, partialTick, Models.partial(AllPartialModels.SHAFTLESS_COGWHEEL));
+                
+                Direction.Axis axis = KineticBlockEntityVisual.rotationAxis(blockEntity.getBlockState());
+                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(AllPartialModels.COGWHEEL_SHAFT))
+                        .createInstance();
+
+                additionalShaft.rotateToFace(axis)
+                        .setup(blockEntity)
+                        .setRotationOffset(BracketedKineticBlockEntityRenderer.getShaftAngleOffset(axis, pos))
+                        .setPosition(getVisualPosition())
+                        .setChanged();
+
                 applyTierColor();
+            }
+
+            private static String getTierName(TieredCogwheelBlockEntity be) {
+                return ((TieredCogwheelBlock) be.getBlockState().getBlock()).getTier().getName();
             }
 
             private void applyTierColor() {
                 Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 rotatingModel.setColor(new Color(tier.getCogwheelColor()));
                 rotatingModel.setChanged();
+                additionalShaft.setColor(new Color(tier.getShaftColor()));
+                additionalShaft.setChanged();
             }
 
             @Override
             public void update(float pt) {
                 super.update(pt);
+                additionalShaft.setup(blockEntity)
+                        .setRotationOffset(BracketedKineticBlockEntityRenderer.getShaftAngleOffset(rotationAxis(), pos))
+                        .setChanged();
                 applyTierColor();
             }
 
             @Override
             public void tick(Context context) {
-                // super.tick() calls applyOverstressEffect() which resets color to WHITE.
-                // We must re-apply the tier color afterwards.
                 super.tick(context);
                 applyTierColor();
+            }
+
+            @Override
+            public void updateLight(float partialTick) {
+                super.updateLight(partialTick);
+                relight(additionalShaft);
+            }
+
+            @Override
+            protected void _delete() {
+                super._delete();
+                additionalShaft.delete();
+            }
+
+            @Override
+            public void collectCrumblingInstances(Consumer<Instance> consumer) {
+                super.collectCrumblingInstances(consumer);
+                consumer.accept(additionalShaft);
             }
         }
 

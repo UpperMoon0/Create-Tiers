@@ -1,14 +1,14 @@
 modLoader="javafml"
-loaderVersion="[47,)"
-license="MIT"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
 issueTrackerURL="https://github.com/createtiers/createtiers/issues"
 
 [[mods]]
-modId="createtiers"
-version="${file.jarVersion}"
-displayName="Create Tiers"
-authors="NsTut"
-description="A mod for Create that introduces a dynamic tiering system for kinetic components (shafts and cogwheels). It provides a flexible way to customize Max RPM and Stress Units. Tiers can be fully customized via KubeJS or datapacks, with automatic resource generation for all registered tiers."
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description="${mod_description}"
 logoFile="createtiers.png"
 
 [[dependencies.createtiers]]
