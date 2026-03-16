@@ -27,7 +27,6 @@ minecraft {
                     source sourceSets.main
                 }
             }
-            arg '-mixin-config=createtiers.mixins.json'
         }
         client {
             property 'forge.enabledGameTestNamespaces', 'createtiers'
