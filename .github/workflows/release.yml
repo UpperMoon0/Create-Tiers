@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Get version
+        id: get_version
+        run: |
+           echo "version=$(grep 'mod_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
+           echo "mc_version=$(grep 'minecraft_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}
+          release_name: "Create: Tiers v${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/libs/create-tiers-${{ steps.get_version.outputs.version }}.jar
+          asset_name: create-tiers-mc${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}.jar
+          asset_content_type: application/java-archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
