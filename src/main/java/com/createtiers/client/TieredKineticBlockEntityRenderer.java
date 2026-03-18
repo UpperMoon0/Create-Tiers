@@ -13,6 +13,7 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.content.kinetics.base.KineticEffectHandler;
 import com.simibubi.create.content.kinetics.simpleRelays.BracketedKineticBlockEntityRenderer;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
@@ -45,46 +46,47 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
     }
 
     private void renderShaft(T be, TieredShaftBlock block, PoseStack ms, MultiBufferSource buffer, int light) {
-        BlockState renderState = be.getBlockState();
-        SuperByteBuffer superBuffer = CachedBuffers.block(KINETIC_BLOCK, renderState);
+        // Use tiered partial model with grayscale texture
+        AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(block.getTier());
+        SuperByteBuffer superBuffer = CachedBuffers.partial(partials.SHAFT, be.getBlockState());
         Direction.Axis axis = getRotationAxisOf(be);
         BlockPos pos = be.getBlockPos();
         if (pos == null) return;
         float angle = getAngleForBe(be, pos, axis);
         
-        transformAndRender(be, superBuffer, axis, angle, light, block.getTier().getShaftColor(), ms, buffer.getBuffer(getRenderType(be, renderState)));
+        transformAndRender(be, superBuffer, axis, angle, light, block.getTier().getShaftColor(), ms, buffer.getBuffer(getRenderType(be, be.getBlockState())));
     }
 
     private void renderCogwheel(T be, TieredCogwheelBlock block, PoseStack ms, MultiBufferSource buffer, int light) {
         Tier tier = block.getTier();
         Direction.Axis axis = getRotationAxisOf(be);
+        AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(tier);
         
         if (block.isLargeCog()) {
             Direction facing = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
             VertexConsumer vc = buffer.getBuffer(RenderType.solid());
             
-            // Render wheel part
-            SuperByteBuffer wheel = CachedBuffers.partialFacingVertical(AllPartialModels.SHAFTLESS_LARGE_COGWHEEL, be.getBlockState(), facing);
+            // Render wheel part with tiered grayscale model
+            SuperByteBuffer wheel = CachedBuffers.partial(partials.LARGE_COGWHEEL_SHAFTLESS, be.getBlockState());
             float wheelAngle = getAngleForBe(be, be.getBlockPos(), axis);
             transformAndRender(be, wheel, axis, wheelAngle, light, tier.getCogwheelColor(), ms, vc);
             
-            // Render shaft part
+            // Render shaft part with tiered grayscale model
             float shaftAngle = getAngleForLargeCogShaft(be, axis);
-            SuperByteBuffer shaft = CachedBuffers.partialFacingVertical(AllPartialModels.COGWHEEL_SHAFT, be.getBlockState(), facing);
+            SuperByteBuffer shaft = CachedBuffers.partial(partials.COGWHEEL_SHAFT, be.getBlockState());
             transformAndRender(be, shaft, axis, shaftAngle, light, tier.getShaftColor(), ms, vc);
         } else {
             // Small cogwheel
             Direction facing = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
             VertexConsumer vc = buffer.getBuffer(RenderType.solid());
             
-            // Render gear part
-            dev.engine_room.flywheel.lib.model.baked.PartialModel gearModel = dev.engine_room.flywheel.lib.model.baked.PartialModel.of(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.createtiers.CreateTiers.MOD_ID, "block/" + tier.getName() + "/cogwheel_shaftless"));
-            SuperByteBuffer gear = CachedBuffers.partial(gearModel, be.getBlockState());
+            // Render gear part with tiered grayscale model
+            SuperByteBuffer gear = CachedBuffers.partial(partials.COGWHEEL_SHAFTLESS, be.getBlockState());
             float gearAngle = getAngleForBe(be, be.getBlockPos(), axis);
             transformAndRender(be, gear, axis, gearAngle, light, tier.getCogwheelColor(), ms, vc);
             
-            // Render shaft part
-            SuperByteBuffer shaft = CachedBuffers.partialFacingVertical(AllPartialModels.COGWHEEL_SHAFT, be.getBlockState(), facing);
+            // Render shaft part with tiered grayscale model
+            SuperByteBuffer shaft = CachedBuffers.partial(partials.COGWHEEL_SHAFT, be.getBlockState());
             float shaftAngle = getAngleForBe(be, be.getBlockPos(), axis);
             transformAndRender(be, shaft, axis, shaftAngle, light, tier.getShaftColor(), ms, vc);
         }

@@ -56,6 +56,7 @@ public class TieredModelGenerator {
             Map<ResourceLocation, JsonObject> blockstates, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String tierName = tier.getName();
         generateShaftModels(tierName, models, resourceManager);
+        generateCogwheelShaftModel(tierName, models, resourceManager);
         generateCogwheelModels(tierName, false, models, resourceManager);
         generateCogwheelModels(tierName, true, models, resourceManager);
         generateItemModels(tierName, models);
@@ -106,9 +107,20 @@ public class TieredModelGenerator {
         models.put(
                 ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
                 mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
-        
-        // Register as PartialModel
-        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "block/" + tierName + "/shaft_half"));
+    }
+
+    private static void generateCogwheelShaftModel(String tierName, Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        // cogwheel_shaft uses textures 0=axis_top, 1=cogwheel_axis
+        // We want the shaft part to use shaft color (tint 0)
+        Map<String, String> textures = Map.of(
+                "0", CreateTiers.MOD_ID + ":block/grayscale/axis_top",
+                "1", CreateTiers.MOD_ID + ":block/grayscale/cogwheel_axis",
+                "particle", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+        // No named elements in cogwheel_shaft, so use default tint 0 (shaft color)
+        Map<String, Integer> tintMap = Collections.emptyMap();
+
+        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/cogwheel_shaft"),
+                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/cogwheel_shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
     }
 
     private static void generateCogwheelModels(String tierName, boolean isLarge,

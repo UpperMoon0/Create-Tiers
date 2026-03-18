@@ -78,6 +78,9 @@ public class ModClient {
 
     @SubscribeEvent
     public static void registerVisualizers(FMLClientSetupEvent event) {
+        // Initialize tiered partial models
+        AllTieredPartialModels.init();
+
         SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_SHAFT.get())
                 .factory(TieredShaftVisual::new)
                 .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
@@ -95,13 +98,16 @@ public class ModClient {
     }
 
     public static class TieredShaftVisual extends SingleAxisRotatingVisual<TieredShaftBlockEntity> {
+        private final Tier tier;
+
         public TieredShaftVisual(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
-            super(context, blockEntity, partialTick, Models.partial(AllPartialModels.SHAFT));
+            super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
+                    ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier()).SHAFT));
+            this.tier = ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier();
             applyTierColor();
         }
 
         private void applyTierColor() {
-            Tier tier = ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier();
             rotatingModel.setColor(new Color(tier.getShaftColor()));
             rotatingModel.setChanged();
         }
@@ -132,12 +138,16 @@ public class ModClient {
 
         public static class SmallTieredCogwheelVisual extends SingleAxisRotatingVisual<TieredCogwheelBlockEntity> {
             protected final RotatingInstance additionalShaft;
+            private final Tier tier;
 
             public SmallTieredCogwheelVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllPartialModels.SHAFTLESS_COGWHEEL));
+                super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
+                        ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier()).COGWHEEL_SHAFTLESS));
                 
+                this.tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 Direction.Axis axis = KineticBlockEntityVisual.rotationAxis(blockEntity.getBlockState());
-                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(AllPartialModels.COGWHEEL_SHAFT))
+                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, 
+                        Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT))
                         .createInstance();
 
                 additionalShaft.rotateToFace(axis)
@@ -149,12 +159,7 @@ public class ModClient {
                 applyTierColor();
             }
 
-            private static String getTierName(TieredCogwheelBlockEntity be) {
-                return ((TieredCogwheelBlock) be.getBlockState().getBlock()).getTier().getName();
-            }
-
             private void applyTierColor() {
-                Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 rotatingModel.setColor(new Color(tier.getCogwheelColor()));
                 rotatingModel.setChanged();
                 additionalShaft.setColor(new Color(tier.getShaftColor()));
@@ -197,12 +202,16 @@ public class ModClient {
 
         public static class LargeTieredCogVisual extends SingleAxisRotatingVisual<TieredCogwheelBlockEntity> {
             protected final RotatingInstance additionalShaft;
+            private final Tier tier;
 
             public LargeTieredCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllPartialModels.SHAFTLESS_LARGE_COGWHEEL));
+                super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
+                        ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier()).LARGE_COGWHEEL_SHAFTLESS));
 
+                this.tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 Direction.Axis axis = KineticBlockEntityVisual.rotationAxis(blockEntity.getBlockState());
-                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(AllPartialModels.COGWHEEL_SHAFT))
+                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, 
+                        Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT))
                         .createInstance();
 
                 additionalShaft.rotateToFace(axis)
@@ -215,7 +224,6 @@ public class ModClient {
             }
 
             private void applyTierColor() {
-                Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 rotatingModel.setColor(new Color(tier.getCogwheelColor()));
                 rotatingModel.setChanged();
                 additionalShaft.setColor(new Color(tier.getShaftColor()));
@@ -225,7 +233,6 @@ public class ModClient {
             @Override
             public void update(float pt) {
                 super.update(pt);
-                Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
                 additionalShaft.setup(blockEntity)
                         .setRotationOffset(BracketedKineticBlockEntityRenderer.getShaftAngleOffset(rotationAxis(), pos))
                         .setChanged();
