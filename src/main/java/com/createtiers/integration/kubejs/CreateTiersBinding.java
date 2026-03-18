@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * KubeJS binding class for Create Tiers.
@@ -15,6 +17,36 @@ import java.util.Collection;
 public class CreateTiersBinding {
     
     private static final Logger LOGGER = LoggerFactory.getLogger("CreateTiers/KubeJS");
+    
+    /**
+     * Register multiple tiers at once for cleaner code.
+     * Example usage in KubeJS:
+     * <pre>
+     * CreateTiers.registerTiers([
+     *     { name: 'crude', level: 1, maxRPM: 128, maxSU: 512, shaftColor: 0x6B4E2C, cogwheelColor: 0x6B4E2C, displayName: 'Crude' },
+     *     { name: 'basic', level: 2, maxRPM: 256, maxSU: 2048, shaftColor: 0x936C3D, cogwheelColor: 0xBCBCBC, displayName: 'Basic' }
+     * ]);
+     * </pre>
+     */
+    @SuppressWarnings("unchecked")
+    public static void registerTiers(List<Map<String, Object>> tiers) {
+        for (Map<String, Object> tierData : tiers) {
+            String name = (String) tierData.get("name");
+            int level = ((Number) tierData.get("level")).intValue();
+            int maxRPM = ((Number) tierData.get("maxRPM")).intValue();
+            int maxSU = ((Number) tierData.get("maxSU")).intValue();
+            
+            // Colors are optional - default to 0xFFFFFF if not provided
+            int shaftColor = tierData.containsKey("shaftColor") ? ((Number) tierData.get("shaftColor")).intValue() : 0xFFFFFF;
+            int cogwheelColor = tierData.containsKey("cogwheelColor") ? ((Number) tierData.get("cogwheelColor")).intValue() : shaftColor;
+            
+            // DisplayName is optional - default to name if not provided
+            String displayName = tierData.containsKey("displayName") ? (String) tierData.get("displayName") : name;
+            
+            registerTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+        }
+        LOGGER.info("Registered {} tiers via registerTiers batch call", tiers.size());
+    }
     
     /**
      * Register a tier with full customization including dual colors.
