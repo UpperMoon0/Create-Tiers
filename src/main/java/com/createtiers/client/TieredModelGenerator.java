@@ -289,6 +289,8 @@ public class TieredModelGenerator {
                 textures.addProperty("particle", "create:block/" + casingType + "_casing");
             }
 
+            model.addProperty("render_type", "cutout_mipped");
+
             return model;
         } catch (Exception e) {
             CreateTiers.LOGGER.error("Failed to mutate encased cogwheel model: " + baseModel, e);
