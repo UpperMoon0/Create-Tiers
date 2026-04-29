@@ -1,11 +1,12 @@
 package com.createtiers.mixin;
 
-import com.simibubi.create.AllBlocks;
-import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
+import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
+import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -36,6 +37,12 @@ public abstract class RotationPropagatorMixin {
         }
         if (block instanceof TieredCogwheelBlock cog) {
             return cog.getTier().getMaxRPM();
+        }
+        if (block instanceof TieredEncasedShaftBlock encasedShaft) {
+            return encasedShaft.getTier().getMaxRPM();
+        }
+        if (block instanceof TieredEncasedCogwheelBlock encasedCog) {
+            return encasedCog.getTier().getMaxRPM();
         }
         return 0;
     }

@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
+import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
+import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.ModLang;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -28,14 +30,17 @@ public class TieredKineticStats implements TooltipModifier {
             tier = shaft.getTier();
         } else if (block instanceof TieredCogwheelBlock cog) {
             tier = cog.getTier();
+        } else if (block instanceof TieredEncasedShaftBlock encasedShaft) {
+            tier = encasedShaft.getTier();
+        } else if (block instanceof TieredEncasedCogwheelBlock encasedCog) {
+            tier = encasedCog.getTier();
         }
 
         if (tier == null)
             return;
 
         List<Component> tooltip = context.getToolTip();
-        
-        // Add Max RPM
+
         ModLang.translate("tooltip.tiered_max_rpm")
                 .style(ChatFormatting.GRAY)
                 .addTo(tooltip);
@@ -46,7 +51,6 @@ public class TieredKineticStats implements TooltipModifier {
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
 
-        // Add Max SU
         ModLang.translate("tooltip.tiered_max_su")
                 .style(ChatFormatting.GRAY)
                 .addTo(tooltip);

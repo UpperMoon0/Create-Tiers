@@ -92,11 +92,15 @@ public class DynamicServerPack implements PackResources {
         var blocksArray = new com.google.gson.JsonArray();
         
         for (Tier tier : TierRegistry.getAllTiers()) {
-            // Add shaft
             blocksArray.add("createtiers:shaft_" + tier.getName());
-            // Add cogwheels
             blocksArray.add("createtiers:cogwheel_" + tier.getName());
             blocksArray.add("createtiers:large_cogwheel_" + tier.getName());
+            blocksArray.add("createtiers:andesite_encased_shaft_" + tier.getName());
+            blocksArray.add("createtiers:brass_encased_shaft_" + tier.getName());
+            blocksArray.add("createtiers:andesite_encased_cogwheel_" + tier.getName());
+            blocksArray.add("createtiers:brass_encased_cogwheel_" + tier.getName());
+            blocksArray.add("createtiers:andesite_encased_large_cogwheel_" + tier.getName());
+            blocksArray.add("createtiers:brass_encased_large_cogwheel_" + tier.getName());
         }
         
         mineablePickaxe.add("values", blocksArray);
@@ -127,12 +131,16 @@ public class DynamicServerPack implements PackResources {
      */
     private static void generateLootTables() {
         for (Tier tier : TierRegistry.getAllTiers()) {
-            // Shaft loot table
             generateBlockLootTable("shaft_" + tier.getName());
-            // Cogwheel loot table
             generateBlockLootTable("cogwheel_" + tier.getName());
-            // Large cogwheel loot table
             generateBlockLootTable("large_cogwheel_" + tier.getName());
+
+            generateEncasedBlockLootTable("andesite_encased_shaft_" + tier.getName(), "shaft_" + tier.getName());
+            generateEncasedBlockLootTable("brass_encased_shaft_" + tier.getName(), "shaft_" + tier.getName());
+            generateEncasedBlockLootTable("andesite_encased_cogwheel_" + tier.getName(), "cogwheel_" + tier.getName());
+            generateEncasedBlockLootTable("brass_encased_cogwheel_" + tier.getName(), "cogwheel_" + tier.getName());
+            generateEncasedBlockLootTable("andesite_encased_large_cogwheel_" + tier.getName(), "large_cogwheel_" + tier.getName());
+            generateEncasedBlockLootTable("brass_encased_large_cogwheel_" + tier.getName(), "large_cogwheel_" + tier.getName());
         }
         
         CreateTiers.LOGGER.debug("Generated loot tables for {} tiers", TierRegistry.size());
@@ -168,6 +176,37 @@ public class DynamicServerPack implements PackResources {
         
         LOOT_TABLES.put(
             ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
+            lootTable
+        );
+    }
+
+    private static void generateEncasedBlockLootTable(String encasedBlockName, String dropBlockName) {
+        JsonObject lootTable = new JsonObject();
+        lootTable.addProperty("type", "minecraft:block");
+
+        var pools = new com.google.gson.JsonArray();
+        var pool = new JsonObject();
+        pool.addProperty("rolls", 1);
+        pool.addProperty("bonus_rolls", 0);
+
+        var entries = new com.google.gson.JsonArray();
+        var entry = new JsonObject();
+        entry.addProperty("type", "minecraft:item");
+        entry.addProperty("name", CreateTiers.MOD_ID + ":" + dropBlockName);
+        entries.add(entry);
+        pool.add("entries", entries);
+
+        var conditions = new com.google.gson.JsonArray();
+        var condition = new JsonObject();
+        condition.addProperty("condition", "minecraft:survives_explosion");
+        conditions.add(condition);
+        pool.add("conditions", conditions);
+
+        pools.add(pool);
+        lootTable.add("pools", pools);
+
+        LOOT_TABLES.put(
+            ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "loot_tables/blocks/" + encasedBlockName),
             lootTable
         );
     }

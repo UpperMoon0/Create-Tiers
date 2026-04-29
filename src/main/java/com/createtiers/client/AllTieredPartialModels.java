@@ -9,13 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Holds tiered partial models that use grayscale textures for proper color tinting.
- * These are used by both Flywheel visuals and the BER renderer.
- */
 public class AllTieredPartialModels {
 
-    // Maps tier name to its partial models
     public static final Map<String, TieredPartials> TIERS = new HashMap<>();
 
     public static class TieredPartials {
@@ -25,6 +20,9 @@ public class AllTieredPartialModels {
         public final PartialModel LARGE_COGWHEEL_SHAFTLESS;
         public final PartialModel COGWHEEL_SHAFT;
 
+        public final PartialModel ANDESITE_ENCASED_SHAFT;
+        public final PartialModel BRASS_ENCASED_SHAFT;
+
         public TieredPartials(String tierName) {
             String prefix = "block/" + tierName + "/";
             SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "shaft"));
@@ -32,12 +30,12 @@ public class AllTieredPartialModels {
             COGWHEEL_SHAFTLESS = PartialModel.of(CreateTiers.asResource(prefix + "cogwheel_shaftless"));
             LARGE_COGWHEEL_SHAFTLESS = PartialModel.of(CreateTiers.asResource(prefix + "large_cogwheel_shaftless"));
             COGWHEEL_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "cogwheel_shaft"));
+
+            ANDESITE_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "andesite_encased_shaft"));
+            BRASS_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "brass_encased_shaft"));
         }
     }
 
-    /**
-     * Initialize all tiered partial models. Called during client setup.
-     */
     public static void init() {
         CreateTiers.LOGGER.info("Initializing tiered partial models...");
         for (Tier tier : TierRegistry.getAllTiers()) {
@@ -48,16 +46,10 @@ public class AllTieredPartialModels {
         CreateTiers.LOGGER.info("Initialized {} tier partial model sets", TIERS.size());
     }
 
-    /**
-     * Get partial models for a specific tier.
-     */
     public static TieredPartials forTier(String tierName) {
         return TIERS.get(tierName);
     }
 
-    /**
-     * Get partial models for a specific tier.
-     */
     public static TieredPartials forTier(Tier tier) {
         return forTier(tier.getName());
     }
