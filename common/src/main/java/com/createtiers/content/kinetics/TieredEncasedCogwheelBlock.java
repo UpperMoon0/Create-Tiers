@@ -2,8 +2,8 @@ package com.createtiers.content.kinetics;
 
 import java.util.function.Supplier;
 
+import com.createtiers.PlatformHelper;
 import com.createtiers.api.Tier;
-import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.api.contraption.transformable.TransformableBlock;
 import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.contraptions.StructureTransform;
@@ -261,7 +261,7 @@ public class TieredEncasedCogwheelBlock extends RotatedPillarKineticBlock
 
     @Override
     public BlockEntityType<? extends TieredCogwheelBlockEntity> getBlockEntityType() {
-        return ModBlocks.TIERED_COGWHEEL.get();
+        return (BlockEntityType<? extends TieredCogwheelBlockEntity>) PlatformHelper.get().getTieredCogwheelType();
     }
 
     @Override
@@ -299,7 +299,7 @@ public class TieredEncasedCogwheelBlock extends RotatedPillarKineticBlock
     }
 
     private BlockState getDefaultCogwheelState() {
-        java.util.List<Block> sourceList = isLarge ? ModBlocks.LARGE_COGWHEELS : ModBlocks.COGWHEELS;
+        java.util.List<Block> sourceList = isLarge ? PlatformHelper.get().getLargeCogwheels() : PlatformHelper.get().getCogwheels();
         for (Block block : sourceList) {
             if (block instanceof TieredCogwheelBlock cog && cog.getTier().equals(tier)) {
                 return cog.defaultBlockState();
@@ -309,8 +309,8 @@ public class TieredEncasedCogwheelBlock extends RotatedPillarKineticBlock
     }
 
     private ItemStack getDefaultCogwheelStack() {
-        java.util.List<net.minecraft.world.item.Item> sourceItems = isLarge ? ModBlocks.LARGE_COGWHEEL_ITEMS : ModBlocks.COGWHEEL_ITEMS;
-        java.util.List<Block> sourceBlocks = isLarge ? ModBlocks.LARGE_COGWHEELS : ModBlocks.COGWHEELS;
+        java.util.List<net.minecraft.world.item.Item> sourceItems = isLarge ? PlatformHelper.get().getLargeCogwheelItems() : PlatformHelper.get().getCogwheelItems();
+        java.util.List<Block> sourceBlocks = isLarge ? PlatformHelper.get().getLargeCogwheels() : PlatformHelper.get().getCogwheels();
         for (int i = 0; i < sourceBlocks.size(); i++) {
             Block block = sourceBlocks.get(i);
             if (block instanceof TieredCogwheelBlock cog && cog.getTier().equals(tier)) {

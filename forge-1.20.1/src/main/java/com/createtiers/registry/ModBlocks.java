@@ -1,5 +1,6 @@
 package com.createtiers.registry;
 
+import com.createtiers.PlatformHelper;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
@@ -26,9 +27,10 @@ import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class ModBlocks {
+public class ModBlocks implements PlatformHelper {
 
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CreateTiers.MOD_ID);
 
@@ -54,6 +56,8 @@ public class ModBlocks {
     public static RegistryObject<BlockEntityType<TieredCogwheelBlockEntity>> TIERED_COGWHEEL;
 
     public static void register(IEventBus eventBus) {
+        PlatformHelper.Holder.INSTANCE = new ModBlocks();
+
         TIERED_SHAFT = BLOCK_ENTITIES.register("tiered_shaft", () -> {
             List<Block> allShaftBlocks = new ArrayList<>(SHAFTS);
             allShaftBlocks.addAll(ENCASED_SHAFTS);
@@ -276,5 +280,45 @@ public class ModBlocks {
             EncasingRegistry.addVariant(largeCogwheelBlock, andesiteEncasedLargeCogwheel);
             EncasingRegistry.addVariant(largeCogwheelBlock, brassEncasedLargeCogwheel);
         }
+    }
+
+    @Override
+    public BlockEntityType<?> getTieredShaftType() {
+        return TIERED_SHAFT.get();
+    }
+
+    @Override
+    public BlockEntityType<?> getTieredCogwheelType() {
+        return TIERED_COGWHEEL.get();
+    }
+
+    @Override
+    public List<Block> getShafts() {
+        return Collections.unmodifiableList(SHAFTS);
+    }
+
+    @Override
+    public List<Item> getShaftItems() {
+        return Collections.unmodifiableList(SHAFT_ITEMS);
+    }
+
+    @Override
+    public List<Block> getCogwheels() {
+        return Collections.unmodifiableList(COGWHEELS);
+    }
+
+    @Override
+    public List<Item> getCogwheelItems() {
+        return Collections.unmodifiableList(COGWHEEL_ITEMS);
+    }
+
+    @Override
+    public List<Block> getLargeCogwheels() {
+        return Collections.unmodifiableList(LARGE_COGWHEELS);
+    }
+
+    @Override
+    public List<Item> getLargeCogwheelItems() {
+        return Collections.unmodifiableList(LARGE_COGWHEEL_ITEMS);
     }
 }

@@ -3,6 +3,7 @@ package com.createtiers.client;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.TierRegistry;
 import net.minecraft.network.chat.Component;
@@ -48,9 +49,7 @@ public class DynamicResourcePack implements PackResources {
     private final PackMetadataSection metadata;
 
     public DynamicResourcePack() {
-        // Create metadata: (description, pack_format)
-        // 1.20.1 pack format for CLIENT_RESOURCES is 15
-        this.metadata = new PackMetadataSection(Component.literal("Dynamic resources for Create Tiers"), 15);
+        this.metadata = new PackMetadataSection(Component.literal("Dynamic resources for Create Tiers"), CreateTiers.PACK_FORMAT);
     }
 
     /**
@@ -68,12 +67,18 @@ public class DynamicResourcePack implements PackResources {
                 for (String key : textures.keySet()) {
                     String texPath = textures.get(key).getAsString();
                     if (texPath.contains("block/grayscale/")) {
-                        ResourceLocation texLoc = ResourceLocation.parse(texPath);
+                        ResourceLocation texLoc;
+                        if (texPath.contains(":")) {
+                            String[] parts = texPath.split(":");
+                            texLoc = Compat.rl(parts[0], parts[1]);
+                        } else {
+                            texLoc = Compat.rl(CreateTiers.MOD_ID, texPath);
+                        }
                         // Convert to full asset path if it's just a shorthand
                         String texLocPath = texLoc.toString().split(":")[1];
                         if (!texLocPath.startsWith("textures/")) {
                             String texLocNamespace = texLoc.toString().split(":")[0];
-                            texLoc = ResourceLocation.fromNamespaceAndPath(texLocNamespace,
+                            texLoc = Compat.rl(texLocNamespace,
                                     "textures/" + texLocPath + ".png");
                         }
                         GRAYSCALE_TEXTURES.add(texLoc);
@@ -170,7 +175,7 @@ public class DynamicResourcePack implements PackResources {
             JsonObject packJson = new JsonObject();
             JsonObject packMeta = new JsonObject();
             packMeta.addProperty("description", "Dynamic resources for Create Tiers");
-            packMeta.addProperty("pack_format", 15);
+            packMeta.addProperty("pack_format", CreateTiers.PACK_FORMAT);
             packJson.add("pack", packMeta);
             return () -> new ByteArrayInputStream(packJson.toString().getBytes(StandardCharsets.UTF_8));
         }
@@ -184,7 +189,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("models/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String modelPath = path.substring(0, path.length() - 5);
-            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(namespace, modelPath);
+            ResourceLocation modelLoc = Compat.rl(namespace, modelPath);
             JsonElement modelJson = MODELS.get(modelLoc);
             if (modelJson != null) {
                 CreateTiers.LOGGER.debug("Serving dynamic model: {}", modelLoc);
@@ -200,7 +205,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.startsWith("blockstates/") && path.endsWith(".json")) {
             // Remove .json extension for key lookup
             String statePath = path.substring(0, path.length() - 5);
-            ResourceLocation stateLoc = ResourceLocation.fromNamespaceAndPath(namespace, statePath);
+            ResourceLocation stateLoc = Compat.rl(namespace, statePath);
             JsonElement stateJson = BLOCKSTATES.get(stateLoc);
             if (stateJson != null) {
                 return () -> new ByteArrayInputStream(stateJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -257,7 +262,7 @@ public class DynamicResourcePack implements PackResources {
                 ResourceLocation usedLoc = null;
 
                 for (String p : possiblePaths) {
-                    ResourceLocation loc = ResourceLocation.fromNamespaceAndPath("create", p);
+                    ResourceLocation loc = Compat.rl("create", p);
                     java.util.Optional<net.minecraft.server.packs.resources.Resource> res = rm.getResource(loc);
                     if (res.isPresent()) {
                         originalResource = res.get();
@@ -317,7 +322,7 @@ public class DynamicResourcePack implements PackResources {
             MODELS.forEach((loc, json) -> {
                 if (loc.getPath().startsWith(path)) {
                     // Output location must include .json
-                    ResourceLocation outputLoc = loc.withSuffix(".json");
+                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
                     output.accept(outputLoc,
                             () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }
@@ -327,8 +332,7 @@ public class DynamicResourcePack implements PackResources {
         if (path.equals("blockstates") || path.startsWith("blockstates/")) {
             BLOCKSTATES.forEach((loc, json) -> {
                 if (loc.getPath().startsWith(path)) {
-                    // Output location must include .json
-                    ResourceLocation outputLoc = loc.withSuffix(".json");
+                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
                     output.accept(outputLoc,
                             () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }
@@ -339,7 +343,7 @@ public class DynamicResourcePack implements PackResources {
             LANGUAGES.forEach((lang, json) -> {
                 String langPath = "lang/" + lang + ".json";
                 if (langPath.startsWith(path)) {
-                    ResourceLocation outputLoc = ResourceLocation.fromNamespaceAndPath(namespace, langPath);
+                    ResourceLocation outputLoc = Compat.rl(namespace, langPath);
                     output.accept(outputLoc,
                             () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }

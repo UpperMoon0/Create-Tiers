@@ -2,8 +2,8 @@ package com.createtiers.content.kinetics;
 
 import java.util.function.Supplier;
 
+import com.createtiers.PlatformHelper;
 import com.createtiers.api.Tier;
-import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.decoration.encasing.EncasedBlock;
 import com.simibubi.create.content.kinetics.base.AbstractEncasedShaftBlock;
@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
@@ -71,7 +72,7 @@ public class TieredEncasedShaftBlock extends AbstractEncasedShaftBlock
 
     @Override
     public BlockEntityType<? extends TieredShaftBlockEntity> getBlockEntityType() {
-        return ModBlocks.TIERED_SHAFT.get();
+        return (BlockEntityType<? extends TieredShaftBlockEntity>) PlatformHelper.get().getTieredShaftType();
     }
 
     @Override
@@ -96,7 +97,7 @@ public class TieredEncasedShaftBlock extends AbstractEncasedShaftBlock
     }
 
     private BlockState getDefaultShaftState() {
-        for (Block block : ModBlocks.SHAFTS) {
+        for (Block block : PlatformHelper.get().getShafts()) {
             if (block instanceof TieredShaftBlock shaft && shaft.getTier().equals(tier)) {
                 return shaft.defaultBlockState();
             }
@@ -105,10 +106,12 @@ public class TieredEncasedShaftBlock extends AbstractEncasedShaftBlock
     }
 
     private ItemStack getDefaultShaftStack() {
-        for (int i = 0; i < ModBlocks.SHAFTS.size(); i++) {
-            Block block = ModBlocks.SHAFTS.get(i);
+        java.util.List<Block> shafts = PlatformHelper.get().getShafts();
+        java.util.List<Item> shaftItems = PlatformHelper.get().getShaftItems();
+        for (int i = 0; i < shafts.size(); i++) {
+            Block block = shafts.get(i);
             if (block instanceof TieredShaftBlock shaft && shaft.getTier().equals(tier)) {
-                return new ItemStack(ModBlocks.SHAFT_ITEMS.get(i));
+                return new ItemStack(shaftItems.get(i));
             }
         }
         return ItemStack.EMPTY;

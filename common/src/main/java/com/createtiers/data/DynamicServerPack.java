@@ -1,6 +1,7 @@
 package com.createtiers.data;
 
 import com.google.gson.JsonObject;
+import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
@@ -41,7 +42,7 @@ public class DynamicServerPack implements PackResources {
     public DynamicServerPack() {
         this.metadata = new PackMetadataSection(
             net.minecraft.network.chat.Component.literal("Dynamic server data for Create Tiers"), 
-            10 // 1.20.1 pack format for SERVER_DATA is 10
+            CreateTiers.SERVER_PACK_FORMAT
         );
     }
     
@@ -106,7 +107,7 @@ public class DynamicServerPack implements PackResources {
         mineablePickaxe.add("values", blocksArray);
         // Put in minecraft namespace for vanilla mining tag
         TAGS.put(
-            ResourceLocation.fromNamespaceAndPath("minecraft", "tags/blocks/mineable/pickaxe"),
+            Compat.rl("minecraft", "tags/blocks/mineable/pickaxe"),
             mineablePickaxe
         );
         
@@ -118,7 +119,7 @@ public class DynamicServerPack implements PackResources {
             tierArray.add("createtiers:shaft_" + tier.getName());
             tierShaftTag.add("values", tierArray);
             TAGS.put(
-                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "tags/blocks/" + tier.getName() + "_shafts"),
+                Compat.rl(CreateTiers.MOD_ID, "tags/blocks/" + tier.getName() + "_shafts"),
                 tierShaftTag
             );
         }
@@ -175,7 +176,7 @@ public class DynamicServerPack implements PackResources {
         lootTable.add("pools", pools);
         
         LOOT_TABLES.put(
-            ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
+            Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
             lootTable
         );
     }
@@ -206,7 +207,7 @@ public class DynamicServerPack implements PackResources {
         lootTable.add("pools", pools);
 
         LOOT_TABLES.put(
-            ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "loot_tables/blocks/" + encasedBlockName),
+            Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + encasedBlockName),
             lootTable
         );
     }
@@ -266,7 +267,7 @@ public class DynamicServerPack implements PackResources {
             JsonObject packJson = new JsonObject();
             JsonObject packMeta = new JsonObject();
             packMeta.addProperty("description", "Dynamic server data for Create Tiers");
-            packMeta.addProperty("pack_format", 10);
+            packMeta.addProperty("pack_format", CreateTiers.SERVER_PACK_FORMAT);
             packJson.add("pack", packMeta);
             return () -> new ByteArrayInputStream(packJson.toString().getBytes(StandardCharsets.UTF_8));
         }
@@ -279,7 +280,7 @@ public class DynamicServerPack implements PackResources {
         // Handle tags
         if (path.startsWith("tags/") && path.endsWith(".json")) {
             String tagPath = path.substring(0, path.length() - 5);
-            ResourceLocation tagLoc = ResourceLocation.fromNamespaceAndPath(namespace, tagPath);
+            ResourceLocation tagLoc = Compat.rl(namespace, tagPath);
             JsonObject tagJson = TAGS.get(tagLoc);
             if (tagJson != null) {
                 return () -> new ByteArrayInputStream(tagJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -289,7 +290,7 @@ public class DynamicServerPack implements PackResources {
         // Handle loot tables (only for createtiers namespace)
         if (namespace.equals(CreateTiers.MOD_ID) && path.startsWith("loot_tables/") && path.endsWith(".json")) {
             String lootPath = path.substring(0, path.length() - 5);
-            ResourceLocation lootLoc = ResourceLocation.fromNamespaceAndPath(namespace, lootPath);
+            ResourceLocation lootLoc = Compat.rl(namespace, lootPath);
             JsonObject lootJson = LOOT_TABLES.get(lootLoc);
             if (lootJson != null) {
                 return () -> new ByteArrayInputStream(lootJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -318,7 +319,7 @@ public class DynamicServerPack implements PackResources {
         if (path.startsWith("tags/") || path.equals("tags")) {
             TAGS.forEach((loc, json) -> {
                 if (loc.getNamespace().equals(namespace) && loc.getPath().startsWith(path)) {
-                    ResourceLocation outputLoc = loc.withSuffix(".json");
+                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
                     output.accept(outputLoc, 
                         () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }
@@ -329,7 +330,7 @@ public class DynamicServerPack implements PackResources {
         if (namespace.equals(CreateTiers.MOD_ID) && (path.startsWith("loot_tables/") || path.equals("loot_tables"))) {
             LOOT_TABLES.forEach((loc, json) -> {
                 if (loc.getPath().startsWith(path)) {
-                    ResourceLocation outputLoc = loc.withSuffix(".json");
+                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
                     output.accept(outputLoc, 
                         () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
                 }

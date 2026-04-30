@@ -1,163 +1,19 @@
 plugins {
-    id 'eclipse'
     id 'idea'
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7.+'
-    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
 }
 
-version = "${mod_version}"
-group = 'com.createtiers'
-archivesBaseName = 'create-tiers'
+allprojects {
+    group = 'com.createtiers'
+    version = '0.2.1'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
 
-minecraft {
-    mappings channel: 'parchment', version: '2023.09.03-1.20.1'
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-    runs {
-        configureEach {
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                "createtiers" {
-                    source sourceSets.main
-                }
-            }
+    idea {
+        module {
+            downloadSources = true
+            downloadJavadoc = true
         }
-        client {
-            property 'forge.enabledGameTestNamespaces', 'createtiers'
-        }
-        server {
-            property 'forge.enabledGameTestNamespaces', 'createtiers'
-            arg '--nogui'
-        }
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', 'createtiers'
-        }
-        data {
-            args '--all', '--mod', 'createtiers', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/'), '--existing-mod', 'create'
-        }
-    }
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-repositories {
-    mavenCentral()
-    flatDir {
-        dir 'libs'
-    }
-    maven { url = 'https://maven.tterrag.com/'
-        content {
-            includeGroup "com.tterrag.registrate"
-        }
-    }
-    maven { url = 'https://maven.createmod.net'
-        content {
-            includeGroup "net.createmod.ponder"
-            includeGroup "dev.engine-room.flywheel"
-            includeGroup "com.simibubi.create"
-        }
-    }
-    maven { url = 'https://maven.blamejared.com'
-        content {
-            includeGroup "mezz.jei"
-        }
-    }
-    maven { url = 'https://maven.architectury.dev/'
-        content {
-            includeGroup "dev.architectury"
-        }
-    }
-    maven { url = 'https://maven.latvian.dev/releases'
-        content {
-            includeGroup 'dev.latvian.mods'
-        }
-    }
-    maven { url = 'https://cursemaven.com'
-        content {
-            includeGroup "curse.maven"
-        }
-    }
-    maven { url = "https://maven.terraformersmc.com/"
-        content {
-            includeGroup 'dev.emi'
-        }
-    }
-    maven { url = 'https://maven.parchmentmc.org' }
-    maven { url = 'https://maven.neoforged.net/releases' }
-    maven { url = 'https://maven.quiltmc.org/repository/release/' }
-}
-
-dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
-    implementation fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
-    implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
-    compileOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}")
-    runtimeOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
-    implementation fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}")
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}") { transitive = false }
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}") { transitive = false }
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}") { transitive = false }
-    // KubeJS integration (optional)
-    implementation fg.deobf("dev.architectury:architectury-forge:${architectury_version}")
-    implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
-    implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    implementation fg.deobf("dev.latvian.mods:kubejs-create-forge:${kubejs_create_version}") { transitive = false }
-    runtimeOnly fg.deobf("curse.maven:jade-324717:${jade_version}")
-    runtimeOnly fg.deobf("curse.maven:spark-361579:${spark_version}")
-    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
-    implementation fg.deobf("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}")
-}
-mixin {
-    add sourceSets.main, "createtiers-refmap.json"
-    config "createtiers.mixins.json"
-}
-jar {
-    manifest {
-        attributes([
-                "Specification-Title"     : "createtiers",
-                "Specification-Vendor"    : "createtiers",
-                "Specification-Version"   : "1",
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.jar.archiveVersion,
-                "Implementation-Vendor"   : "createtiers",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-        ])
-    }
-}
-
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: "[1.20.1,1.21)",
-            forge_version          : forge_version,
-            forge_version_range    : "[47,)",
-            loader_version_range   : "[47,)",
-            mod_id                 : "createtiers",
-            mod_name               : "Create Tiers",
-            mod_license            : "MIT",
-            mod_version            : mod_version,
-            mod_authors            : "NsTut",
-            mod_description        : "A mod for Create that introduces a dynamic tiering system for kinetic components (shafts and cogwheels). It provides a flexible way to customize Max RPM and Stress Units. Tiers can be fully customized via KubeJS or datapacks, with automatic resource generation for all registered tiers.",
-    ]
-    inputs.properties replaceProperties
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-idea {
-    module {
-        downloadSources = true
-        downloadJavadoc = true
     }
 }

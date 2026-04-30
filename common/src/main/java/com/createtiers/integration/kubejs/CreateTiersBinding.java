@@ -1,5 +1,6 @@
 package com.createtiers.integration.kubejs;
 
+import com.createtiers.Compat;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -52,7 +53,7 @@ public class CreateTiersBinding {
      * Register a tier with full customization including dual colors.
      */
     public static void registerTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor, String displayName) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("createtiers", name);
+        ResourceLocation id = rl("createtiers", name);
         
         Tier tier = Tier.builder()
                 .tier(level)
@@ -81,7 +82,7 @@ public class CreateTiersBinding {
      * Register a tier with a resource location from another mod and dual colors.
      */
     public static void registerCustomTier(String namespace, String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace, name);
+        ResourceLocation id = rl(namespace, name);
         
         Tier tier = Tier.builder()
                 .tier(level)
@@ -106,7 +107,7 @@ public class CreateTiersBinding {
     }
     
     public static Tier getTier(String name) {
-        return TierRegistry.get(ResourceLocation.fromNamespaceAndPath("createtiers", name));
+        return TierRegistry.get(rl("createtiers", name));
     }
     
     public static Tier getTierByLevel(int level) {
@@ -118,6 +119,14 @@ public class CreateTiersBinding {
     }
     
     public static boolean tierExists(String name) {
-        return TierRegistry.exists(ResourceLocation.fromNamespaceAndPath("createtiers", name));
+        return TierRegistry.exists(rl("createtiers", name));
+    }
+
+    private static ResourceLocation rl(String namespace, String path) {
+        try {
+            return Compat.rl(namespace, path);
+        } catch (IllegalStateException e) {
+            return new ResourceLocation(namespace, path);
+        }
     }
 }

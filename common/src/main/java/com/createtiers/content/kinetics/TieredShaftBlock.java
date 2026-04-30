@@ -1,7 +1,7 @@
 package com.createtiers.content.kinetics;
 
+import com.createtiers.PlatformHelper;
 import com.createtiers.api.Tier;
-import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
@@ -48,7 +48,7 @@ public class TieredShaftBlock extends ShaftBlock {
 
     @Override
     public BlockEntityType<? extends TieredShaftBlockEntity> getBlockEntityType() {
-        return ModBlocks.TIERED_SHAFT.get();
+        return (BlockEntityType<? extends TieredShaftBlockEntity>) PlatformHelper.get().getTieredShaftType();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.createtiers.client;
 
+import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
@@ -92,26 +93,26 @@ public class TieredModelGenerator {
     }
 
     private static void generateItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/shaft_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/shaft_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/shaft"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/cogwheel"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/large_cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/large_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/large_cogwheel"));
     }
 
     private static void generateEncasedItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/andesite_encased_shaft_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_shaft_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_shaft"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/brass_encased_shaft_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_shaft_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_shaft"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/andesite_encased_cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_cogwheel"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/brass_encased_cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_cogwheel"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/andesite_encased_large_cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_large_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_large_cogwheel"));
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/item/brass_encased_large_cogwheel_" + tierName),
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_large_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_large_cogwheel"));
     }
 
@@ -128,11 +129,11 @@ public class TieredModelGenerator {
                 "particle", CreateTiers.MOD_ID + ":block/grayscale/axis");
         Map<String, Integer> tintMap = Map.of("Axis", 0);
 
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft"),
-                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft"),
+                mutateModel(Compat.rl("create", "block/shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
         models.put(
-                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
-                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+                Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
+                mutateModel(Compat.rl("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
     }
 
     private static void generateCogwheelShaftModel(String tierName, Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
@@ -142,8 +143,8 @@ public class TieredModelGenerator {
                 "particle", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
         Map<String, Integer> tintMap = Collections.emptyMap();
 
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/cogwheel_shaft"),
-                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/cogwheel_shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/cogwheel_shaft"),
+                mutateModel(Compat.rl("create", "block/cogwheel_shaft"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
     }
 
     private static void generateCogwheelModels(String tierName, boolean isLarge,
@@ -171,29 +172,29 @@ public class TieredModelGenerator {
         tintMap.put("GearCaseInnerRotated", 1);
         tintMap.put("GearCaseOuter", 1);
 
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix),
-                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/" + suffix), textures, tintMap, 1, Collections.emptySet(), resourceManager));
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix),
+                mutateModel(Compat.rl("create", "block/" + suffix), textures, tintMap, 1, Collections.emptySet(), resourceManager));
 
-        ResourceLocation shaftlessModelLoc = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix + "_shaftless");
+        ResourceLocation shaftlessModelLoc = Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + suffix + "_shaftless");
         models.put(shaftlessModelLoc,
-                mutateModel(ResourceLocation.fromNamespaceAndPath("create", "block/" + suffix + "_shaftless"), textures,
+                mutateModel(Compat.rl("create", "block/" + suffix + "_shaftless"), textures,
                         tintMap, 1, Collections.emptySet(), resourceManager));
 
-        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "block/" + tierName + "/" + suffix + "_shaftless"));
+        dev.engine_room.flywheel.lib.model.baked.PartialModel.of(Compat.rl(CreateTiers.MOD_ID, "block/" + tierName + "/" + suffix + "_shaftless"));
     }
 
     private static void generateEncasedShaftModels(String tierName, String casingType,
             Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String createBaseModel = "block/encased_shaft/block_" + casingType;
 
-        models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + casingType + "_encased_shaft"),
-                mutateEncasedShaftModel(ResourceLocation.fromNamespaceAndPath("create", createBaseModel), tierName, resourceManager));
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + casingType + "_encased_shaft"),
+                mutateEncasedShaftModel(Compat.rl("create", createBaseModel), tierName, resourceManager));
     }
 
     private static JsonObject mutateEncasedShaftModel(ResourceLocation baseModel, String tierName,
             net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         try {
-            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
+            ResourceLocation modelLoc = Compat.rl(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
             java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = resourceManager.getResource(modelLoc);
             if (resource.isEmpty()) {
                 CreateTiers.LOGGER.error("Could not find base encased shaft model: {}", modelLoc);
@@ -247,9 +248,9 @@ public class TieredModelGenerator {
             String createBaseModel = "block/" + blockFolder + "/block" + variant;
             String outputName = casingType + "_encased_" + suffix + variant;
 
-            models.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + outputName),
+            models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + outputName),
                     mutateEncasedCogwheelModel(
-                            ResourceLocation.fromNamespaceAndPath("create", createBaseModel),
+                            Compat.rl("create", createBaseModel),
                             casingType, sideTexture, woodTexture, gearboxTexture, resourceManager));
         }
     }
@@ -258,7 +259,7 @@ public class TieredModelGenerator {
             String sideTexture, String woodTexture, String gearboxTexture,
             net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         try {
-            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
+            ResourceLocation modelLoc = Compat.rl(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
             java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = resourceManager.getResource(modelLoc);
             if (resource.isEmpty()) {
                 CreateTiers.LOGGER.error("Could not find base encased cogwheel model: {}", modelLoc);
@@ -304,7 +305,7 @@ public class TieredModelGenerator {
             String[] parts = baseModel.toString().split(":");
             String namespace = parts[0];
             String path = parts[1];
-            ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(namespace, "models/" + path + ".json");
+            ResourceLocation modelLoc = Compat.rl(namespace, "models/" + path + ".json");
             java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = resourceManager.getResource(modelLoc);
             if (resource.isEmpty()) {
                 CreateTiers.LOGGER.error("Could not find base model to mutate: {}", modelLoc);
@@ -348,28 +349,28 @@ public class TieredModelGenerator {
     }
 
     private static void generateShaftBlockstate(String tierName, Map<ResourceLocation, JsonObject> blockstates) {
-        ResourceLocation modelLocation = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
+        ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
                 "block/" + tierName + "/shaft");
-        blockstates.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
                 createAxisBlockstate(modelLocation));
     }
 
     private static void generateCogwheelBlockstate(String tierName, boolean isLarge,
             Map<ResourceLocation, JsonObject> blockstates) {
         String suffix = isLarge ? "large_cogwheel" : "cogwheel";
-        ResourceLocation modelLocation = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
+        ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
                 "block/" + tierName + "/" + suffix);
         blockstates.put(
-                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/" + suffix + "_" + tierName),
+                Compat.rl(CreateTiers.MOD_ID, "blockstates/" + suffix + "_" + tierName),
                 createAxisBlockstate(modelLocation));
     }
 
     private static void generateEncasedShaftBlockstate(String tierName, String casingType,
             Map<ResourceLocation, JsonObject> blockstates) {
         String blockName = casingType + "_encased_shaft_" + tierName;
-        ResourceLocation modelLocation = ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
+        ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
                 "block/" + tierName + "/" + casingType + "_encased_shaft");
-        blockstates.put(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/" + blockName),
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/" + blockName),
                 createAxisBlockstate(modelLocation));
     }
 
@@ -379,7 +380,7 @@ public class TieredModelGenerator {
         String blockName = casingType + "_encased_" + suffix + "_" + tierName;
         String modelPrefix = CreateTiers.MOD_ID + ":block/" + tierName + "/" + casingType + "_encased_" + suffix;
         blockstates.put(
-                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "blockstates/" + blockName),
+                Compat.rl(CreateTiers.MOD_ID, "blockstates/" + blockName),
                 createEncasedCogwheelBlockstate(modelPrefix));
     }
 

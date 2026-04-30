@@ -42,7 +42,7 @@ public class DataEventHandler {
             event.addRepositorySource((packConsumer) -> {
                 Pack.Info packInfo = new Pack.Info(
                         Component.literal("Dynamic server data for Create Tiers"),
-                        10, // pack format for 1.20.1 SERVER_DATA
+                        CreateTiers.SERVER_PACK_FORMAT,
                         FeatureFlagSet.of()
                 );
                 

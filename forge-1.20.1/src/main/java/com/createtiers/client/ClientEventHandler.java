@@ -39,7 +39,7 @@ public class ClientEventHandler {
             event.addRepositorySource((packConsumer) -> {
                 Pack.Info packInfo = new Pack.Info(
                         Component.literal("Dynamic resources for Create Tiers"),
-                        15,
+                        CreateTiers.PACK_FORMAT,
                         FeatureFlagSet.of()
                 );
 

@@ -1,0 +1,39 @@
+package com.createtiers.registry;
+
+import com.createtiers.CreateTiers;
+import com.simibubi.create.AllBlocks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public class ModCreativeTabs {
+
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateTiers.MOD_ID);
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CREATE_TIERS_TAB = CREATIVE_MODE_TABS.register("create_tiers",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.createtiers"))
+                    .icon(() -> {
+                        if (!ModBlocks.LARGE_COGWHEEL_ITEMS.isEmpty()) {
+                            return new ItemStack(ModBlocks.LARGE_COGWHEEL_ITEMS.get(0));
+                        }
+                        return new ItemStack(AllBlocks.LARGE_COGWHEEL.get());
+                    })
+                    .displayItems((parameters, output) -> {
+                        ModBlocks.SHAFT_ITEMS.forEach(output::accept);
+                        ModBlocks.COGWHEEL_ITEMS.forEach(output::accept);
+                        ModBlocks.LARGE_COGWHEEL_ITEMS.forEach(output::accept);
+                        ModBlocks.ENCASED_SHAFT_ITEMS.forEach(output::accept);
+                        ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(output::accept);
+                        ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(output::accept);
+                    })
+                    .build());
+
+    public static void register(IEventBus eventBus) {
+        CREATIVE_MODE_TABS.register(eventBus);
+    }
+}
