@@ -148,7 +148,7 @@ public class TieredCogwheelBlockItem extends BlockItem {
 
         @Override
         public Predicate<BlockState> getStatePredicate() {
-            return s -> s.getBlock() instanceof TieredCogwheelBlock;
+            return s -> ICogWheel.isSmallCog(s) || ICogWheel.isLargeCog(s);
         }
 
         @Override

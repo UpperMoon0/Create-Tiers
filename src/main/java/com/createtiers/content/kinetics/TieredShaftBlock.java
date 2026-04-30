@@ -3,6 +3,7 @@ package com.createtiers.content.kinetics;
 import com.createtiers.api.Tier;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
+import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import com.simibubi.create.foundation.placement.PoleHelper;
@@ -57,7 +58,7 @@ public class TieredShaftBlock extends ShaftBlock {
             return InteractionResult.PASS;
 
         IPlacementHelper helper = PlacementHelpers.get(placementHelperId);
-        if (helper.matchesItem(stack))
+        if (helper.matchesItem(stack) && helper.matchesState(state))
             return helper.getOffset(player, level, state, pos, hitResult)
                     .placeInWorld(level, (BlockItem) stack.getItem(), player, hand, hitResult);
 
@@ -67,7 +68,7 @@ public class TieredShaftBlock extends ShaftBlock {
     @MethodsReturnNonnullByDefault
     private static class PlacementHelper extends PoleHelper<Direction.Axis> {
         private PlacementHelper() {
-            super(state -> state.getBlock() instanceof TieredShaftBlock, state -> state.getValue(BlockStateProperties.AXIS), BlockStateProperties.AXIS);
+            super(state -> state.getBlock() instanceof AbstractSimpleShaftBlock, state -> state.getValue(BlockStateProperties.AXIS), BlockStateProperties.AXIS);
         }
 
         @Override
@@ -78,7 +79,7 @@ public class TieredShaftBlock extends ShaftBlock {
 
         @Override
         public Predicate<BlockState> getStatePredicate() {
-            return state -> state.getBlock() instanceof TieredShaftBlock;
+            return state -> state.getBlock() instanceof AbstractSimpleShaftBlock;
         }
     }
 }
