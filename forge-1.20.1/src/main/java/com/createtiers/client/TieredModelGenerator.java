@@ -26,8 +26,6 @@ public class TieredModelGenerator {
     public static void generateAllModels(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         CreateTiers.LOGGER.info("Generating tiered models with grayscale textures and tinting...");
 
-        DynamicResourcePack.clear();
-
         Map<ResourceLocation, JsonElement> models = new HashMap<>();
         Map<ResourceLocation, JsonObject> blockstates = new HashMap<>();
 
@@ -35,8 +33,8 @@ public class TieredModelGenerator {
             generateTierModels(tier, models, blockstates, resourceManager);
         }
 
-        models.forEach(DynamicResourcePack::addModel);
-        blockstates.forEach(DynamicResourcePack::addBlockState);
+        DynamicResourcePack.setModels(models);
+        DynamicResourcePack.setBlockstates(blockstates);
 
         DynamicResourcePack.addTranslation("en_us", "itemGroup.createtiers", "Create Tiers");
 
@@ -188,10 +186,10 @@ public class TieredModelGenerator {
         String createBaseModel = "block/encased_shaft/block_" + casingType;
 
         models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + casingType + "_encased_shaft"),
-                mutateEncasedShaftModel(Compat.rl("create", createBaseModel), tierName, resourceManager));
+                mutateEncasedShaftModel(Compat.rl("create", createBaseModel), tierName, casingType, resourceManager));
     }
 
-    private static JsonObject mutateEncasedShaftModel(ResourceLocation baseModel, String tierName,
+    private static JsonObject mutateEncasedShaftModel(ResourceLocation baseModel, String tierName, String casingType,
             net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         try {
             ResourceLocation modelLoc = Compat.rl(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
@@ -205,11 +203,27 @@ public class TieredModelGenerator {
                     .getAsJsonObject();
 
             JsonObject textures = new JsonObject();
-            textures.addProperty("casing", "create:block/" + baseModel.getPath().split("/")[2] + "_casing");
+            textures.addProperty("casing", "create:block/" + casingType + "_casing");
             textures.addProperty("opening", CreateTiers.MOD_ID + ":block/grayscale/gearbox");
-            textures.addProperty("1", CreateTiers.MOD_ID + ":block/grayscale/gearbox");
-            textures.addProperty("particle", "create:block/" + baseModel.getPath().split("/")[2] + "_casing");
+            textures.addProperty("1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            textures.addProperty("particle", "create:block/" + casingType + "_casing");
             model.add("textures", textures);
+
+            String parentPath = model.has("parent") ? model.get("parent").getAsString() : null;
+            if (parentPath != null) {
+                String[] parentParts = parentPath.split(":");
+                String parentNamespace = parentParts.length > 1 ? parentParts[0] : baseModel.getNamespace();
+                String parentModelPath = parentParts.length > 1 ? parentParts[1] : parentParts[0];
+                ResourceLocation parentLoc = Compat.rl(parentNamespace, "models/" + parentModelPath + ".json");
+                java.util.Optional<net.minecraft.server.packs.resources.Resource> parentResource = resourceManager.getResource(parentLoc);
+                if (parentResource.isPresent()) {
+                    JsonObject parentModel = JsonParser.parseReader(new InputStreamReader(parentResource.get().open(), StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+                    if (parentModel.has("elements")) {
+                        model.add("elements", parentModel.getAsJsonArray("elements"));
+                    }
+                }
+            }
 
             if (model.has("elements")) {
                 JsonArray elements = model.getAsJsonArray("elements");
@@ -371,7 +385,7 @@ public class TieredModelGenerator {
         ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
                 "block/" + tierName + "/" + casingType + "_encased_shaft");
         blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/" + blockName),
-                createAxisBlockstate(modelLocation));
+                createAxisBlockstateNoWaterlogged(modelLocation));
     }
 
     private static void generateEncasedCogwheelBlockstate(String tierName, String casingType, boolean isLarge,
@@ -399,6 +413,24 @@ public class TieredModelGenerator {
                 }
                 variants.add("axis=" + axis.getName() + ",waterlogged=" + waterlogged, variant);
             }
+        }
+        blockstate.add("variants", variants);
+        return blockstate;
+    }
+
+    private static JsonObject createAxisBlockstateNoWaterlogged(ResourceLocation model) {
+        JsonObject blockstate = new JsonObject();
+        JsonObject variants = new JsonObject();
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            JsonObject variant = new JsonObject();
+            variant.addProperty("model", model.toString());
+            if (axis == Direction.Axis.X) {
+                variant.addProperty("x", 90);
+                variant.addProperty("y", 90);
+            } else if (axis == Direction.Axis.Z) {
+                variant.addProperty("x", 90);
+            }
+            variants.add("axis=" + axis.getName(), variant);
         }
         blockstate.add("variants", variants);
         return blockstate;

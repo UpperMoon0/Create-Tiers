@@ -31,8 +31,8 @@ public class AllTieredPartialModels {
             LARGE_COGWHEEL_SHAFTLESS = PartialModel.of(CreateTiers.asResource(prefix + "large_cogwheel_shaftless"));
             COGWHEEL_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "cogwheel_shaft"));
 
-            ANDESITE_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "andesite_encased_shaft"));
-            BRASS_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "brass_encased_shaft"));
+            ANDESITE_ENCASED_SHAFT = SHAFT;
+            BRASS_ENCASED_SHAFT = SHAFT;
         }
     }
 

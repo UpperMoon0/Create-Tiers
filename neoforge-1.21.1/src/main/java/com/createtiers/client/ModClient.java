@@ -25,6 +25,7 @@ import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.visual.BlockEntityVisual;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.api.visualization.VisualizationContext;
+import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.lib.model.Models;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.visualization.SimpleBlockEntityVisualizer;
@@ -117,17 +118,24 @@ public class ModClient {
         public static BlockEntityVisual<TieredShaftBlockEntity> create(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
             Block block = blockEntity.getBlockState().getBlock();
             if (block instanceof TieredEncasedShaftBlock) {
-                return new EncasedShaftVisual(context, blockEntity, partialTick);
+                BlockEntityVisual<TieredShaftBlockEntity> visual = EncasedShaftVisual.tryCreate(context, blockEntity, partialTick);
+                if (visual != null) return visual;
             }
-            return new PlainShaftVisual(context, blockEntity, partialTick);
+            return PlainShaftVisual.tryCreate(context, blockEntity, partialTick);
         }
 
         public static class PlainShaftVisual extends SingleAxisRotatingVisual<TieredShaftBlockEntity> {
             private final Tier tier;
 
-            public PlainShaftVisual(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
-                        ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier()).SHAFT));
+            public static BlockEntityVisual<TieredShaftBlockEntity> tryCreate(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
+                Tier tier = ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier();
+                Model model = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT);
+                if (model == null) return null;
+                return new PlainShaftVisual(context, blockEntity, partialTick, model);
+            }
+
+            private PlainShaftVisual(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick, Model model) {
+                super(context, blockEntity, partialTick, model);
                 this.tier = ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier();
                 applyTierColor();
             }
@@ -153,8 +161,14 @@ public class ModClient {
         public static class EncasedShaftVisual extends SingleAxisRotatingVisual<TieredShaftBlockEntity> {
             private final Tier tier;
 
-            public EncasedShaftVisual(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(getEncasedShaftPartial(blockEntity)));
+            public static BlockEntityVisual<TieredShaftBlockEntity> tryCreate(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
+                Model model = Models.partial(getEncasedShaftPartial(blockEntity));
+                if (model == null) return null;
+                return new EncasedShaftVisual(context, blockEntity, partialTick, model);
+            }
+
+            private EncasedShaftVisual(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick, Model model) {
+                super(context, blockEntity, partialTick, model);
                 this.tier = resolveTier(blockEntity.getBlockState());
                 applyTierColor();
             }
@@ -196,18 +210,19 @@ public class ModClient {
         public static BlockEntityVisual<TieredCogwheelBlockEntity> create(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
             Block block = blockEntity.getBlockState().getBlock();
             if (block instanceof TieredEncasedCogwheelBlock) {
-                return TieredEncasedCogVisual.create(context, blockEntity, partialTick);
+                BlockEntityVisual<TieredCogwheelBlockEntity> visual = TieredEncasedCogVisual.create(context, blockEntity, partialTick);
+                if (visual != null) return visual;
             }
-            return TieredPlainCogVisual.create(context, blockEntity, partialTick);
+            return TieredPlainCogVisual.tryCreate(context, blockEntity, partialTick);
         }
     }
 
     public static class TieredPlainCogVisual {
-        public static BlockEntityVisual<TieredCogwheelBlockEntity> create(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
+        public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
             if (ICogWheel.isLargeCog(blockEntity.getBlockState())) {
-                return new LargeCogVisual(context, blockEntity, partialTick);
+                return LargeCogVisual.tryCreate(context, blockEntity, partialTick);
             } else {
-                return new SmallCogVisual(context, blockEntity, partialTick);
+                return SmallCogVisual.tryCreate(context, blockEntity, partialTick);
             }
         }
 
@@ -215,14 +230,21 @@ public class ModClient {
             protected final RotatingInstance additionalShaft;
             private final Tier tier;
 
-            public SmallCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
-                        ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier()).COGWHEEL_SHAFTLESS));
+            public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
+                Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
+                Model shaftless = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFTLESS);
+                if (shaftless == null) return null;
+                Model shaft = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
+                if (shaft == null) return null;
+                return new SmallCogVisual(context, blockEntity, partialTick, shaftless, shaft, tier);
+            }
 
-                this.tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
+            private SmallCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick, Model shaftless, Model shaft, Tier tier) {
+                super(context, blockEntity, partialTick, shaftless);
+
+                this.tier = tier;
                 Direction.Axis axis = KineticBlockEntityVisual.rotationAxis(blockEntity.getBlockState());
-                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING,
-                                Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT))
+                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, shaft)
                         .createInstance();
 
                 additionalShaft.rotateToFace(axis)
@@ -279,14 +301,21 @@ public class ModClient {
             protected final RotatingInstance additionalShaft;
             private final Tier tier;
 
-            public LargeCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(AllTieredPartialModels.forTier(
-                        ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier()).LARGE_COGWHEEL_SHAFTLESS));
+            public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
+                Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
+                Model shaftless = Models.partial(AllTieredPartialModels.forTier(tier).LARGE_COGWHEEL_SHAFTLESS);
+                if (shaftless == null) return null;
+                Model shaft = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
+                if (shaft == null) return null;
+                return new LargeCogVisual(context, blockEntity, partialTick, shaftless, shaft, tier);
+            }
 
-                this.tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
+            private LargeCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick, Model shaftless, Model shaft, Tier tier) {
+                super(context, blockEntity, partialTick, shaftless);
+
+                this.tier = tier;
                 Direction.Axis axis = KineticBlockEntityVisual.rotationAxis(blockEntity.getBlockState());
-                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING,
-                                Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT))
+                additionalShaft = instancerProvider().instancer(AllInstanceTypes.ROTATING, shaft)
                         .createInstance();
 
                 additionalShaft.rotateToFace(axis)
@@ -343,9 +372,9 @@ public class ModClient {
     public static class TieredEncasedCogVisual {
         public static BlockEntityVisual<TieredCogwheelBlockEntity> create(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
             if (ICogWheel.isLargeCog(blockEntity.getBlockState())) {
-                return new LargeEncasedCogVisual(context, blockEntity, partialTick);
+                return LargeEncasedCogVisual.tryCreate(context, blockEntity, partialTick);
             } else {
-                return new SmallEncasedCogVisual(context, blockEntity, partialTick);
+                return SmallEncasedCogVisual.tryCreate(context, blockEntity, partialTick);
             }
         }
 
@@ -356,8 +385,18 @@ public class ModClient {
             @org.jetbrains.annotations.Nullable
             protected final RotatingInstance rotatingBottomShaft;
 
-            public SmallEncasedCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(getEncasedCogwheelShaftlessPartial(blockEntity)));
+            public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
+                Tier tier = resolveTier(blockEntity.getBlockState());
+                if (tier == null) return null;
+                Model shaftless = Models.partial(getEncasedCogwheelShaftlessPartial(blockEntity));
+                if (shaftless == null) return null;
+                Model shaftHalf = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
+                if (shaftHalf == null) return null;
+                return new SmallEncasedCogVisual(context, blockEntity, partialTick, shaftless, shaftHalf);
+            }
+
+            private SmallEncasedCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick, Model shaftless, Model shaftHalf) {
+                super(context, blockEntity, partialTick, shaftless);
 
                 Block block = blockEntity.getBlockState().getBlock();
                 this.tier = resolveTier(blockEntity.getBlockState());
@@ -369,8 +408,7 @@ public class ModClient {
                     for (Direction d : Iterate.directionsInAxis(rotationAxis())) {
                         if (!encased.hasShaftTowards(blockEntity.getLevel(), blockEntity.getBlockPos(), blockEntity.getBlockState(), d))
                             continue;
-                        RotatingInstance instance = instancerProvider().instancer(AllInstanceTypes.ROTATING,
-                                        Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF))
+                        RotatingInstance instance = instancerProvider().instancer(AllInstanceTypes.ROTATING, shaftHalf)
                                 .createInstance();
                         instance.setup(blockEntity)
                                 .setPosition(getVisualPosition())
@@ -454,8 +492,18 @@ public class ModClient {
             @org.jetbrains.annotations.Nullable
             protected final RotatingInstance rotatingBottomShaft;
 
-            public LargeEncasedCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
-                super(context, blockEntity, partialTick, Models.partial(getEncasedLargeCogwheelShaftlessPartial(blockEntity)));
+            public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
+                Tier tier = resolveTier(blockEntity.getBlockState());
+                if (tier == null) return null;
+                Model shaftless = Models.partial(getEncasedLargeCogwheelShaftlessPartial(blockEntity));
+                if (shaftless == null) return null;
+                Model shaftHalf = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
+                if (shaftHalf == null) return null;
+                return new LargeEncasedCogVisual(context, blockEntity, partialTick, shaftless, shaftHalf);
+            }
+
+            private LargeEncasedCogVisual(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick, Model shaftless, Model shaftHalf) {
+                super(context, blockEntity, partialTick, shaftless);
 
                 Block block = blockEntity.getBlockState().getBlock();
                 this.tier = resolveTier(blockEntity.getBlockState());
@@ -467,8 +515,7 @@ public class ModClient {
                     for (Direction d : Iterate.directionsInAxis(rotationAxis())) {
                         if (!encased.hasShaftTowards(blockEntity.getLevel(), blockEntity.getBlockPos(), blockEntity.getBlockState(), d))
                             continue;
-                        RotatingInstance instance = instancerProvider().instancer(AllInstanceTypes.ROTATING,
-                                        Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF))
+                        RotatingInstance instance = instancerProvider().instancer(AllInstanceTypes.ROTATING, shaftHalf)
                                 .createInstance();
                         instance.setup(blockEntity)
                                 .setPosition(getVisualPosition())

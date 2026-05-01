@@ -118,10 +118,31 @@ public class DynamicResourcePack implements PackResources {
      * reload)
      */
     public static void clear() {
-        MODELS.clear();
-        BLOCKSTATES.clear();
-        LANGUAGES.clear();
-        resourcesGenerated = false;
+        synchronized (GENERATION_LOCK) {
+            MODELS.clear();
+            BLOCKSTATES.clear();
+            LANGUAGES.clear();
+            GRAYSCALE_CACHE.clear();
+            GRAYSCALE_TEXTURES.clear();
+            resourcesGenerated = false;
+        }
+    }
+
+    public static void setModels(Map<ResourceLocation, JsonElement> models) {
+        synchronized (GENERATION_LOCK) {
+            MODELS.clear();
+            GRAYSCALE_TEXTURES.clear();
+            for (Map.Entry<ResourceLocation, JsonElement> entry : models.entrySet()) {
+                addModel(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    public static void setBlockstates(Map<ResourceLocation, JsonObject> blockstates) {
+        synchronized (GENERATION_LOCK) {
+            BLOCKSTATES.clear();
+            BLOCKSTATES.putAll(blockstates);
+        }
     }
 
     @Override

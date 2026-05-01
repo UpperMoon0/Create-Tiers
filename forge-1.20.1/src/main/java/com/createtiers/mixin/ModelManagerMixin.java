@@ -1,7 +1,6 @@
 package com.createtiers.mixin;
 
 import com.createtiers.CreateTiers;
-import com.createtiers.client.DynamicResourcePack;
 import com.createtiers.client.TieredModelGenerator;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -31,14 +30,7 @@ public class ModelManagerMixin {
                                 Executor executor2,
                                 CallbackInfoReturnable<CompletableFuture<Void>> cir) {
         CreateTiers.LOGGER.info("Reinitializing Create-Tiers dynamic resources...");
-        
-        // Clear existing resources and reset generation flag
-        DynamicResourcePack.clear();
-        
-        // Regenerate models and blockstates (using Create's textures)
-        // This will also call markGenerated() when done
         TieredModelGenerator.generateAllModels(resourceManager);
-        
         CreateTiers.LOGGER.info("Create-Tiers dynamic resources reinitialized!");
     }
 }

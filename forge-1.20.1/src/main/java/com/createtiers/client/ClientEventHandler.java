@@ -30,10 +30,6 @@ public class ClientEventHandler {
         if (event.getPackType() == PackType.CLIENT_RESOURCES) {
             CreateTiers.LOGGER.info("Registering Create-Tiers dynamic resource pack...");
 
-            DynamicResourcePack.clear();
-
-            CreateTiers.LOGGER.info("Create-Tiers dynamic models generated successfully!");
-
             dynamicResourcePack = new DynamicResourcePack();
 
             event.addRepositorySource((packConsumer) -> {
