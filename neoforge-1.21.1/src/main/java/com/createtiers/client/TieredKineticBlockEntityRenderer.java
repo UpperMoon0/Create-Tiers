@@ -100,14 +100,7 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
 
     private void renderEncasedShaft(T be, TieredEncasedShaftBlock block, PoseStack ms, MultiBufferSource buffer, int light) {
         AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(block.getTier());
-        PartialModel encasedShaftModel;
-        if (block.getCasing() == com.simibubi.create.AllBlocks.ANDESITE_CASING.get()) {
-            encasedShaftModel = partials.ANDESITE_ENCASED_SHAFT;
-        } else {
-            encasedShaftModel = partials.BRASS_ENCASED_SHAFT;
-        }
-
-        SuperByteBuffer superBuffer = CachedBuffers.partial(encasedShaftModel, be.getBlockState());
+        SuperByteBuffer superBuffer = CachedBuffers.partial(partials.SHAFT, be.getBlockState());
         Direction.Axis axis = getRotationAxisOf(be);
         BlockPos pos = be.getBlockPos();
         if (pos == null) return;

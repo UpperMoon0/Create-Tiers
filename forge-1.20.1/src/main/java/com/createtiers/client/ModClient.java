@@ -190,12 +190,7 @@ public class ModClient {
                 Block block = be.getBlockState().getBlock();
                 if (!(block instanceof TieredEncasedShaftBlock encased)) return AllPartialModels.SHAFT;
                 AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(encased.getTier());
-                if (encased.getCasing() == AllBlocks.ANDESITE_CASING.get()) {
-                    return partials.ANDESITE_ENCASED_SHAFT;
-                } else if (encased.getCasing() == AllBlocks.BRASS_CASING.get()) {
-                    return partials.BRASS_ENCASED_SHAFT;
-                }
-                return AllPartialModels.SHAFT;
+                return partials.SHAFT;
             }
 
             private void applyTierColor() {
