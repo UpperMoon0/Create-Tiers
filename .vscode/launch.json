@@ -60,6 +60,94 @@
         "MCP_MAPPINGS": "parchment_2023.09.03-1.20.1"
       },
       "preLaunchTask": "prepareRunServerCompile"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge-1.21.1 - Client",
+      "presentation": {
+        "group": "Mod Development - neoforge-1.21.1",
+        "order": 0
+      },
+      "projectName": "neoforge-1.21.1",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcreatetiers%%D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge-1.21.1\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge-1.21.1 - Data",
+      "presentation": {
+        "group": "Mod Development - neoforge-1.21.1",
+        "order": 1
+      },
+      "projectName": "neoforge-1.21.1",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\dataRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\dataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcreatetiers%%D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge-1.21.1\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge-1.21.1 - GameTestServer",
+      "presentation": {
+        "group": "Mod Development - neoforge-1.21.1",
+        "order": 2
+      },
+      "projectName": "neoforge-1.21.1",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcreatetiers%%D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge-1.21.1\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge-1.21.1 - Server",
+      "presentation": {
+        "group": "Mod Development - neoforge-1.21.1",
+        "order": 3
+      },
+      "projectName": "neoforge-1.21.1",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcreatetiers%%D:\\Workspaces\\Minecraft Projects\\MC Mods\\Inventors\\Create-Tiers\\neoforge-1.21.1\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge-1.21.1\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
     }
   ]
 }
