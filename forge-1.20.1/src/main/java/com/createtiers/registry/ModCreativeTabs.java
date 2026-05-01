@@ -27,9 +27,6 @@ public class ModCreativeTabs {
                         ModBlocks.SHAFT_ITEMS.forEach(output::accept);
                         ModBlocks.COGWHEEL_ITEMS.forEach(output::accept);
                         ModBlocks.LARGE_COGWHEEL_ITEMS.forEach(output::accept);
-                        ModBlocks.ENCASED_SHAFT_ITEMS.forEach(output::accept);
-                        ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(output::accept);
-                        ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(output::accept);
                     })
                     .build());
 
