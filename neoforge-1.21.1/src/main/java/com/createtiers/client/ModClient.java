@@ -42,6 +42,7 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 
@@ -52,6 +53,11 @@ import java.util.function.Consumer;
 
 @EventBusSubscriber(modid = CreateTiers.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ModClient {
+
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        AllTieredPartialModels.init();
+    }
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -84,8 +90,6 @@ public class ModClient {
 
     @SubscribeEvent
     public static void registerVisualizers(EntityRenderersEvent.RegisterRenderers event) {
-        AllTieredPartialModels.init();
-
         SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_SHAFT.get())
                 .factory(TieredShaftVisual::create)
                 .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
@@ -103,6 +107,15 @@ public class ModClient {
         ModBlocks.ENCASED_SHAFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    private static Model safePartial(PartialModel partial) {
+        try {
+            return Models.partial(partial);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     static Tier resolveTier(net.minecraft.world.level.block.state.BlockState state) {
@@ -129,7 +142,7 @@ public class ModClient {
 
             public static BlockEntityVisual<TieredShaftBlockEntity> tryCreate(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
                 Tier tier = ((TieredShaftBlock) blockEntity.getBlockState().getBlock()).getTier();
-                Model model = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT);
+                Model model = safePartial(AllTieredPartialModels.forTier(tier).SHAFT);
                 if (model == null) return null;
                 return new PlainShaftVisual(context, blockEntity, partialTick, model);
             }
@@ -162,7 +175,7 @@ public class ModClient {
             private final Tier tier;
 
             public static BlockEntityVisual<TieredShaftBlockEntity> tryCreate(VisualizationContext context, TieredShaftBlockEntity blockEntity, float partialTick) {
-                Model model = Models.partial(getEncasedShaftPartial(blockEntity));
+                Model model = safePartial(getEncasedShaftPartial(blockEntity));
                 if (model == null) return null;
                 return new EncasedShaftVisual(context, blockEntity, partialTick, model);
             }
@@ -217,7 +230,7 @@ public class ModClient {
         }
     }
 
-    public static class TieredPlainCogVisual {
+        public static class TieredPlainCogVisual {
         public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
             if (ICogWheel.isLargeCog(blockEntity.getBlockState())) {
                 return LargeCogVisual.tryCreate(context, blockEntity, partialTick);
@@ -232,9 +245,9 @@ public class ModClient {
 
             public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
                 Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
-                Model shaftless = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFTLESS);
+                Model shaftless = safePartial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFTLESS);
                 if (shaftless == null) return null;
-                Model shaft = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
+                Model shaft = safePartial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
                 if (shaft == null) return null;
                 return new SmallCogVisual(context, blockEntity, partialTick, shaftless, shaft, tier);
             }
@@ -303,9 +316,9 @@ public class ModClient {
 
             public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
                 Tier tier = ((TieredCogwheelBlock) blockEntity.getBlockState().getBlock()).getTier();
-                Model shaftless = Models.partial(AllTieredPartialModels.forTier(tier).LARGE_COGWHEEL_SHAFTLESS);
+                Model shaftless = safePartial(AllTieredPartialModels.forTier(tier).LARGE_COGWHEEL_SHAFTLESS);
                 if (shaftless == null) return null;
-                Model shaft = Models.partial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
+                Model shaft = safePartial(AllTieredPartialModels.forTier(tier).COGWHEEL_SHAFT);
                 if (shaft == null) return null;
                 return new LargeCogVisual(context, blockEntity, partialTick, shaftless, shaft, tier);
             }
@@ -388,9 +401,9 @@ public class ModClient {
             public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
                 Tier tier = resolveTier(blockEntity.getBlockState());
                 if (tier == null) return null;
-                Model shaftless = Models.partial(getEncasedCogwheelShaftlessPartial(blockEntity));
+                Model shaftless = safePartial(getEncasedCogwheelShaftlessPartial(blockEntity));
                 if (shaftless == null) return null;
-                Model shaftHalf = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
+                Model shaftHalf = safePartial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
                 if (shaftHalf == null) return null;
                 return new SmallEncasedCogVisual(context, blockEntity, partialTick, shaftless, shaftHalf);
             }
@@ -495,9 +508,9 @@ public class ModClient {
             public static BlockEntityVisual<TieredCogwheelBlockEntity> tryCreate(VisualizationContext context, TieredCogwheelBlockEntity blockEntity, float partialTick) {
                 Tier tier = resolveTier(blockEntity.getBlockState());
                 if (tier == null) return null;
-                Model shaftless = Models.partial(getEncasedLargeCogwheelShaftlessPartial(blockEntity));
+                Model shaftless = safePartial(getEncasedLargeCogwheelShaftlessPartial(blockEntity));
                 if (shaftless == null) return null;
-                Model shaftHalf = Models.partial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
+                Model shaftHalf = safePartial(AllTieredPartialModels.forTier(tier).SHAFT_HALF);
                 if (shaftHalf == null) return null;
                 return new LargeEncasedCogVisual(context, blockEntity, partialTick, shaftless, shaftHalf);
             }

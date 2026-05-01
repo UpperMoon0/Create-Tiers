@@ -202,10 +202,13 @@ public class TieredModelGenerator {
             JsonObject model = JsonParser.parseReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))
                     .getAsJsonObject();
 
+            String gearboxTexture = casingType.equals("brass") ? "create:block/brass_gearbox"
+                    : "create:block/gearbox";
+
             JsonObject textures = new JsonObject();
             textures.addProperty("casing", "create:block/" + casingType + "_casing");
-            textures.addProperty("opening", CreateTiers.MOD_ID + ":block/grayscale/gearbox");
-            textures.addProperty("1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            textures.addProperty("opening", gearboxTexture);
+            textures.addProperty("1", "#opening");
             textures.addProperty("particle", "create:block/" + casingType + "_casing");
             model.add("textures", textures);
 
@@ -225,21 +228,7 @@ public class TieredModelGenerator {
                 }
             }
 
-            if (model.has("elements")) {
-                JsonArray elements = model.getAsJsonArray("elements");
-                for (JsonElement el : elements) {
-                    JsonObject element = el.getAsJsonObject();
-                    String name = element.has("name") ? element.get("name").getAsString() : "";
-                    if (name.equals("Core")) {
-                        if (element.has("faces")) {
-                            JsonObject faces = element.getAsJsonObject("faces");
-                            for (String faceName : faces.keySet()) {
-                                faces.getAsJsonObject(faceName).addProperty("tintindex", 0);
-                            }
-                        }
-                    }
-                }
-            }
+
 
             return model;
         } catch (Exception e) {

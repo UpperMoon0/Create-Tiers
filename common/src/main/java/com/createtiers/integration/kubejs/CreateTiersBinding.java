@@ -126,7 +126,7 @@ public class CreateTiersBinding {
         try {
             return Compat.rl(namespace, path);
         } catch (IllegalStateException e) {
-            return new ResourceLocation(namespace, path);
+            return ResourceLocation.fromNamespaceAndPath(namespace, path);
         }
     }
 }
