@@ -24,6 +24,7 @@ def commonJavaSrc = fileTree(dir: '../common/src/main/java', exclude: [
     'com/createtiers/data/DynamicServerPack.java',
     'com/createtiers/data/DumpDataCommand.java',
     'com/createtiers/integration/kubejs/CreateTiersPlugin.java',
+    'com/createtiers/integration/kubejs/CreateTiersBinding.java',
 ])
 
 def commonStagingDir = layout.buildDirectory.dir('generated/sources/common-staging')
@@ -40,6 +41,7 @@ sourceSets {
         }
         resources {
             srcDir '../common/src/main/resources'
+            srcDir 'src/main/resources'
             srcDir 'src/generated/resources'
             exclude 'pack.mcmeta'
             exclude 'assets/createtiers/lang/**'
@@ -83,6 +85,19 @@ repositories {
     maven { url = 'https://maven.latvian.dev/releases'
         content {
             includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
+        }
+    }
+    maven { url = 'https://maven.latvian.dev/mirror'
+        content {
+            includeGroup "dev.architectury"
+            includeGroup "me.shedaniel"
+            includeGroup "me.shedaniel.cloth"
+            includeGroup "mezz.jei"
+            includeGroup "net.darkhax.bookshelf"
+            includeGroup "net.darkhax.gamestages"
+            includeGroup "dev.emi"
+            includeGroup "com.github.rtyley"
         }
     }
     maven { url = 'https://cursemaven.com'
@@ -93,6 +108,11 @@ repositories {
     maven { url = "https://maven.terraformersmc.com/"
         content {
             includeGroup 'dev.emi'
+        }
+    }
+    maven { url = 'https://jitpack.io'
+        content {
+            includeGroup "com.github.rtyley"
         }
     }
 }
@@ -146,6 +166,7 @@ configurations {
 
 dependencies {
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
+    implementation "dev.latvian.mods:kubejs-neoforge:2101.7.2-build.363"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

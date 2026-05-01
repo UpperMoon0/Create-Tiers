@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -26,32 +26,26 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build
-        run: ./gradlew build
+      - name: Build Forge 1.20.1
+        run: ./gradlew :forge-1.20.1:build
+
+      - name: Build NeoForge 1.21.1
+        run: ./gradlew :neoforge-1.21.1:build
 
       - name: Get version
         id: get_version
         run: |
-           echo "version=$(grep 'mod_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
-           echo "mc_version=$(grep 'minecraft_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
+          echo "version=$(grep 'mod_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}
-          release_name: "Create: Tiers v${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}"
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: "Create: Tiers v${{ steps.get_version.outputs.version }}"
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/libs/create-tiers-${{ steps.get_version.outputs.version }}.jar
-          asset_name: create-tiers-mc${{ steps.get_version.outputs.mc_version }}-${{ steps.get_version.outputs.version }}.jar
-          asset_content_type: application/java-archive
+          files: |
+            forge-1.20.1/build/libs/create-tiers-forge-${{ steps.get_version.outputs.version }}.jar
+            neoforge-1.21.1/build/libs/create-tiers-neoforge-${{ steps.get_version.outputs.version }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
