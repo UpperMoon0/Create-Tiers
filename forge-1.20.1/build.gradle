@@ -8,7 +8,7 @@ plugins {
 
 version = "${mod_version}"
 group = 'com.createtiers'
-archivesBaseName = 'create-tiers-forge'
+archivesBaseName = "create-tiers-forge-${minecraft_version}"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
