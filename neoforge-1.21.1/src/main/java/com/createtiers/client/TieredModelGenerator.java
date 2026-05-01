@@ -185,10 +185,10 @@ public class TieredModelGenerator {
         String createBaseModel = "block/encased_shaft/block_" + casingType;
 
         models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/" + casingType + "_encased_shaft"),
-                mutateEncasedShaftModel(Compat.rl("create", createBaseModel), tierName, resourceManager));
+                mutateEncasedShaftModel(Compat.rl("create", createBaseModel), tierName, casingType, resourceManager));
     }
 
-    private static JsonObject mutateEncasedShaftModel(ResourceLocation baseModel, String tierName,
+    private static JsonObject mutateEncasedShaftModel(ResourceLocation baseModel, String tierName, String casingType,
             net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         try {
             ResourceLocation modelLoc = Compat.rl(baseModel.getNamespace(), "models/" + baseModel.getPath() + ".json");
@@ -201,7 +201,6 @@ public class TieredModelGenerator {
             JsonObject model = JsonParser.parseReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))
                     .getAsJsonObject();
 
-            String casingType = baseModel.getPath().split("/")[2];
             String gearboxTexture = casingType.equals("brass") ? "create:block/brass_gearbox"
                     : "create:block/gearbox";
 
@@ -211,6 +210,23 @@ public class TieredModelGenerator {
             textures.addProperty("1", "#opening");
             textures.addProperty("particle", "create:block/" + casingType + "_casing");
             model.add("textures", textures);
+
+            String parentPath = model.has("parent") ? model.get("parent").getAsString() : null;
+            if (parentPath != null) {
+                String[] parentParts = parentPath.split(":");
+                String parentNamespace = parentParts.length > 1 ? parentParts[0] : baseModel.getNamespace();
+                String parentModelPath = parentParts.length > 1 ? parentParts[1] : parentParts[0];
+                ResourceLocation parentLoc = Compat.rl(parentNamespace, "models/" + parentModelPath + ".json");
+                java.util.Optional<net.minecraft.server.packs.resources.Resource> parentResource = resourceManager.getResource(parentLoc);
+                if (parentResource.isPresent()) {
+                    JsonObject parentModel = JsonParser.parseReader(new InputStreamReader(parentResource.get().open(), StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+                    if (parentModel.has("elements")) {
+                        model.add("elements", parentModel.getAsJsonArray("elements"));
+                        model.remove("parent");
+                    }
+                }
+            }
 
             return model;
         } catch (Exception e) {
@@ -356,7 +372,7 @@ public class TieredModelGenerator {
         ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
                 "block/" + tierName + "/" + casingType + "_encased_shaft");
         blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/" + blockName),
-                createAxisBlockstate(modelLocation));
+                createAxisBlockstateNoWaterlogged(modelLocation));
     }
 
     private static void generateEncasedCogwheelBlockstate(String tierName, String casingType, boolean isLarge,
@@ -384,6 +400,24 @@ public class TieredModelGenerator {
                 }
                 variants.add("axis=" + axis.getName() + ",waterlogged=" + waterlogged, variant);
             }
+        }
+        blockstate.add("variants", variants);
+        return blockstate;
+    }
+
+    private static JsonObject createAxisBlockstateNoWaterlogged(ResourceLocation model) {
+        JsonObject blockstate = new JsonObject();
+        JsonObject variants = new JsonObject();
+        for (Direction.Axis axis : Direction.Axis.values()) {
+            JsonObject variant = new JsonObject();
+            variant.addProperty("model", model.toString());
+            if (axis == Direction.Axis.X) {
+                variant.addProperty("x", 90);
+                variant.addProperty("y", 90);
+            } else if (axis == Direction.Axis.Z) {
+                variant.addProperty("x", 90);
+            }
+            variants.add("axis=" + axis.getName(), variant);
         }
         blockstate.add("variants", variants);
         return blockstate;
