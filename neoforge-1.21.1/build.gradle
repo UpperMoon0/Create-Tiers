@@ -46,9 +46,12 @@ sourceSets {
             exclude 'pack.mcmeta'
             exclude 'assets/createtiers/lang/**'
             exclude 'createtiers.png'
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
     }
+}
+
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.named('compileJava') {
