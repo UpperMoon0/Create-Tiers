@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
 
 public class ModLang extends Lang {
 
@@ -26,10 +25,6 @@ public class ModLang extends Lang {
 
     public static LangBuilder itemName(ItemStack stack) {
         return builder().add(stack.getHoverName().copy());
-    }
-
-    public static LangBuilder fluidName(FluidStack stack) {
-        return builder().add(stack.getDisplayName().copy());
     }
 
     public static LangBuilder number(double d) {
