@@ -20,6 +20,7 @@ public class CommonCreativeTab {
                     ModBlocks.SHAFT_ITEMS.forEach(output::accept);
                     ModBlocks.COGWHEEL_ITEMS.forEach(output::accept);
                     ModBlocks.LARGE_COGWHEEL_ITEMS.forEach(output::accept);
+                    ModBlocks.GEARBOX_ITEMS.forEach(output::accept);
                 });
     }
 }

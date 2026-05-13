@@ -9,6 +9,8 @@ import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
 import com.createtiers.content.kinetics.TieredCogwheelBlockItem;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
 import com.simibubi.create.AllBlocks;
@@ -51,8 +53,12 @@ public class ModBlocks implements PlatformHelper {
     public static final List<Block> ENCASED_LARGE_COGWHEELS = new ArrayList<>();
     public static final List<Item> ENCASED_LARGE_COGWHEEL_ITEMS = new ArrayList<>();
 
+    public static final List<Block> GEARBOXES = new ArrayList<>();
+    public static final List<Item> GEARBOX_ITEMS = new ArrayList<>();
+
     public static DeferredHolder<BlockEntityType<?>, BlockEntityType<TieredShaftBlockEntity>> TIERED_SHAFT;
     public static DeferredHolder<BlockEntityType<?>, BlockEntityType<TieredCogwheelBlockEntity>> TIERED_COGWHEEL;
+    public static DeferredHolder<BlockEntityType<?>, BlockEntityType<TieredGearboxBlockEntity>> TIERED_GEARBOX;
 
     public static void register(IEventBus eventBus) {
         PlatformHelper.Holder.INSTANCE = new ModBlocks();
@@ -69,6 +75,10 @@ public class ModBlocks implements PlatformHelper {
             allCogwheelBlocks.addAll(ENCASED_COGWHEELS);
             allCogwheelBlocks.addAll(ENCASED_LARGE_COGWHEELS);
             return BlockEntityType.Builder.of(TieredCogwheelBlockEntity::new, allCogwheelBlocks.toArray(new Block[0])).build(null);
+        });
+
+        TIERED_GEARBOX = BLOCK_ENTITIES.register("tiered_gearbox", () -> {
+            return BlockEntityType.Builder.of(TieredGearboxBlockEntity::new, GEARBOXES.toArray(new Block[0])).build(null);
         });
 
         BLOCK_ENTITIES.register(eventBus);
@@ -149,6 +159,13 @@ public class ModBlocks implements PlatformHelper {
                         .strength(3.0f, 4.8f)
                         .requiresCorrectToolForDrops(), true, AllBlocks.BRASS_CASING::get, tier);
                 ENCASED_LARGE_COGWHEELS.add(brassEncasedLargeCogwheel);
+
+                Block gearboxBlock = new TieredGearboxBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.PODZOL)
+                        .noOcclusion()
+                        .strength(3.0f, 4.8f)
+                        .requiresCorrectToolForDrops(), tier);
+                GEARBOXES.add(gearboxBlock);
             }
         }
 
@@ -168,6 +185,8 @@ public class ModBlocks implements PlatformHelper {
 
             event.register(Registries.BLOCK, CreateTiers.asResource("andesite_encased_large_cogwheel_" + tier.getName()), () -> ENCASED_LARGE_COGWHEELS.get(index * 2));
             event.register(Registries.BLOCK, CreateTiers.asResource("brass_encased_large_cogwheel_" + tier.getName()), () -> ENCASED_LARGE_COGWHEELS.get(index * 2 + 1));
+
+            event.register(Registries.BLOCK, CreateTiers.asResource("gearbox_" + tier.getName()), () -> GEARBOXES.get(index));
         }
 
         TierRegistry.freeze();
@@ -220,6 +239,16 @@ public class ModBlocks implements PlatformHelper {
 
             registerEncasedCogwheelItem(event, tier, "andesite_encased_large_cogwheel_" + tier.getName(), ENCASED_LARGE_COGWHEELS, ENCASED_LARGE_COGWHEEL_ITEMS, 0);
             registerEncasedCogwheelItem(event, tier, "brass_encased_large_cogwheel_" + tier.getName(), ENCASED_LARGE_COGWHEELS, ENCASED_LARGE_COGWHEEL_ITEMS, 1);
+
+            Block gearboxBlock = GEARBOXES.stream()
+                    .filter(b -> b instanceof TieredGearboxBlock && ((TieredGearboxBlock) b).getTier().equals(tier))
+                    .findFirst()
+                    .orElse(null);
+            if (gearboxBlock != null) {
+                Item item = new BlockItem(gearboxBlock, new Item.Properties());
+                event.register(Registries.ITEM, CreateTiers.asResource("gearbox_" + tier.getName()), () -> item);
+                GEARBOX_ITEMS.add(item);
+            }
         }
     }
 
@@ -284,6 +313,21 @@ public class ModBlocks implements PlatformHelper {
     @Override
     public BlockEntityType<?> getTieredCogwheelType() {
         return TIERED_COGWHEEL.get();
+    }
+
+    @Override
+    public BlockEntityType<?> getTieredGearboxType() {
+        return TIERED_GEARBOX.get();
+    }
+
+    @Override
+    public List<Block> getGearboxes() {
+        return Collections.unmodifiableList(GEARBOXES);
+    }
+
+    @Override
+    public List<Item> getGearboxItems() {
+        return Collections.unmodifiableList(GEARBOX_ITEMS);
     }
 
     @Override

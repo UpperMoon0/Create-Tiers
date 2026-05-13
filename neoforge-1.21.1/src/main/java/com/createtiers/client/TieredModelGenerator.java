@@ -69,7 +69,11 @@ public class TieredModelGenerator {
         generateEncasedCogwheelBlockstate(tierName, "andesite", true, blockstates);
         generateEncasedCogwheelBlockstate(tierName, "brass", true, blockstates);
 
+        generateGearboxModels(tierName, models, resourceManager);
+        generateGearboxBlockstate(tierName, blockstates);
+
         generateEncasedItemModels(tierName, models);
+        generateGearboxItemModels(tierName, models);
         generateTierLanguages(tier);
     }
 
@@ -80,6 +84,7 @@ public class TieredModelGenerator {
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.shaft_" + tierName, displayName + " Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.cogwheel_" + tierName, displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.large_cogwheel_" + tierName, "Large " + displayName + " Cogwheel");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.gearbox_" + tierName, displayName + " Gearbox");
 
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_shaft_" + tierName, "Andesite Encased " + displayName + " Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_shaft_" + tierName, "Brass Encased " + displayName + " Shaft");
@@ -87,6 +92,11 @@ public class TieredModelGenerator {
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_cogwheel_" + tierName, "Brass Encased " + displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_large_cogwheel_" + tierName, "Andesite Encased Large " + displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_large_cogwheel_" + tierName, "Brass Encased Large " + displayName + " Cogwheel");
+    }
+
+    private static void generateGearboxItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/gearbox_" + tierName),
+                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/gearbox"));
     }
 
     private static void generateItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
@@ -383,6 +393,26 @@ public class TieredModelGenerator {
         blockstates.put(
                 Compat.rl(CreateTiers.MOD_ID, "blockstates/" + blockName),
                 createEncasedCogwheelBlockstate(modelPrefix));
+    }
+
+    private static void generateGearboxModels(String tierName, Map<ResourceLocation, JsonElement> models,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        String prefix = "block/" + tierName + "/";
+
+        Map<String, String> textures = new HashMap<>();
+        textures.put("0", "create:block/andesite_casing");
+        textures.put("1", "create:block/gearbox");
+        textures.put("particle", "create:block/andesite_casing");
+
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/" + prefix + "gearbox"),
+                mutateModel(Compat.rl("create", "block/gearbox/block"), textures, Map.of(), 0, Collections.emptySet(), resourceManager));
+    }
+
+    private static void generateGearboxBlockstate(String tierName, Map<ResourceLocation, JsonObject> blockstates) {
+        ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID,
+                "block/" + tierName + "/gearbox");
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/gearbox_" + tierName),
+                createAxisBlockstateNoWaterlogged(modelLocation));
     }
 
     private static JsonObject createAxisBlockstate(ResourceLocation model) {

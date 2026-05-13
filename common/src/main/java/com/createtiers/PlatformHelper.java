@@ -12,6 +12,8 @@ public interface PlatformHelper {
 
     BlockEntityType<?> getTieredCogwheelType();
 
+    BlockEntityType<?> getTieredGearboxType();
+
     List<Block> getShafts();
 
     List<Item> getShaftItems();
@@ -23,6 +25,10 @@ public interface PlatformHelper {
     List<Block> getLargeCogwheels();
 
     List<Item> getLargeCogwheelItems();
+
+    List<Block> getGearboxes();
+
+    List<Item> getGearboxItems();
 
     static PlatformHelper get() {
         return Holder.INSTANCE;

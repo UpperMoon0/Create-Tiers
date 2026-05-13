@@ -23,6 +23,8 @@ public class AllTieredPartialModels {
         public final PartialModel ANDESITE_ENCASED_SHAFT;
         public final PartialModel BRASS_ENCASED_SHAFT;
 
+        public final PartialModel GEARBOX;
+
         public TieredPartials(String tierName) {
             String prefix = "block/" + tierName + "/";
             SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "shaft"));
@@ -33,6 +35,8 @@ public class AllTieredPartialModels {
 
             ANDESITE_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "andesite_encased_shaft"));
             BRASS_ENCASED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "brass_encased_shaft"));
+
+            GEARBOX = PartialModel.of(CreateTiers.asResource(prefix + "gearbox"));
         }
     }
 
