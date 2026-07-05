@@ -4,6 +4,7 @@ import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
@@ -46,7 +47,9 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
         if (VisualizationManager.supportsVisualization(be.getLevel())) return;
 
         BlockState state = be.getBlockState();
-        if (state.getBlock() instanceof TieredEncasedShaftBlock encasedShaft) {
+        if (state.getBlock() instanceof TieredGearboxBlock gearbox) {
+            renderGearbox(be, gearbox, ms, buffer, light);
+        } else if (state.getBlock() instanceof TieredEncasedShaftBlock encasedShaft) {
             renderEncasedShaft(be, encasedShaft, ms, buffer, light);
         } else if (state.getBlock() instanceof TieredEncasedCogwheelBlock encasedCog) {
             renderEncasedCogwheel(be, encasedCog, ms, buffer, light);
@@ -56,6 +59,35 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
             renderCogwheel(be, cogBlock, ms, buffer, light);
         } else {
             super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
+        }
+    }
+
+    private void renderGearbox(T be, TieredGearboxBlock block, PoseStack ms, MultiBufferSource buffer, int light) {
+        Tier tier = block.getTier();
+        AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(tier);
+        Axis boxAxis = be.getBlockState().getValue(
+                net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS);
+        BlockPos pos = be.getBlockPos();
+        float time = AnimationTickHolder.getRenderTime(be.getLevel());
+        VertexConsumer consumer = buffer.getBuffer(RenderType.solid());
+
+        for (Direction direction : Iterate.directions) {
+            Axis axis = direction.getAxis();
+            if (boxAxis == axis)
+                continue;
+
+            SuperByteBuffer shaft = CachedBuffers.partialFacing(partials.SHAFT_HALF, be.getBlockState(), direction);
+            float angle = (time * be.getSpeed() * 3f / 10) % 360;
+            if (be.getSpeed() != 0 && be.hasSource()) {
+                BlockPos source = be.source.subtract(pos);
+                Direction sourceFacing = Direction.getNearest(source.getX(), source.getY(), source.getZ());
+                angle = TieredGearboxVisual.getDirectionalSpeed(angle, sourceFacing, direction);
+            }
+
+            float offset = getRotationOffsetForPosition(be, pos, axis);
+            kineticRotationTransform(shaft, be, axis, (angle + offset) / 180f * (float) Math.PI, light);
+            applyColor(be, shaft, tier.getShaftColor());
+            shaft.renderInto(ms, consumer);
         }
     }
 

@@ -70,7 +70,6 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
         BlockPos pos = be.getBlockPos();
 
         float time = AnimationTickHolder.getRenderTime(be.getLevel());
-        float angle = (time * be.getSpeed() * 3f / 10) % 360;
 
         VertexConsumer vc = buffer.getBuffer(RenderType.solid());
 
@@ -81,14 +80,12 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
 
             SuperByteBuffer shaft = CachedBuffers.partialFacing(partials.SHAFT_HALF, be.getBlockState(), direction);
             float offset = getRotationOffsetForPosition(be, pos, axis);
+            float angle = (time * be.getSpeed() * 3f / 10) % 360;
 
             if (be.getSpeed() != 0 && be.hasSource()) {
                 BlockPos source = be.source.subtract(be.getBlockPos());
                 Direction sourceFacing = Direction.getNearest(source.getX(), source.getY(), source.getZ());
-                if (sourceFacing.getAxis() == direction.getAxis())
-                    angle *= sourceFacing == direction ? 1 : -1;
-                else if (sourceFacing.getAxisDirection() == direction.getAxisDirection())
-                    angle *= -1;
+                angle = TieredGearboxVisual.getDirectionalSpeed(angle, sourceFacing, direction);
             }
 
             float finalAngle = (angle + offset) / 180f * (float) Math.PI;

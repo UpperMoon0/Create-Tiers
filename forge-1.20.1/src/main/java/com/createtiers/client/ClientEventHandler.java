@@ -5,6 +5,7 @@ import com.createtiers.registry.ModBlocks;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
@@ -119,6 +120,13 @@ public class ClientEventHandler {
             }
             return -1;
         }, ModBlocks.SHAFT_ITEMS.toArray(new net.minecraft.world.item.Item[0]));
+
+        event.register((stack, tintIndex) -> {
+            if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof TieredGearboxBlock gearbox) {
+                if (tintIndex == 0) return gearbox.getTier().getShaftColor();
+            }
+            return -1;
+        }, ModBlocks.GEARBOX_ITEMS.toArray(new net.minecraft.world.item.Item[0]));
 
         net.minecraft.world.item.Item[] cogItems = new net.minecraft.world.item.Item[ModBlocks.COGWHEEL_ITEMS.size() + ModBlocks.LARGE_COGWHEEL_ITEMS.size()];
         int k = 0;

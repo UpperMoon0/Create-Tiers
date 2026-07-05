@@ -2,7 +2,7 @@ package com.createtiers.content.kinetics;
 
 import com.createtiers.PlatformHelper;
 import com.createtiers.api.Tier;
-import com.simibubi.create.AllItems;
+import com.createtiers.foundation.item.TieredVerticalGearboxItem;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import net.minecraft.core.BlockPos;
@@ -19,7 +19,6 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.HitResult;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class TieredGearboxBlock extends RotatedPillarKineticBlock implements IBE<TieredGearboxBlockEntity> {
@@ -55,13 +54,13 @@ public class TieredGearboxBlock extends RotatedPillarKineticBlock implements IBE
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         if (state.getValue(AXIS).isVertical())
             return super.getDrops(state, builder);
-        return Arrays.asList(new ItemStack(AllItems.VERTICAL_GEARBOX.get()));
+        return List.of(getVerticalItem());
     }
 
     public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
         if (state.getValue(AXIS).isVertical())
             return super.getCloneItemStack(level, pos, state);
-        return new ItemStack(AllItems.VERTICAL_GEARBOX.get());
+        return getVerticalItem();
     }
 
     @Override
@@ -77,5 +76,15 @@ public class TieredGearboxBlock extends RotatedPillarKineticBlock implements IBE
     @Override
     public Axis getRotationAxis(BlockState state) {
         return state.getValue(AXIS);
+    }
+
+    private ItemStack getVerticalItem() {
+        return PlatformHelper.get().getGearboxItems().stream()
+                .filter(TieredVerticalGearboxItem.class::isInstance)
+                .map(TieredVerticalGearboxItem.class::cast)
+                .filter(item -> item.getBlock() == this)
+                .findFirst()
+                .map(ItemStack::new)
+                .orElse(ItemStack.EMPTY);
     }
 }

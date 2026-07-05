@@ -13,6 +13,7 @@ import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredGearboxBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.createtiers.foundation.item.TieredVerticalGearboxItem;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.EncasingRegistry;
 import net.minecraft.core.registries.Registries;
@@ -253,6 +254,12 @@ public class ModBlocks implements PlatformHelper {
                 Item item = new BlockItem(gearboxBlock, new Item.Properties());
                 event.register(Registries.ITEM, CreateTiers.asResource("gearbox_" + tier.getName()), () -> item);
                 GEARBOX_ITEMS.add(item);
+
+                Item verticalItem = new TieredVerticalGearboxItem((TieredGearboxBlock) gearboxBlock,
+                        new Item.Properties());
+                event.register(Registries.ITEM, CreateTiers.asResource("vertical_gearbox_" + tier.getName()),
+                        () -> verticalItem);
+                GEARBOX_ITEMS.add(verticalItem);
             }
         }
     }

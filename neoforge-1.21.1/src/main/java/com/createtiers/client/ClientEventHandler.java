@@ -5,8 +5,10 @@ import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.registry.ModBlocks;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackSelectionConfig;
@@ -22,6 +24,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.createmod.catnip.render.SuperByteBufferCache;
 
 import java.util.List;
 
@@ -34,6 +37,8 @@ public class ClientEventHandler {
     public static void onAddPackFinders(AddPackFindersEvent event) {
         if (event.getPackType() == PackType.CLIENT_RESOURCES) {
             CreateTiers.LOGGER.info("Registering Create-Tiers dynamic resource pack...");
+
+            SuperByteBufferCache.getInstance().registerCompartment(KineticBlockEntityRenderer.KINETIC_BLOCK);
 
             DynamicResourcePack.clear();
 
@@ -125,6 +130,13 @@ public class ClientEventHandler {
             }
             return -1;
         }, ModBlocks.SHAFT_ITEMS.toArray(new net.minecraft.world.item.Item[0]));
+
+        event.register((stack, tintIndex) -> {
+            if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof TieredGearboxBlock gearbox) {
+                if (tintIndex == 0) return gearbox.getTier().getShaftColor();
+            }
+            return -1;
+        }, ModBlocks.GEARBOX_ITEMS.toArray(new net.minecraft.world.item.Item[0]));
 
         net.minecraft.world.item.Item[] cogItems = new net.minecraft.world.item.Item[ModBlocks.COGWHEEL_ITEMS.size() + ModBlocks.LARGE_COGWHEEL_ITEMS.size()];
         int k = 0;

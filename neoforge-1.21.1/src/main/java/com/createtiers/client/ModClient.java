@@ -63,6 +63,7 @@ public class ModClient {
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TIERED_SHAFT.get(), TieredKineticBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TIERED_COGWHEEL.get(), TieredKineticBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.TIERED_GEARBOX.get(), TieredKineticBlockEntityRenderer::new);
     }
 
     @SubscribeEvent
@@ -100,10 +101,16 @@ public class ModClient {
                 .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
                 .apply();
 
+        SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_GEARBOX.get())
+                .factory(TieredGearboxVisual::create)
+                .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
+                .apply();
+
         TieredKineticStats kineticStats = new TieredKineticStats();
         ModBlocks.SHAFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.LARGE_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.GEARBOX_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_SHAFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
@@ -604,4 +611,5 @@ public class ModClient {
             }
         }
     }
+
 }

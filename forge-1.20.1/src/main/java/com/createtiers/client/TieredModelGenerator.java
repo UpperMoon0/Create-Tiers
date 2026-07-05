@@ -70,7 +70,10 @@ public class TieredModelGenerator {
         generateEncasedCogwheelBlockstate(tierName, "andesite", true, blockstates);
         generateEncasedCogwheelBlockstate(tierName, "brass", true, blockstates);
 
+        generateGearboxModels(tierName, models, resourceManager);
+        generateGearboxBlockstate(tierName, blockstates);
         generateEncasedItemModels(tierName, models);
+        generateGearboxItemModels(tierName, models, resourceManager);
         generateTierLanguages(tier);
     }
 
@@ -81,6 +84,9 @@ public class TieredModelGenerator {
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.shaft_" + tierName, displayName + " Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.cogwheel_" + tierName, displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.large_cogwheel_" + tierName, "Large " + displayName + " Cogwheel");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.gearbox_" + tierName, displayName + " Gearbox");
+        DynamicResourcePack.addTranslation("en_us", "item.createtiers.vertical_gearbox_" + tierName,
+                "Vertical " + displayName + " Gearbox");
 
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_shaft_" + tierName, "Andesite Encased " + displayName + " Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_shaft_" + tierName, "Brass Encased " + displayName + " Shaft");
@@ -97,6 +103,42 @@ public class TieredModelGenerator {
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/cogwheel"));
         models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/large_cogwheel_" + tierName),
                 createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/large_cogwheel"));
+    }
+
+    private static void generateGearboxItemModels(String tierName, Map<ResourceLocation, JsonElement> models,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        Map<String, String> textures = new HashMap<>();
+        textures.put("0", "create:block/andesite_casing");
+        textures.put("1", "create:block/gearbox");
+        textures.put("1_0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+        textures.put("1_1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+        textures.put("particle", "create:block/andesite_casing");
+
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/gearbox_" + tierName),
+                mutateModel(Compat.rl("create", "block/gearbox/item"), textures, Map.of("Axis", 0), -1,
+                        Collections.emptySet(), resourceManager));
+
+        Map<String, String> verticalTextures = new HashMap<>();
+        verticalTextures.put("0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+        verticalTextures.put("1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+        verticalTextures.put("gearbox_top", "create:block/andesite_casing");
+        verticalTextures.put("gearbox", "create:block/gearbox");
+        verticalTextures.put("particle", CreateTiers.MOD_ID + ":block/grayscale/axis");
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/vertical_gearbox_" + tierName),
+                mutateModel(Compat.rl("create", "block/gearbox/item_vertical"), verticalTextures,
+                        Map.of("Axis", 0), -1,
+                        Collections.emptySet(), resourceManager));
+    }
+
+    private static void generateGearboxModels(String tierName, Map<ResourceLocation, JsonElement> models,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        Map<String, String> textures = Map.of(
+                "0", "create:block/andesite_casing",
+                "1", "create:block/gearbox",
+                "particle", "create:block/andesite_casing");
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/gearbox"),
+                mutateModel(Compat.rl("create", "block/gearbox/block"), textures, Map.of(), -1,
+                        Collections.emptySet(), resourceManager));
     }
 
     private static void generateEncasedItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
@@ -366,6 +408,12 @@ public class TieredModelGenerator {
         blockstates.put(
                 Compat.rl(CreateTiers.MOD_ID, "blockstates/" + suffix + "_" + tierName),
                 createAxisBlockstate(modelLocation));
+    }
+
+    private static void generateGearboxBlockstate(String tierName, Map<ResourceLocation, JsonObject> blockstates) {
+        ResourceLocation modelLocation = Compat.rl(CreateTiers.MOD_ID, "block/" + tierName + "/gearbox");
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/gearbox_" + tierName),
+                createAxisBlockstateNoWaterlogged(modelLocation));
     }
 
     private static void generateEncasedShaftBlockstate(String tierName, String casingType,

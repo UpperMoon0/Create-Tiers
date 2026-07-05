@@ -16,7 +16,10 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def commonJavaSrc = fileTree(dir: '../common/src/main/java', exclude: [
     'com/createtiers/content/kinetics/**',
-    'com/createtiers/mixin/**',
+    'com/createtiers/mixin/KineticBlockEntityAccessor.java',
+    'com/createtiers/mixin/KineticEffectHandlerAccessor.java',
+    'com/createtiers/mixin/KineticNetworkMixin.java',
+    'com/createtiers/mixin/SpeedGaugeBlockEntityMixin.java',
     'com/createtiers/client/DynamicResourcePack.java',
     'com/createtiers/client/AllTieredPartialModels.java',
     'com/createtiers/client/TieredKineticBlockEntityRenderer.java',
@@ -46,6 +49,14 @@ sourceSets {
             exclude 'pack.mcmeta'
             exclude 'assets/createtiers/lang/**'
             exclude 'createtiers.png'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
         }
     }
 }
@@ -166,11 +177,16 @@ neoForge {
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    testImplementation.extendsFrom testLocal
 }
 
 dependencies {
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
     implementation "dev.latvian.mods:kubejs-neoforge:2101.7.2-build.363"
+
+    testLocal "org.junit.jupiter:junit-jupiter-api:5.10.0"
+    testLocal "org.junit.jupiter:junit-jupiter-engine:5.10.0"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.10.0"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
@@ -209,6 +225,15 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.register('testUnit', Test) {
+    testClassesDirs = sourceSets.test.output
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
 
 idea {
