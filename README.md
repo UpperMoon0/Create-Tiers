@@ -53,7 +53,9 @@ CreateTiers.registerTiers([
 ])
 ```
 
-Tier IDs, numeric levels, and generated tier names must be unique. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
+Batch registration is atomic: if any definition in the batch is invalid or conflicts with another tier, none of that batch is registered. Numeric fields must be whole 32-bit integers; fractional or overflowing values are rejected instead of truncated.
+
+Tier IDs, numeric levels, and generated tier names must be unique. Generated names must also be valid Minecraft resource paths. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
 
 `registerCustomTier(namespace, name, ...)` may be used when another integration needs a namespaced lookup ID. Generated Create Tiers component IDs still use `name`, so generated names remain globally unique across namespaces.
 
