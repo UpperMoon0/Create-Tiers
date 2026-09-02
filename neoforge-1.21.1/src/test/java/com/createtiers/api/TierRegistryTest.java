@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.resources.ResourceLocation;
@@ -62,13 +63,23 @@ class TierRegistryTest {
     }
 
     @Test
-    void invalidLimitsAreRejected() {
+    void invalidLimitsLevelsAndColorsAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_level"),
+                new Tier(0, "bad_level", 256, 1024)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
                 ResourceLocation.fromNamespaceAndPath("createtiers", "bad_rpm"),
                 new Tier(1, "bad_rpm", 0, 1024)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
                 ResourceLocation.fromNamespaceAndPath("createtiers", "bad_su"),
                 new Tier(1, "bad_su", 256, 0)));
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_shaft_color"),
+                new Tier(1, "bad_shaft_color", 256, 1024, -1, 0xFFFFFF, null)));
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_cog_color"),
+                new Tier(1, "bad_cog_color", 256, 1024, 0xFFFFFF, 0x1000000, null)));
+        assertEquals(0, TierRegistry.size());
     }
 
     @Test
@@ -94,5 +105,40 @@ class TierRegistryTest {
         assertEquals(0, TierRegistry.size());
         assertFalse(TierRegistry.exists(basicId));
         assertFalse(TierRegistry.exists(advancedId));
+    }
+
+    @Test
+    void validBatchCommitsAllTiersAndReadsBackInLevelOrder() {
+        ResourceLocation highId = ResourceLocation.fromNamespaceAndPath("createtiers", "high");
+        ResourceLocation lowId = ResourceLocation.fromNamespaceAndPath("createtiers", "low");
+        Tier high = new Tier(2, "high", 512, 4096);
+        Tier low = new Tier(1, "low", 256, 1024);
+        Map<ResourceLocation, Tier> registrations = new LinkedHashMap<>();
+        registrations.put(highId, high);
+        registrations.put(lowId, low);
+
+        assertEquals(List.of(high, low), TierRegistry.registerAll(registrations));
+        assertEquals(List.of(low, high), List.copyOf(TierRegistry.getAllTiers()));
+        assertEquals(high, TierRegistry.get(highId));
+        assertEquals(low, TierRegistry.getByLevel(1));
+    }
+
+    @Test
+    void frozenRegistryRejectsSingleAndBatchMutationsWithoutChangingContents() {
+        ResourceLocation basicId = ResourceLocation.fromNamespaceAndPath("createtiers", "basic");
+        Tier basic = new Tier(1, "basic", 256, 1024);
+        TierRegistry.register(basicId, basic);
+        TierRegistry.freeze();
+
+        assertThrows(IllegalStateException.class, () -> TierRegistry.register(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "advanced"),
+                new Tier(2, "advanced", 512, 2048)));
+        assertThrows(IllegalStateException.class, () -> TierRegistry.registerAll(Map.of(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "elite"),
+                new Tier(3, "elite", 1024, 4096))));
+
+        assertTrue(TierRegistry.isFrozen());
+        assertEquals(1, TierRegistry.size());
+        assertEquals(basic, TierRegistry.get(basicId));
     }
 }
