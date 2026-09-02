@@ -20,7 +20,7 @@
 
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
-- Build and unit-test both Forge 1.20.1 and NeoForge 1.21.1 in parallel on pull requests, then run a focused NeoForge GameTest suite; releases remain push-to-main only.
+- Build Forge 1.20.1 and NeoForge 1.21.1 in parallel on pull requests while running the shared unit suite through NeoForge, then run a focused NeoForge GameTest suite; releases remain push-to-main only.
 
 ### Tests
 
