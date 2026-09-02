@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,38 +39,79 @@ public class TierRegistry {
      * @throws IllegalArgumentException if the tier is invalid or conflicts with an existing tier
      */
     public static synchronized Tier register(ResourceLocation id, Tier tier) {
-        Objects.requireNonNull(id, "Tier id cannot be null");
-        Objects.requireNonNull(tier, "Tier cannot be null");
+        validateMutable();
+        validateRegistration(id, tier, TIERS.keySet(), TIERS_BY_LEVEL.keySet(), registeredNames());
+        put(id, tier);
+        return tier;
+    }
 
+    /**
+     * Atomically register a batch of tiers. The entire batch is validated against both the
+     * existing registry and itself before any entry is committed.
+     *
+     * @param registrations ordered tier registrations
+     * @return registered tiers in iteration order
+     */
+    public static synchronized List<Tier> registerAll(Map<ResourceLocation, Tier> registrations) {
+        Objects.requireNonNull(registrations, "Tier registrations cannot be null");
+        validateMutable();
+
+        Set<ResourceLocation> ids = new HashSet<>(TIERS.keySet());
+        Set<Integer> levels = new HashSet<>(TIERS_BY_LEVEL.keySet());
+        Set<String> names = registeredNames();
+
+        for (Map.Entry<ResourceLocation, Tier> entry : registrations.entrySet()) {
+            validateRegistration(entry.getKey(), entry.getValue(), ids, levels, names);
+            ids.add(entry.getKey());
+            levels.add(entry.getValue().getTier());
+            names.add(entry.getValue().getName());
+        }
+
+        List<Tier> registered = new ArrayList<>(registrations.size());
+        for (Map.Entry<ResourceLocation, Tier> entry : registrations.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+            registered.add(entry.getValue());
+        }
+        return registered;
+    }
+
+    private static void validateMutable() {
         if (frozen) {
             throw new IllegalStateException("Tier registry is frozen. Tiers must be registered during mod initialization/startup scripts.");
         }
+    }
 
+    private static void validateRegistration(ResourceLocation id, Tier tier, Set<ResourceLocation> ids,
+            Set<Integer> levels, Set<String> names) {
+        Objects.requireNonNull(id, "Tier id cannot be null");
+        Objects.requireNonNull(tier, "Tier cannot be null");
         validateTier(tier);
 
-        if (TIERS.containsKey(id)) {
+        if (ids.contains(id)) {
             throw new IllegalArgumentException("Tier id '" + id + "' is already registered");
         }
-
-        Tier levelConflict = TIERS_BY_LEVEL.get(tier.getTier());
-        if (levelConflict != null) {
-            throw new IllegalArgumentException("Tier level " + tier.getTier() + " is already used by '" + levelConflict.getName() + "'");
+        if (levels.contains(tier.getTier())) {
+            throw new IllegalArgumentException("Tier level " + tier.getTier() + " is already registered");
         }
-
-        for (Map.Entry<ResourceLocation, Tier> entry : TIERS.entrySet()) {
-            if (entry.getValue().getName().equals(tier.getName())) {
-                throw new IllegalArgumentException(
-                        "Tier generated name '" + tier.getName() + "' is already used by " + entry.getKey()
-                                + ". Generated component names must be unique across namespaces.");
-            }
+        if (names.contains(tier.getName())) {
+            throw new IllegalArgumentException(
+                    "Tier generated name '" + tier.getName() + "' is already registered. Generated component names must be unique across namespaces.");
         }
+    }
 
+    private static Set<String> registeredNames() {
+        Set<String> names = new HashSet<>();
+        for (Tier tier : TIERS.values()) {
+            names.add(tier.getName());
+        }
+        return names;
+    }
+
+    private static void put(ResourceLocation id, Tier tier) {
         TIERS.put(id, tier);
         TIERS_BY_LEVEL.put(tier.getTier(), tier);
         LOGGER.info("Registered tier: {} (level {}, maxRPM: {}, maxSU: {})",
                 id, tier.getTier(), tier.getMaxRPM(), tier.getMaxSU());
-
-        return tier;
     }
 
     private static void validateTier(Tier tier) {
@@ -79,6 +121,10 @@ public class TierRegistry {
         if (tier.getName() == null || tier.getName().isBlank()) {
             throw new IllegalArgumentException("Tier name cannot be blank");
         }
+        if (!isValidGeneratedPath(tier.getName())) {
+            throw new IllegalArgumentException(
+                    "Tier generated name '" + tier.getName() + "' contains characters that are invalid in Minecraft resource paths");
+        }
         if (tier.getMaxRPM() <= 0) {
             throw new IllegalArgumentException("Tier maxRPM must be greater than 0 for '" + tier.getName() + "'");
         }
@@ -87,6 +133,17 @@ public class TierRegistry {
         }
         validateColor("shaftColor", tier.getShaftColor(), tier.getName());
         validateColor("cogwheelColor", tier.getCogwheelColor(), tier.getName());
+    }
+
+    private static boolean isValidGeneratedPath(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.' || c == '/') {
+                continue;
+            }
+            return false;
+        }
+        return true;
     }
 
     private static void validateColor(String field, int color, String tierName) {
