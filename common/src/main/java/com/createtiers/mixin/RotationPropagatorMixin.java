@@ -2,7 +2,7 @@ package com.createtiers.mixin;
 
 import com.createtiers.api.ITieredBlockEntity;
 import com.createtiers.api.Tier;
-import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierLimitPolicy;
 import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
@@ -47,7 +47,7 @@ public abstract class RotationPropagatorMixin {
                     target = "Lnet/createmod/catnip/config/ConfigBase$ConfigInt;get()Ljava/lang/Object;",
                     ordinal = 0))
     private static Object createtiers$newSpeedLimit(ConfigBase.ConfigInt instance) {
-        return getAllowedRPM(CREATETIERS$OVERSPEED_TARGETS.get()[0], (Integer) instance.get());
+        return getAllowedRPM(consumeTarget(0), (Integer) instance.get());
     }
 
     @Redirect(method = "propagateNewSource(Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;)V",
@@ -55,23 +55,31 @@ public abstract class RotationPropagatorMixin {
                     target = "Lnet/createmod/catnip/config/ConfigBase$ConfigInt;get()Ljava/lang/Object;",
                     ordinal = 1))
     private static Object createtiers$oppositeSpeedLimit(ConfigBase.ConfigInt instance) {
-        return getAllowedRPM(CREATETIERS$OVERSPEED_TARGETS.get()[1], (Integer) instance.get());
+        return getAllowedRPM(consumeTarget(1), (Integer) instance.get());
+    }
+
+    private static KineticBlockEntity consumeTarget(int index) {
+        KineticBlockEntity[] targets = CREATETIERS$OVERSPEED_TARGETS.get();
+        KineticBlockEntity target = targets[index];
+        targets[index] = null;
+        return target;
     }
 
     private static int getAllowedRPM(KineticBlockEntity blockEntity, int createDefault) {
-        if (blockEntity == null)
+        if (blockEntity == null) {
             return createDefault;
-
-        Block block = blockEntity.getBlockState().getBlock();
-        if (block instanceof GaugeBlock)
-            return Integer.MAX_VALUE;
-
-        if (blockEntity instanceof ITieredBlockEntity tieredBlockEntity) {
-            Tier tier = tieredBlockEntity.getTier();
-            if (tier != null)
-                return tier.getMaxRPM();
         }
 
-        return Math.max(createDefault, TierRegistry.getMaxPossibleRPM());
+        Block block = blockEntity.getBlockState().getBlock();
+        boolean bypassLimit = block instanceof GaugeBlock;
+
+        Tier tier = null;
+        if (blockEntity instanceof ITieredBlockEntity tieredBlockEntity) {
+            tier = tieredBlockEntity.getTier();
+        }
+
+        // The limit belongs to the component receiving the conveyed speed.
+        // Untiered Create components must never inherit a higher registered tier limit.
+        return TierLimitPolicy.allowedRPM(tier, createDefault, bypassLimit);
     }
 }
