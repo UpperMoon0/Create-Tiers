@@ -38,13 +38,13 @@ public final class CreateTiersGameTests {
         }
 
         // Tiered receiver above Create's ordinary limit: allowed by the receiver's tier.
-        assertPropagation(helper, new BlockPos(1, 1, 1), HIGH_TIER, createMax + 1f, true);
+        assertPropagation(helper, new BlockPos(1, 1, 1), null, HIGH_TIER, createMax + 1f, true);
 
         // Tiered receiver below Create's ordinary limit: rejected by the receiver's tier.
-        assertPropagation(helper, new BlockPos(1, 1, 4), LOW_TIER, LOW_TIER.getMaxRPM() + 1f, false);
+        assertPropagation(helper, new BlockPos(1, 1, 4), null, LOW_TIER, LOW_TIER.getMaxRPM() + 1f, false);
 
-        // Untiered Create receiver: rejected by Create's configured limit, never by a registered high tier.
-        assertPropagation(helper, new BlockPos(5, 1, 1), null, createMax + 1f, false);
+        // High-tier source -> untiered Create receiver: the receiver still enforces Create's configured limit.
+        assertPropagation(helper, new BlockPos(5, 1, 1), HIGH_TIER, null, createMax + 1f, false);
         helper.succeed();
     }
 
@@ -68,9 +68,11 @@ public final class CreateTiersGameTests {
         helper.succeed();
     }
 
-    private static void assertPropagation(GameTestHelper helper, BlockPos sourceRelative, Tier receiverTier,
-            float speed, boolean shouldPropagate) {
-        KineticBlockEntity source = placeKinetic(helper, sourceRelative);
+    private static void assertPropagation(GameTestHelper helper, BlockPos sourceRelative, Tier sourceTier,
+            Tier receiverTier, float speed, boolean shouldPropagate) {
+        KineticBlockEntity source = sourceTier == null
+                ? placeKinetic(helper, sourceRelative)
+                : placeTieredKinetic(helper, sourceRelative, sourceTier);
         KineticBlockEntity target = receiverTier == null
                 ? placeKinetic(helper, sourceRelative.east())
                 : placeTieredKinetic(helper, sourceRelative.east(), receiverTier);
