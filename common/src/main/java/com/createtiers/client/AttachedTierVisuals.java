@@ -24,8 +24,9 @@ public final class AttachedTierVisuals {
     }
 
     /**
-     * Dedicated cogwheels use the tier's cogwheel color. All other ordinary Create kinetic
-     * components use the shaft/mechanical color so casing and machine identity remain readable.
+     * Create cogwheel blocks, including encased cogs, use the tier's cogwheel color. All other
+     * ordinary Create kinetic components use the shaft/mechanical color so casing and machine
+     * identity remain readable.
      */
     public static Color getBaseColor(KineticBlockEntity blockEntity) {
         Tier tier = getAttachedTier(blockEntity);
@@ -33,7 +34,7 @@ public final class AttachedTierVisuals {
             return null;
         }
 
-        boolean cogwheel = ICogWheel.isDedicatedCogWheel(blockEntity.getBlockState().getBlock());
+        boolean cogwheel = blockEntity.getBlockState().getBlock() instanceof ICogWheel;
         return new Color(cogwheel ? tier.getCogwheelColor() : tier.getShaftColor());
     }
 
