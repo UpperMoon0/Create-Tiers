@@ -1,8 +1,12 @@
 package com.createtiers.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
@@ -65,5 +69,30 @@ class TierRegistryTest {
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
                 ResourceLocation.fromNamespaceAndPath("createtiers", "bad_su"),
                 new Tier(1, "bad_su", 256, 0)));
+    }
+
+    @Test
+    void invalidGeneratedResourceNameIsRejectedAtRegistration() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                ResourceLocation.fromNamespaceAndPath("createtiers", "safe_lookup_id"),
+                new Tier(1, "Bad Name", 256, 1024)));
+
+        assertTrue(error.getMessage().contains("invalid in Minecraft resource paths"));
+        assertEquals(0, TierRegistry.size());
+    }
+
+    @Test
+    void batchRegistrationIsAtomicWhenLaterEntryConflicts() {
+        ResourceLocation basicId = ResourceLocation.fromNamespaceAndPath("createtiers", "basic");
+        ResourceLocation advancedId = ResourceLocation.fromNamespaceAndPath("createtiers", "advanced");
+        Map<ResourceLocation, Tier> registrations = new LinkedHashMap<>();
+        registrations.put(basicId, new Tier(1, "basic", 256, 1024));
+        registrations.put(advancedId, new Tier(1, "advanced", 512, 2048));
+
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.registerAll(registrations));
+
+        assertEquals(0, TierRegistry.size());
+        assertFalse(TierRegistry.exists(basicId));
+        assertFalse(TierRegistry.exists(advancedId));
     }
 }
