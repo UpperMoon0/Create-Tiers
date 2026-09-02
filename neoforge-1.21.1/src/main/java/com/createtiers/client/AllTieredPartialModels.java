@@ -4,12 +4,15 @@ import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AllTieredPartialModels {
+
+    /** Subtle machine accent used when an ordinary Create kinetic block is tier-calibrated. */
+    public static final PartialModel ATTACHED_TIER_ACCENT =
+            PartialModel.of(CreateTiers.asResource("block/tier_accent"));
 
     public static final Map<String, TieredPartials> TIERS = new HashMap<>();
 
