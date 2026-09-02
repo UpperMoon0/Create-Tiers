@@ -3,6 +3,7 @@ package com.createtiers.gametest;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.RotationPropagator;
@@ -128,7 +129,7 @@ public final class CreateTiersGameTests {
         private final Tier tier;
 
         private TestTieredShaftBlockEntity(BlockPos pos, BlockState state, Tier tier) {
-            super(pos, state);
+            super(AllBlockEntityTypes.BRACKETED_KINETIC.get(), pos, state);
             this.tier = tier;
         }
 
