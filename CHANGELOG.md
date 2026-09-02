@@ -2,6 +2,13 @@
 
 ## 0.2.4
 
+### Added
+
+- Support tier calibration on every Create `KineticBlockEntity`-backed component across Forge 1.20.1 and NeoForge 1.21.1 without cloning upstream machine classes.
+- Sneak-use a tiered shaft to apply its tier to an ordinary Create kinetic component; use the same tier again to clear it. The shaft is reusable.
+- Persist attached tiers in block-entity NBT and rebuild the kinetic connection when calibration changes.
+- Keep speedometers and stressometers intentionally exempt from calibration.
+
 ### Fixed
 
 - Preserve Create's configured RPM limit for untiered kinetic components in mixed tiered networks.
@@ -25,4 +32,4 @@
 ### Tests
 
 - Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
-- Added NeoForge GameTests that exercise the real Create Tiers mixins in a Minecraft server for receiver-scoped tiered/untiered RPM enforcement and lowest-tier connected-network Max SU/overspeed behavior.
+- Added NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, and generic tier attachment on an ordinary Create kinetic block entity.
