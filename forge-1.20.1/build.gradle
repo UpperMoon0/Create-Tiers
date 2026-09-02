@@ -104,7 +104,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
+    annotationProcessor "org.spongepowered.mixin:0.8.7:processor"
     implementation fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
     implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
     compileOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}")
@@ -117,6 +117,7 @@ dependencies {
     implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
     implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
     implementation fg.deobf("dev.latvian.mods:kubejs-create-forge:${kubejs_create_version}") { transitive = false }
+    compileOnly fg.deobf("curse.maven:jade-324717:${jade_version}")
     runtimeOnly fg.deobf("curse.maven:jade-324717:${jade_version}")
     runtimeOnly fg.deobf("curse.maven:spark-361579:${spark_version}")
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
