@@ -1,5 +1,6 @@
 package com.createtiers.data;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.createtiers.Compat;
@@ -28,7 +29,16 @@ class DynamicServerPackTest {
     }
 
     @Test
-    void usesMinecraft121SingularDataPathsAndIncludesGearbox() {
+    void doesNotSnapshotPartiallyRegisteredTiers() {
+        DynamicServerPack.generateResources();
+        assertFalse(DynamicServerPack.isResourcesGenerated());
+        assertTrue(DynamicServerPack.getTags().isEmpty());
+        assertTrue(DynamicServerPack.getLootTables().isEmpty());
+    }
+
+    @Test
+    void usesMinecraft121SingularDataPathsAndIncludesGearboxAfterFreeze() {
+        TierRegistry.freeze();
         DynamicServerPack.generateResources();
 
         ResourceLocation pickaxeTag = ResourceLocation.fromNamespaceAndPath(
@@ -36,6 +46,7 @@ class DynamicServerPackTest {
         ResourceLocation gearboxLoot = ResourceLocation.fromNamespaceAndPath(
                 "createtiers", "loot_table/blocks/gearbox_basic");
 
+        assertTrue(DynamicServerPack.isResourcesGenerated());
         assertTrue(DynamicServerPack.getTags().containsKey(pickaxeTag));
         assertTrue(DynamicServerPack.getTags().get(pickaxeTag).toString().contains("createtiers:gearbox_basic"));
         assertTrue(DynamicServerPack.getLootTables().containsKey(gearboxLoot));
