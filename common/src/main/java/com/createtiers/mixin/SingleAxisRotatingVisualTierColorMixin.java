@@ -5,7 +5,6 @@ import com.simibubi.create.content.kinetics.KineticDebugger;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.RotatingInstance;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
-import dev.engine_room.flywheel.lib.visual.SimpleTickableVisual;
 import net.createmod.catnip.theme.Color;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Final;
@@ -24,7 +23,7 @@ public abstract class SingleAxisRotatingVisualTierColorMixin {
     protected RotatingInstance rotatingModel;
 
     @Inject(method = "tick", at = @At("TAIL"))
-    private void createtiers$keepAttachedTierColor(SimpleTickableVisual.Context context, CallbackInfo ci) {
+    private void createtiers$keepAttachedTierColor(CallbackInfo ci) {
         if (KineticDebugger.isActive()) {
             return;
         }
