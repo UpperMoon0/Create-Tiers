@@ -6,6 +6,7 @@ import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.ModLang;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -34,6 +35,8 @@ public class TieredKineticStats implements TooltipModifier {
             tier = encasedShaft.getTier();
         } else if (block instanceof TieredEncasedCogwheelBlock encasedCog) {
             tier = encasedCog.getTier();
+        } else if (block instanceof TieredGearboxBlock gearbox) {
+            tier = gearbox.getTier();
         }
 
         if (tier == null)
