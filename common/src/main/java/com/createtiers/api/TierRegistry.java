@@ -25,7 +25,7 @@ public class TierRegistry {
 
     private static final Map<ResourceLocation, Tier> TIERS = new ConcurrentHashMap<>();
     private static final Map<Integer, Tier> TIERS_BY_LEVEL = new ConcurrentHashMap<>();
-    private static boolean frozen = false;
+    private static volatile boolean frozen = false;
 
     /**
      * Register a new tier. Must be called before the registry is frozen.
