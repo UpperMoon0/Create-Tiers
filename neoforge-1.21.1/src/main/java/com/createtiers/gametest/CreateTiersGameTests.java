@@ -19,7 +19,6 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder(CreateTiers.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class CreateTiersGameTests {
 
     private static final String TEMPLATE = "empty";
@@ -29,6 +28,7 @@ public final class CreateTiersGameTests {
     private CreateTiersGameTests() {
     }
 
+    @PrefixGameTestTemplate(false)
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void receiverScopedRpmLimits(GameTestHelper helper) {
         int createMax = AllConfigs.server().kinetics.maxRotationSpeed.get();
@@ -47,6 +47,7 @@ public final class CreateTiersGameTests {
         helper.succeed();
     }
 
+    @PrefixGameTestTemplate(false)
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void connectedNetworkUsesLowestTierSuCap(GameTestHelper helper) {
         KineticBlockEntity lowEntity = placeTieredKinetic(helper, new BlockPos(1, 1, 1), LOW_TIER);
@@ -106,7 +107,8 @@ public final class CreateTiersGameTests {
         helper.getLevel().setBlock(absolute, state, 3);
         helper.getLevel().removeBlockEntity(absolute);
 
-        TestTieredShaftBlockEntity blockEntity = new TestTieredShaftBlockEntity(absolute, state, tier);
+        BlockState liveState = helper.getLevel().getBlockState(absolute);
+        TestTieredShaftBlockEntity blockEntity = new TestTieredShaftBlockEntity(absolute, liveState, tier);
         helper.getLevel().setBlockEntity(blockEntity);
         return blockEntity;
     }
