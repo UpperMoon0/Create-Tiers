@@ -22,6 +22,23 @@ public abstract class RotatingInstanceTierColorMixin {
     @Unique
     private KineticBlockEntity createtiers$blockEntity;
 
+    /**
+     * Create also uses this helper for non-RotatingInstance kinetic visuals such as scrolling belts.
+     * Keep the kinetic debugger's network color, otherwise expose the attached tier color.
+     */
+    @Inject(method = "colorFromBE", at = @At("HEAD"), cancellable = true)
+    private static void createtiers$attachedTierColorFromBlockEntity(KineticBlockEntity blockEntity,
+            CallbackInfoReturnable<Integer> cir) {
+        if (KineticDebugger.isActive()) {
+            return;
+        }
+
+        Color color = AttachedTierVisuals.getRenderedColor(blockEntity);
+        if (color != null) {
+            cir.setReturnValue(color.getRGB());
+        }
+    }
+
     @Inject(
             method = "setup(Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;Lnet/minecraft/core/Direction$Axis;F)Lcom/simibubi/create/content/kinetics/base/RotatingInstance;",
             at = @At("RETURN"))
