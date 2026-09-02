@@ -32,6 +32,8 @@ Speedometers and stressometers are deliberately not calibratable: they are obser
 
 Attached tiers are stored in the target block entity's NBT and move with normal Create block-entity serialization. Changing or clearing a tier detaches and reattaches the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
 
+Calibrated components also inherit the tier's custom colors without replacing Create's casing textures. Dedicated Create cogwheels use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to calibrated machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
+
 ## Registering tiers
 
 Tiers must exist before Minecraft freezes the block/item registries. Register them from **KubeJS `startup_scripts`** or from another mod during initialization.
