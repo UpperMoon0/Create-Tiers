@@ -4,7 +4,7 @@ A dynamic, customizable tier system for Create kinetic components.
 
 ## What it does
 
-Create Tiers adds tiered shafts, cogwheels, encased variants, and gearboxes with configurable mechanical limits and colors.
+Create Tiers provides native generated tiered shafts, cogwheels, encased variants, and gearboxes, and can attach those same tier limits to Create's existing kinetic machines without replacing their upstream block classes.
 
 Each tier defines:
 
@@ -12,7 +12,25 @@ Each tier defines:
 - **Max SU** — a hard stress-cap for the connected Create kinetic network. If multiple tiered components are present, the lowest Max SU wins.
 - **Shaft and cogwheel colors** — used by the generated models and kinetic rendering.
 
-Untiered Create components always keep Create's normal configured maximum RPM. A high-speed tiered network therefore does **not** make vanilla Create shafts, cogs, gearboxes, or other ordinary kinetic components high-RPM-safe.
+Untiered Create components always keep Create's normal configured maximum RPM. A high-speed tiered network therefore does **not** make ordinary Create components high-RPM-safe unless they are explicitly tier-calibrated.
+
+## Tiering Create components
+
+Create's kinetic system is much broader than shafts and cogwheels. Create Tiers therefore supports every current `KineticBlockEntity`-backed Create component generically instead of copying dozens of upstream machine classes.
+
+**Sneak-use a tiered shaft on a Create kinetic component** to calibrate that component to the shaft's tier. Sneak-use the same tier again to clear the attachment and restore ordinary Create limits. The shaft is a reusable calibration key; it is not consumed.
+
+This automatically covers Create kinetic families such as:
+
+- transmission and control: clutches, gearshifts, encased chain drives, adjustable chain gearshifts, belts, chain conveyors, gantry shafts, sequenced gearshifts, flywheels, and rotation speed controllers;
+- processing and logistics: encased fans, turntables, millstones, crushing wheels, mechanical presses/mixers, weighted ejectors, pumps, hose pulleys, drills, saws, deployers, mechanical crafters, and mechanical arms;
+- contraption motion: mechanical pistons, mechanical/clockwork bearings, rope pulleys, and elevator pulleys;
+- generators: creative motors, water wheels, large water wheels, hand cranks, valve handles, steam engines, and windmill bearings;
+- any future Create component that participates through `KineticBlockEntity`, unless Create Tiers deliberately exempts it.
+
+Speedometers and stressometers are deliberately not calibratable: they are observation devices and retain Create Tiers' unlimited RPM observation exemption.
+
+Attached tiers are stored in the target block entity's NBT and move with normal Create block-entity serialization. Changing or clearing a tier detaches and reattaches the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
 
 ## Registering tiers
 
@@ -61,7 +79,7 @@ Tier IDs, numeric levels, and generated tier names must be unique. Generated nam
 
 ## Generated resources
 
-Create Tiers generates models, blockstates, translations, mining tags, and block loot for registered components at runtime. Minecraft 1.20.1 Forge and 1.21.1 NeoForge use their version-correct resource/data-pack layouts.
+Create Tiers generates models, blockstates, translations, mining tags, and block loot for registered native tier components at runtime. Minecraft 1.20.1 Forge and 1.21.1 NeoForge use their version-correct resource/data-pack layouts.
 
 ## License
 
