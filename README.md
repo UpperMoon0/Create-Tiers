@@ -34,6 +34,17 @@ Attached tiers are stored in the target block entity's NBT and move with normal 
 
 Calibrated components also inherit the tier's custom colors without replacing Create's casing textures. Create cogwheel blocks, including encased cogwheels, use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to calibrated machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
 
+### Jade
+
+Jade support is optional. When Jade is installed, Create Tiers adds tier information to Jade's existing Create tooltip instead of replacing Create's own kinetic information. Tiered and calibrated kinetic components show:
+
+- the effective tier display name;
+- whether the tier is **Intrinsic** (a native Create Tiers block) or **Calibrated** (attached to a normal Create block);
+- the tier's **Max RPM**;
+- the tier's **Max SU**.
+
+The Jade payload is generated from the server-side block entity, so multiplayer clients see the authoritative tier rather than relying on locally inferred state. Untiered Create blocks do not receive extra Create Tiers Jade lines.
+
 ## Registering tiers
 
 Tiers must exist before Minecraft freezes the block/item registries. Register them from **KubeJS `startup_scripts`** or from another mod during initialization.
