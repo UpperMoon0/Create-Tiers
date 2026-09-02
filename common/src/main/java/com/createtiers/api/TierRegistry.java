@@ -156,6 +156,23 @@ public class TierRegistry {
         return TIERS.get(id);
     }
 
+    /**
+     * Resolve the canonical registered id for a tier.
+     *
+     * @return the id, or {@code null} when the tier is not registered
+     */
+    public static ResourceLocation getId(Tier tier) {
+        if (tier == null) {
+            return null;
+        }
+        for (Map.Entry<ResourceLocation, Tier> entry : TIERS.entrySet()) {
+            if (entry.getValue().equals(tier)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     public static Tier getByLevel(int level) {
         return TIERS_BY_LEVEL.get(level);
     }
