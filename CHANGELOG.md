@@ -20,8 +20,9 @@
 
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
-- Run both Forge 1.20.1 and NeoForge 1.21.1 builds/tests on pull requests; releases remain push-to-main only.
+- Build and unit-test both Forge 1.20.1 and NeoForge 1.21.1 in parallel on pull requests, then run a focused NeoForge GameTest suite; releases remain push-to-main only.
 
 ### Tests
 
-- Added regression coverage for untiered-vs-tiered RPM policy, tier registry invariants, atomic KubeJS batches/exact numeric parsing, and NeoForge 1.21 gearbox data paths.
+- Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
+- Added NeoForge GameTests that exercise the real Create Tiers mixins in a Minecraft server for receiver-scoped tiered/untiered RPM enforcement and lowest-tier connected-network Max SU/overspeed behavior.
