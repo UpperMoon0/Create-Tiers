@@ -9,6 +9,7 @@
 - Persist attached tiers in block-entity NBT and rebuild the kinetic connection when calibration changes.
 - Apply attached-tier custom colors to ordinary Create kinetics: dedicated cogwheels use `cogwheelColor`, other rotating/mechanical parts use `shaftColor`, and specialized machines receive a subtle tier-colored accent when their renderer has no suitable tintable part.
 - Keep attached-tier visuals consistent across Flywheel and fallback block-entity rendering while preserving Create's overstress and kinetic-debugger feedback.
+- Add optional Jade integration for intrinsic and calibrated tiers, showing the tier name, tier source, Max RPM, and Max SU from authoritative server data.
 - Keep speedometers and stressometers intentionally exempt from calibration.
 
 ### Fixed
