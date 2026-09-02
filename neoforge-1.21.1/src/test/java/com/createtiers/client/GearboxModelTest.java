@@ -5,7 +5,8 @@ import com.createtiers.api.TierRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GearboxModelTest {
@@ -19,31 +20,24 @@ public class GearboxModelTest {
         for (Tier tier : TierRegistry.getAllTiers()) {
             AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(tier.getName());
             assertNotNull(partials, "Partial models should exist for tier: " + tier.getName());
-            assertNotNull(partials.GEARBOX, "GEARBOX partial should exist for tier: " + tier.getName());
-            assertNotNull(partials.SHAFT_HALF, "SHAFT_HALF partial should exist for tier: " + tier.getName());
+            assertNotNull(partials.SHAFT_HALF, "Gearbox shaft-half partial should exist for tier: " + tier.getName());
         }
     }
 
     @Test
-    void gearboxPartialHasCorrectResourcePath() {
+    void gearboxUsesTierShaftHalfPartial() {
         AllTieredPartialModels.init();
 
         for (Tier tier : TierRegistry.getAllTiers()) {
             AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(tier.getName());
-            String tierName = tier.getName();
-
-            assertNotNull(partials.GEARBOX, "GEARBOX partial should exist");
+            assertNotNull(partials.SHAFT_HALF,
+                    "Tiered gearboxes render each output using the tier shaft-half partial");
         }
     }
 
     @Test
-    void shaftHalfPartialIsDifferentFromGearboxPartial() {
-        AllTieredPartialModels.init();
-
-        for (Tier tier : TierRegistry.getAllTiers()) {
-            AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(tier.getName());
-            assertNotSame(partials.SHAFT_HALF, partials.GEARBOX,
-                "SHAFT_HALF and GEARBOX should be different partial models");
-        }
+    void attachedTierAccentPartialIsRegistered() {
+        assertNotNull(AllTieredPartialModels.ATTACHED_TIER_ACCENT,
+                "Calibrated ordinary Create kinetics need the generic tier accent partial");
     }
 }
