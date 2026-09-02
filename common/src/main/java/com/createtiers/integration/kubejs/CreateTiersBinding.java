@@ -7,7 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +23,7 @@ public class CreateTiersBinding {
             throw new IllegalArgumentException("CreateTiers.registerTiers requires a tier list");
         }
 
+        Map<ResourceLocation, Tier> registrations = new LinkedHashMap<>();
         for (int index = 0; index < tiers.size(); index++) {
             Map<String, Object> tierData = tiers.get(index);
             if (tierData == null) {
@@ -35,8 +38,14 @@ public class CreateTiersBinding {
             int cogwheelColor = optionalNumber(tierData, "cogwheelColor", shaftColor, index);
             String displayName = optionalString(tierData, "displayName", name, index);
 
-            registerTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+            ResourceLocation id = rl("createtiers", name);
+            Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+            if (registrations.putIfAbsent(id, tier) != null) {
+                throw fieldError(index, "name", "duplicates another tier in this batch");
+            }
         }
+
+        TierRegistry.registerAll(registrations);
         LOGGER.info("Registered {} tiers via registerTiers batch call", tiers.size());
     }
 
@@ -60,16 +69,7 @@ public class CreateTiersBinding {
             String displayName) {
         requireDirectName(name, "name");
         ResourceLocation id = rl("createtiers", name);
-
-        Tier tier = Tier.builder()
-                .tier(level)
-                .name(name)
-                .maxRPM(maxRPM)
-                .maxSU(maxSU)
-                .shaftColor(shaftColor)
-                .cogwheelColor(cogwheelColor)
-                .displayName(displayName)
-                .build();
+        Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
 
         TierRegistry.register(id, tier);
         LOGGER.info("Registered tier '{}' via KubeJS: level={}, maxRPM={}, maxSU={}", name, level, maxRPM, maxSU);
@@ -84,16 +84,7 @@ public class CreateTiersBinding {
         requireDirectName(namespace, "namespace");
         requireDirectName(name, "name");
         ResourceLocation id = rl(namespace, name);
-
-        Tier tier = Tier.builder()
-                .tier(level)
-                .name(name)
-                .maxRPM(maxRPM)
-                .maxSU(maxSU)
-                .shaftColor(shaftColor)
-                .cogwheelColor(cogwheelColor)
-                .displayName(name)
-                .build();
+        Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, name);
 
         TierRegistry.register(id, tier);
         LOGGER.info("Registered custom tier '{}:{}' via KubeJS: level={}, maxRPM={}, maxSU={}",
@@ -120,6 +111,19 @@ public class CreateTiersBinding {
         return TierRegistry.exists(rl("createtiers", name));
     }
 
+    private static Tier createTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
+            String displayName) {
+        return Tier.builder()
+                .tier(level)
+                .name(name)
+                .maxRPM(maxRPM)
+                .maxSU(maxSU)
+                .shaftColor(shaftColor)
+                .cogwheelColor(cogwheelColor)
+                .displayName(displayName)
+                .build();
+    }
+
     private static String requireString(Map<String, Object> data, String key, int index) {
         Object value = data.get(key);
         if (!(value instanceof String string) || string.isBlank()) {
@@ -140,7 +144,11 @@ public class CreateTiersBinding {
         if (!(value instanceof Number number)) {
             throw fieldError(index, key, "must be a number");
         }
-        return number.intValue();
+        try {
+            return new BigDecimal(number.toString()).intValueExact();
+        } catch (NumberFormatException | ArithmeticException e) {
+            throw fieldError(index, key, "must be a whole 32-bit integer");
+        }
     }
 
     private static int optionalNumber(Map<String, Object> data, String key, int fallback, int index) {
