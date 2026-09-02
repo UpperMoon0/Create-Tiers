@@ -6,7 +6,9 @@
 
 - Preserve Create's configured RPM limit for untiered kinetic components in mixed tiered networks.
 - Keep per-tier RPM limits scoped to tiered receiving components instead of globally raising vanilla Create limits.
-- Reject duplicate tier IDs, numeric levels, generated names, invalid limits, and invalid RGB colors during startup.
+- Reject duplicate tier IDs, numeric levels, generated names, invalid limits, invalid generated resource paths, and invalid RGB colors during startup.
+- Make KubeJS batch tier registration atomic so one invalid/conflicting entry cannot leave earlier entries partially registered.
+- Reject fractional and overflowing KubeJS numeric fields instead of silently truncating or wrapping them to `int`.
 - Generate pickaxe mining tags and loot for tiered gearboxes.
 - Use Minecraft 1.21.1 data-pack format 48 and the 1.21 singular `tags/block` / `loot_table` resource paths on NeoForge.
 - Show tier RPM/SU tooltips on normal and vertical tiered gearboxes.
@@ -22,4 +24,4 @@
 
 ### Tests
 
-- Added regression coverage for untiered-vs-tiered RPM policy, tier registry invariants, and NeoForge 1.21 gearbox data paths.
+- Added regression coverage for untiered-vs-tiered RPM policy, tier registry invariants, atomic KubeJS batches/exact numeric parsing, and NeoForge 1.21 gearbox data paths.
