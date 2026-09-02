@@ -12,8 +12,9 @@ public class CreateTiersNeoForge {
     public CreateTiersNeoForge(IEventBus modEventBus) {
         Compat.init(ResourceLocation::fromNamespaceAndPath);
 
+        // Minecraft 1.21/1.21.1 resource-pack and data-pack formats.
         CreateTiers.PACK_FORMAT = 34;
-        CreateTiers.SERVER_PACK_FORMAT = 78;
+        CreateTiers.SERVER_PACK_FORMAT = 48;
 
         ModCreativeTabs.register(modEventBus);
         ModBlocks.register(modEventBus);

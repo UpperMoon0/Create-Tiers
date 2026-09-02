@@ -6,13 +6,19 @@
   "refmap": "createtiers-refmap.json",
   "mixins": [
     "RotationPropagatorMixin",
+    "KineticBlockEntityTierMixin",
+    "TieredShaftCalibrationMixin",
+    "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
     "KineticBlockEntityAccessor",
     "KineticEffectHandlerAccessor",
     "KineticNetworkMixin"
   ],
   "client": [
-    "ModelManagerMixin"
+    "KineticBlockEntityRendererTierColorMixin",
+    "ModelManagerMixin",
+    "RotatingInstanceTierColorMixin",
+    "SafeBlockEntityRendererTierAccentMixin"
   ],
   "injectors": {
     "defaultRequire": 1

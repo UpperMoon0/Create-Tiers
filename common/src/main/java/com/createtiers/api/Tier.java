@@ -4,10 +4,10 @@ import java.util.Objects;
 
 /**
  * Represents a tier for Create kinetic blocks.
- * Tiers can be customized via datapack or KubeJS.
+ * Tiers are registered during startup via KubeJS or another mod integration.
  */
 public class Tier implements Comparable<Tier> {
-    
+
     private final int tier;
     private final String name;
     private final int maxRPM;
@@ -15,15 +15,16 @@ public class Tier implements Comparable<Tier> {
     private final int shaftColor;
     private final int cogwheelColor;
     private final String displayName;
-    
+
     /**
-     * Creates a new Tier
+     * Creates a new Tier.
+     *
      * @param tier The tier number (must be unique)
-     * @param name The internal name of the tier
-     * @param maxRPM Maximum RPM for this tier
-     * @param maxSU Maximum Stress Units for this tier
-     * @param shaftColor The color of the shaft (hex RGB)
-     * @param cogwheelColor The color of the cogwheel (hex RGB)
+     * @param name The internal/generated component name of the tier
+     * @param maxRPM Maximum RPM this tiered component may receive
+     * @param maxSU Hard stress-cap for a connected kinetic network containing this tier
+     * @param shaftColor The color of the shaft (24-bit RGB)
+     * @param cogwheelColor The color of the cogwheel (24-bit RGB)
      * @param displayName Optional display name for the tier
      */
     public Tier(int tier, String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor, String displayName) {
@@ -35,15 +36,11 @@ public class Tier implements Comparable<Tier> {
         this.cogwheelColor = cogwheelColor;
         this.displayName = displayName != null ? displayName : name;
     }
-    
-    /**
-     * Creates a new Tier with default colors
-     */
+
     public Tier(int tier, String name, int maxRPM, int maxSU) {
         this(tier, name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, null);
     }
-    
-    // Getters
+
     public int getTier() { return tier; }
     public String getName() { return name; }
     public int getMaxRPM() { return maxRPM; }
@@ -51,40 +48,35 @@ public class Tier implements Comparable<Tier> {
     public int getShaftColor() { return shaftColor; }
     public int getCogwheelColor() { return cogwheelColor; }
     public String getDisplayName() { return displayName; }
-    
-    /**
-     * Gets the primary color (for backward compatibility or UI)
-     */
+
+    /** Primary visual color retained for API compatibility. */
     public int getColor() { return cogwheelColor; }
-    
+
     /**
-     * Gets the maximum speed for processing recipes.
-     * Default implementation returns maxRPM / 2.
+     * Legacy derived processing-speed helper retained for compatibility.
+     * This is not the kinetic RPM limit; use {@link #getMaxRPM()} for that.
      */
     public int getMaxSpeed() {
         return maxRPM / 2;
     }
-    
+
     /**
-     * Gets the maximum capacity for fluid handling.
-     * Default implementation returns maxSU * 2.
+     * Legacy derived capacity helper retained for compatibility.
+     * This is not the connected-network stress limit; use {@link #getMaxSU()} for that.
      */
     public int getMaxCapacity() {
         return maxSU * 2;
     }
-    
-    /**
-     * Create a new Tier builder.
-     */
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     @Override
     public int compareTo(Tier other) {
         return Integer.compare(this.tier, other.tier);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -92,12 +84,12 @@ public class Tier implements Comparable<Tier> {
         Tier other = (Tier) obj;
         return tier == other.tier && name.equals(other.name);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(tier, name);
     }
-    
+
     @Override
     public String toString() {
         return "Tier{" +
@@ -109,11 +101,8 @@ public class Tier implements Comparable<Tier> {
                 ", cogwheelColor=" + String.format("#%06X", cogwheelColor) +
                 '}';
     }
-    
-    /**
-     * Builder class for creating Tier instances.
-     * Useful for KubeJS and datapack integration.
-     */
+
+    /** Builder for startup integrations such as KubeJS and other mods. */
     public static class Builder {
         private int tier = 1;
         private String name = "tier_1";
@@ -122,48 +111,48 @@ public class Tier implements Comparable<Tier> {
         private int shaftColor = 0xFFFFFF;
         private int cogwheelColor = 0xFFFFFF;
         private String displayName = null;
-        
+
         public Builder tier(int tier) {
             this.tier = tier;
             return this;
         }
-        
+
         public Builder name(String name) {
             this.name = name;
             return this;
         }
-        
+
         public Builder maxRPM(int maxRPM) {
             this.maxRPM = maxRPM;
             return this;
         }
-        
+
         public Builder maxSU(int maxSU) {
             this.maxSU = maxSU;
             return this;
         }
-        
+
         public Builder shaftColor(int color) {
             this.shaftColor = color;
             return this;
         }
-        
+
         public Builder cogwheelColor(int color) {
             this.cogwheelColor = color;
             return this;
         }
-        
+
         public Builder color(int color) {
             this.shaftColor = color;
             this.cogwheelColor = color;
             return this;
         }
-        
+
         public Builder displayName(String displayName) {
             this.displayName = displayName;
             return this;
         }
-        
+
         public Tier build() {
             return new Tier(tier, name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
         }

@@ -173,6 +173,11 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
 }
 
 configurations {
@@ -183,6 +188,8 @@ configurations {
 dependencies {
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
     implementation "dev.latvian.mods:kubejs-neoforge:2101.7.2-build.363"
+    compileOnly "curse.maven:jade-324717:${jade_version}"
+    localRuntime "curse.maven:jade-324717:${jade_version}"
 
     testLocal "org.junit.jupiter:junit-jupiter-api:5.10.0"
     testLocal "org.junit.jupiter:junit-jupiter-engine:5.10.0"

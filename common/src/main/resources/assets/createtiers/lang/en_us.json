@@ -1,4 +1,14 @@
 {
   "createtiers.tooltip.tiered_max_rpm": "Maximum Speed",
-  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity"
+  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity",
+  "createtiers.tooltip.tiered_network_su": "Connected Network Stress Limit",
+  "createtiers.tooltip.tier_calibration": "Sneak-use on a Create kinetic component to apply or remove this tier",
+  "createtiers.message.tier_attached": "Kinetic tier set to %s",
+  "createtiers.message.tier_cleared": "Kinetic tier cleared; vanilla Create limits restored",
+  "createtiers.jade.tier": "Tier: %s",
+  "createtiers.jade.source": "Tier Source: %s",
+  "createtiers.jade.source.intrinsic": "Intrinsic",
+  "createtiers.jade.source.calibrated": "Calibrated",
+  "createtiers.jade.max_rpm": "Max RPM: %s RPM",
+  "createtiers.jade.max_su": "Max SU: %s SU"
 }

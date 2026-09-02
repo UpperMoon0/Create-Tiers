@@ -6,6 +6,7 @@ import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
+import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.ModLang;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -34,6 +35,8 @@ public class TieredKineticStats implements TooltipModifier {
             tier = encasedShaft.getTier();
         } else if (block instanceof TieredEncasedCogwheelBlock encasedCog) {
             tier = encasedCog.getTier();
+        } else if (block instanceof TieredGearboxBlock gearbox) {
+            tier = gearbox.getTier();
         }
 
         if (tier == null)
@@ -51,7 +54,7 @@ public class TieredKineticStats implements TooltipModifier {
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
 
-        ModLang.translate("tooltip.tiered_max_su")
+        ModLang.translate("tooltip.tiered_network_su")
                 .style(ChatFormatting.GRAY)
                 .addTo(tooltip);
         ModLang.builder()
@@ -60,5 +63,11 @@ public class TieredKineticStats implements TooltipModifier {
                 .add(CreateLang.translate("generic.unit.stress"))
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
+
+        if (block instanceof TieredShaftBlock) {
+            ModLang.translate("tooltip.tier_calibration")
+                    .style(ChatFormatting.DARK_GRAY)
+                    .addTo(tooltip);
+        }
     }
 }
