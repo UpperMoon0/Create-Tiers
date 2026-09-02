@@ -32,6 +32,22 @@ public abstract class RotatingInstanceTierColorMixin {
     }
 
     @Inject(
+            method = "setColor(Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;)Lcom/simibubi/create/content/kinetics/base/RotatingInstance;",
+            at = @At("HEAD"), cancellable = true)
+    private void createtiers$keepAttachedTierColorFromBlockEntity(KineticBlockEntity blockEntity,
+            CallbackInfoReturnable<RotatingInstance> cir) {
+        createtiers$blockEntity = blockEntity;
+        if (KineticDebugger.isActive()) {
+            return;
+        }
+
+        Color color = AttachedTierVisuals.getRenderedColor(blockEntity);
+        if (color != null) {
+            createtiers$setColorAndReturn(color, cir);
+        }
+    }
+
+    @Inject(
             method = "setColor(Lnet/createmod/catnip/theme/Color;)Lcom/simibubi/create/content/kinetics/base/RotatingInstance;",
             at = @At("HEAD"), cancellable = true)
     private void createtiers$keepAttachedTierColor(Color requestedColor,
@@ -41,12 +57,16 @@ public abstract class RotatingInstanceTierColorMixin {
         }
 
         Color color = AttachedTierVisuals.getRenderedColor(createtiers$blockEntity);
-        if (color == null) {
-            return;
+        if (color != null) {
+            createtiers$setColorAndReturn(color, cir);
         }
+    }
 
+    @Unique
+    private void createtiers$setColorAndReturn(Color color, CallbackInfoReturnable<RotatingInstance> cir) {
         RotatingInstance self = (RotatingInstance) (Object) this;
         self.color(color.getRed(), color.getGreen(), color.getBlue());
+        self.setChanged();
         cir.setReturnValue(self);
     }
 
