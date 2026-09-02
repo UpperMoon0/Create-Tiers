@@ -1,4 +1,5 @@
 {
   "createtiers.tooltip.tiered_max_rpm": "Maximum Speed",
-  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity"
+  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity",
+  "createtiers.tooltip.tiered_network_su": "Connected Network Stress Limit"
 }
