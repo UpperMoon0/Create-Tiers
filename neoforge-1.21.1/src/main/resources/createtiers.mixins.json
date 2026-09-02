@@ -6,6 +6,7 @@
   "refmap": "createtiers-refmap.json",
   "mixins": [
     "RotationPropagatorMixin",
+    "KineticBlockEntityTierMixin",
     "SpeedGaugeBlockEntityMixin",
     "KineticBlockEntityAccessor",
     "KineticEffectHandlerAccessor",
