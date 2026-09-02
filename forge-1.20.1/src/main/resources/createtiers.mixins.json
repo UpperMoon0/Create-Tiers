@@ -15,12 +15,10 @@
     "KineticNetworkMixin"
   ],
   "client": [
-    "AbstractBlockEntityVisualAccessor",
     "KineticBlockEntityRendererTierColorMixin",
     "ModelManagerMixin",
     "RotatingInstanceTierColorMixin",
-    "SafeBlockEntityRendererTierAccentMixin",
-    "SingleAxisRotatingVisualTierColorMixin"
+    "SafeBlockEntityRendererTierAccentMixin"
   ],
   "injectors": {
     "defaultRequire": 1
