@@ -54,7 +54,7 @@ public class TieredKineticStats implements TooltipModifier {
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
 
-        ModLang.translate("tooltip.tiered_max_su")
+        ModLang.translate("tooltip.tiered_network_su")
                 .style(ChatFormatting.GRAY)
                 .addTo(tooltip);
         ModLang.builder()
