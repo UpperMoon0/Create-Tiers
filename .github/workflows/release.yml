@@ -1,6 +1,9 @@
-name: Release
+name: Build and Release
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -21,23 +24,25 @@ jobs:
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build Forge 1.20.1
+      - name: Build and test Forge 1.20.1
         run: ./gradlew :forge-1.20.1:build
 
-      - name: Build NeoForge 1.21.1
+      - name: Build and test NeoForge 1.21.1
         run: ./gradlew :neoforge-1.21.1:build
 
       - name: Get version
+        if: github.event_name == 'push'
         id: get_version
         run: |
           echo "version=$(grep 'mod_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
 
       - name: Publish Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
