@@ -1,7 +1,9 @@
 package com.createtiers.gametest;
 
 import com.createtiers.CreateTiers;
+import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
+import com.createtiers.api.TierRegistry;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
@@ -13,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -25,6 +28,10 @@ public final class CreateTiersGameTests {
     private static final String TEMPLATE = "empty";
     private static final Tier LOW_TIER = new Tier(1, "gametest_low", 128, 512);
     private static final Tier HIGH_TIER = new Tier(2, "gametest_high", 1024, 4096);
+    private static final ResourceLocation ATTACHMENT_TIER_ID =
+            ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "gametest_attachment");
+    private static final Tier ATTACHMENT_TIER =
+            new Tier(Integer.MAX_VALUE - 7, "gametest_attachment", 1024, 4096);
 
     private CreateTiersGameTests() {
     }
@@ -66,6 +73,49 @@ public final class CreateTiersGameTests {
         assertFloat(helper, 0f, network.calculateCapacity(),
                 "Tier overspeed did not zero the connected network capacity");
         helper.succeed();
+    }
+
+    @PrefixGameTestTemplate(false)
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void ordinaryCreateKineticAcceptsAttachedTier(GameTestHelper helper) {
+        Tier tier = ensureAttachmentTier();
+        KineticBlockEntity kinetic = placeKinetic(helper, new BlockPos(1, 1, 1));
+        if (!(kinetic instanceof IAttachedTierBlockEntity attachable)) {
+            helper.fail("Create KineticBlockEntity did not receive the generic tier attachment mixin");
+            return;
+        }
+
+        attachable.setAttachedTier(tier);
+        if (!tier.equals(attachable.getTier()) || !ATTACHMENT_TIER_ID.equals(attachable.getAttachedTierId())) {
+            helper.fail("Ordinary Create kinetic component did not expose its attached tier");
+        }
+
+        kinetic.setSpeed(tier.getMaxRPM() + 1f);
+        KineticNetwork network = new KineticNetwork();
+        network.members.put(kinetic, 0f);
+        network.initFromTE(10_000f, 0f, 0);
+        assertFloat(helper, 0f, network.calculateCapacity(),
+                "Attached tier RPM limit was not enforced for an ordinary Create kinetic component");
+
+        attachable.clearAttachedTier();
+        if (attachable.getTier() != null || attachable.getAttachedTierId() != null) {
+            helper.fail("Clearing an attached tier did not restore ordinary Create tier state");
+        }
+        helper.succeed();
+    }
+
+    private static Tier ensureAttachmentTier() {
+        Tier existing = TierRegistry.get(ATTACHMENT_TIER_ID);
+        if (existing != null) {
+            return existing;
+        }
+
+        TierRegistry.unfreeze();
+        try {
+            return TierRegistry.register(ATTACHMENT_TIER_ID, ATTACHMENT_TIER);
+        } finally {
+            TierRegistry.freeze();
+        }
     }
 
     private static void assertPropagation(GameTestHelper helper, BlockPos sourceRelative, Tier sourceTier,
