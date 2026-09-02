@@ -16,8 +16,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(value = RotationPropagator.class, remap = false)
 public abstract class RotationPropagatorMixin {
 
-    private static final ThreadLocal<KineticBlockEntity[]> CREATETIERS$OVERSPEED_TARGETS =
-            ThreadLocal.withInitial(() -> new KineticBlockEntity[2]);
+    private static final ThreadLocal<LimitTarget[]> CREATETIERS$OVERSPEED_TARGETS =
+            ThreadLocal.withInitial(() -> new LimitTarget[2]);
+
+    private record LimitTarget(Tier tier, boolean bypassLimit) {
+    }
 
     @Shadow
     private static float getConveyedSpeed(KineticBlockEntity from, KineticBlockEntity to) {
@@ -29,7 +32,7 @@ public abstract class RotationPropagatorMixin {
                     target = "Lcom/simibubi/create/content/kinetics/RotationPropagator;getConveyedSpeed(Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;)F",
                     ordinal = 0))
     private static float createtiers$captureNewSpeedTarget(KineticBlockEntity from, KineticBlockEntity to) {
-        CREATETIERS$OVERSPEED_TARGETS.get()[0] = to;
+        CREATETIERS$OVERSPEED_TARGETS.get()[0] = resolveTarget(to);
         return getConveyedSpeed(from, to);
     }
 
@@ -38,7 +41,7 @@ public abstract class RotationPropagatorMixin {
                     target = "Lcom/simibubi/create/content/kinetics/RotationPropagator;getConveyedSpeed(Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;)F",
                     ordinal = 1))
     private static float createtiers$captureOppositeSpeedTarget(KineticBlockEntity from, KineticBlockEntity to) {
-        CREATETIERS$OVERSPEED_TARGETS.get()[1] = to;
+        CREATETIERS$OVERSPEED_TARGETS.get()[1] = resolveTarget(to);
         return getConveyedSpeed(from, to);
     }
 
@@ -58,28 +61,29 @@ public abstract class RotationPropagatorMixin {
         return getAllowedRPM(consumeTarget(1), (Integer) instance.get());
     }
 
-    private static KineticBlockEntity consumeTarget(int index) {
-        KineticBlockEntity[] targets = CREATETIERS$OVERSPEED_TARGETS.get();
-        KineticBlockEntity target = targets[index];
-        targets[index] = null;
-        return target;
-    }
-
-    private static int getAllowedRPM(KineticBlockEntity blockEntity, int createDefault) {
-        if (blockEntity == null) {
-            return createDefault;
-        }
-
+    private static LimitTarget resolveTarget(KineticBlockEntity blockEntity) {
         Block block = blockEntity.getBlockState().getBlock();
-        boolean bypassLimit = block instanceof GaugeBlock;
-
         Tier tier = null;
         if (blockEntity instanceof ITieredBlockEntity tieredBlockEntity) {
             tier = tieredBlockEntity.getTier();
         }
+        return new LimitTarget(tier, block instanceof GaugeBlock);
+    }
+
+    private static LimitTarget consumeTarget(int index) {
+        LimitTarget[] targets = CREATETIERS$OVERSPEED_TARGETS.get();
+        LimitTarget target = targets[index];
+        targets[index] = null;
+        return target;
+    }
+
+    private static int getAllowedRPM(LimitTarget target, int createDefault) {
+        if (target == null) {
+            return createDefault;
+        }
 
         // The limit belongs to the component receiving the conveyed speed.
         // Untiered Create components must never inherit a higher registered tier limit.
-        return TierLimitPolicy.allowedRPM(tier, createDefault, bypassLimit);
+        return TierLimitPolicy.allowedRPM(target.tier(), createDefault, target.bypassLimit());
     }
 }
