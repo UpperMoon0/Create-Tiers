@@ -33,7 +33,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build and unit test both loaders
+      - name: Build both loaders and run unit tests
         run: ./gradlew --parallel :forge-1.20.1:build :neoforge-1.21.1:build
 
       - name: Run NeoForge GameTests
