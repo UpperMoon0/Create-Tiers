@@ -1,30 +1,66 @@
 # Create Tiers
 
-A dynamic, customizable tiered system for Create kinetic components.
+A dynamic, customizable tier system for Create kinetic components.
 
-## About
+## What it does
 
-**Create Tiers** is an extension for the [Create mod](https://www.curseforge.com/minecraft/mc-mods/create) that introduces a flexible tiering system for kinetic components like shafts and cogwheels. It is designed to be lightweight and highly customizable, allowing modpack authors to define their own progression without any external tech-tree dependencies.
+Create Tiers adds tiered shafts, cogwheels, encased variants, and gearboxes with configurable mechanical limits and colors.
 
-This mod was inspired by the [Greate](https://github.com/GreateBeyondTheHorizon/Greate) mod, aiming to provide similar tiered functionality in a standalone package.
+Each tier defines:
 
-## Key Features
+- **Max RPM** — the highest speed that tiered component may receive.
+- **Max SU** — a hard stress-cap for the connected Create kinetic network. If multiple tiered components are present, the lowest Max SU wins.
+- **Shaft and cogwheel colors** — used by the generated models and kinetic rendering.
 
-- **Dynamic Tier Registration**: Define as many tiers as you need! Tiers can be registered via KubeJS or datapacks during the initialization phase.
-- **Customizable Performance**: Each tier can have its own Max RPM and Max Stress Units (SU) limits, allowing for deep progression balancing.
-- **Individually Colored Components**: Customize the color of both shafts and cogwheels independently for each tier, creating a unique visual identity for your modpack's progression.
-- **Automated Resource Generation**: No need to create dozens of models and textures. Blockstates, models, and textures are automatically generated for every registered tier at runtime.
-- **Minimal Dependencies**: Requires only the Create mod, favoring flexibility without complex tech-tree requirements.
+Untiered Create components always keep Create's normal configured maximum RPM. A high-speed tiered network therefore does **not** make vanilla Create shafts, cogs, gearboxes, or other ordinary kinetic components high-RPM-safe.
 
-## Integration
+## Registering tiers
 
-### KubeJS Support
-Create Tiers features native KubeJS integration, making it easy to register tiers directly from your startup scripts:
+Tiers must exist before Minecraft freezes the block/item registries. Register them from **KubeJS `startup_scripts`** or from another mod during initialization.
+
+Runtime/server datapacks cannot create new tier block registry entries and are therefore not a supported tier-registration mechanism.
+
+### KubeJS
 
 ```javascript
-// Example: Register a custom 'elite' tier
-CreateTiers.registerTier('elite', 3, 1024, 4096, 0x00FFBB, 0x55FF55, 'Elite');
+// kubejs/startup_scripts/create_tiers.js
+CreateTiers.registerTier('basic', 1, 256, 1024)
+CreateTiers.registerTier('advanced', 2, 512, 4096, 0xC88A45)
+CreateTiers.registerTier('elite', 3, 1024, 16384, 0x00FFBB, 0x55FF55, 'Elite')
 ```
+
+Batch form:
+
+```javascript
+CreateTiers.registerTiers([
+  {
+    name: 'basic',
+    level: 1,
+    maxRPM: 256,
+    maxSU: 1024,
+    shaftColor: 0xAAAAAA,
+    cogwheelColor: 0x777777,
+    displayName: 'Basic'
+  },
+  {
+    name: 'advanced',
+    level: 2,
+    maxRPM: 512,
+    maxSU: 4096,
+    shaftColor: 0xB87333,
+    displayName: 'Advanced'
+  }
+])
+```
+
+Tier IDs, numeric levels, and generated tier names must be unique. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
+
+`registerCustomTier(namespace, name, ...)` may be used when another integration needs a namespaced lookup ID. Generated Create Tiers component IDs still use `name`, so generated names remain globally unique across namespaces.
+
+## Generated resources
+
+Create Tiers generates models, blockstates, translations, mining tags, and block loot for registered components at runtime. Minecraft 1.20.1 Forge and 1.21.1 NeoForge use their version-correct resource/data-pack layouts.
+
 ## License
 
-This project is licensed under the MIT License
+MIT
