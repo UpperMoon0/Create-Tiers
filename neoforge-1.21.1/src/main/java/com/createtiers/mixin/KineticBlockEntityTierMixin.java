@@ -3,6 +3,7 @@ package com.createtiers.mixin;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -53,6 +54,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
         createtiers$attachedTierId = id;
         createtiers$attachedTier = tier;
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, tier);
         createtiers$rebuildKinetics();
     }
 
@@ -64,6 +66,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
         createtiers$attachedTierId = null;
         createtiers$attachedTier = null;
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, null);
         createtiers$rebuildKinetics();
     }
 
@@ -94,6 +97,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
     private void createtiers$readAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
             boolean clientPacket, CallbackInfo ci) {
         createtiers$loadTier(tag);
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, createtiers$attachedTier);
     }
 
     @Unique
