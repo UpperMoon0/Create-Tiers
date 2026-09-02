@@ -45,29 +45,30 @@ public class DynamicServerPack implements PackResources {
     }
 
     public static void generateResources() {
-        if (resourcesGenerated) {
-            return;
-        }
-        if (TierRegistry.size() == 0) {
-            CreateTiers.LOGGER.debug("TierRegistry is empty - skipping server data generation for now");
+        if (resourcesGenerated || !TierRegistry.isFrozen()) {
             return;
         }
 
-        TAGS.clear();
-        LOOT_TABLES.clear();
-        generateMiningTags();
-        generateLootTables();
-        resourcesGenerated = true;
-        CreateTiers.LOGGER.info("Dynamic server data generated. Tags: {}, Loot Tables: {}", TAGS.size(), LOOT_TABLES.size());
+        synchronized (DynamicServerPack.class) {
+            if (resourcesGenerated || !TierRegistry.isFrozen()) {
+                return;
+            }
+
+            TAGS.clear();
+            LOOT_TABLES.clear();
+            if (TierRegistry.size() > 0) {
+                generateMiningTags();
+                generateLootTables();
+            }
+            resourcesGenerated = true;
+            CreateTiers.LOGGER.info("Dynamic server data generated from {} finalized tiers. Tags: {}, Loot Tables: {}",
+                    TierRegistry.size(), TAGS.size(), LOOT_TABLES.size());
+        }
     }
 
     private static void ensureResourcesGenerated() {
-        if (!resourcesGenerated && TierRegistry.size() > 0) {
-            synchronized (DynamicServerPack.class) {
-                if (!resourcesGenerated && TierRegistry.size() > 0) {
-                    generateResources();
-                }
-            }
+        if (!resourcesGenerated && TierRegistry.isFrozen()) {
+            generateResources();
         }
     }
 
@@ -204,7 +205,6 @@ public class DynamicServerPack implements PackResources {
         if (type != PackType.SERVER_DATA) {
             return null;
         }
-        ensureResourcesGenerated();
 
         String namespace = location.getNamespace();
         String path = location.getPath();
@@ -216,6 +216,8 @@ public class DynamicServerPack implements PackResources {
             packJson.add("pack", packMeta);
             return () -> stream(packJson);
         }
+
+        ensureResourcesGenerated();
 
         if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft")) {
             return null;
