@@ -14,6 +14,10 @@ ENCASING_DISCOVERY = ROOT / "common/src/main/java/com/createtiers/registry/Creat
 FORGE_SERVER_PACK = ROOT / "common/src/main/java/com/createtiers/data/DynamicServerPack.java"
 NEO_SERVER_PACK = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/data/DynamicServerPack.java"
 CREATIVE_TAB = ROOT / "common/src/main/java/com/createtiers/registry/CommonCreativeTab.java"
+TIER_ACCENT_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/SafeBlockEntityRendererTierAccentMixin.java"
+KINETIC_BOARD_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/KineticScrollValueBehaviourTierRangeMixin.java"
+FORGE_CLIENT_COLORS = ROOT / "forge-1.20.1/src/main/java/com/createtiers/client/ClientEventHandler.java"
+NEO_CLIENT_COLORS = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/client/ClientEventHandler.java"
 
 
 class ResourceContractTests(unittest.TestCase):
@@ -48,6 +52,31 @@ class ResourceContractTests(unittest.TestCase):
             self.assertIn("TieredNativeKineticBlock", source)
             self.assertIn('"blockstates/" + baseId.getPath() + ".json"', source)
             self.assertIn('"models/item/" + baseId.getPath() + ".json"', source)
+            self.assertIn("createTieredNativeItemModel", source)
+            self.assertIn('Map.of("Axis", 0)', source)
+            self.assertIn('":block/grayscale/axis"', source)
+
+    def test_native_tier_controls_do_not_get_generic_attached_tier_accent(self):
+        source = TIER_ACCENT_MIXIN.read_text(encoding="utf-8")
+        self.assertIn("AttachedTierVisuals.getAttachedTier(kinetic) == null", source)
+
+    def test_kinetic_value_board_uses_effective_tier_rpm(self):
+        source = KINETIC_BOARD_MIXIN.read_text(encoding="utf-8")
+        self.assertIn("tier.getMaxRPM()", source)
+        self.assertIn("new ValueSettingsBoard(", source)
+
+    def test_native_relay_items_register_shaft_tint_handlers_on_both_targets(self):
+        for path in (FORGE_CLIENT_COLORS, NEO_CLIENT_COLORS):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("TieredNativeKineticBlock nativeBlock", source)
+            for collection in (
+                "CLUTCH_ITEMS",
+                "GEARSHIFT_ITEMS",
+                "CHAIN_DRIVE_ITEMS",
+                "CHAIN_GEARSHIFT_ITEMS",
+                "SPEED_CONTROLLER_ITEMS",
+            ):
+                self.assertIn(collection, source)
 
     def test_creative_tab_exposes_registered_upgrades_without_encased_variant_clutter(self):
         source = CREATIVE_TAB.read_text(encoding="utf-8")

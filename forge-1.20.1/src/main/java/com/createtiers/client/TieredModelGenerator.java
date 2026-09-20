@@ -106,17 +106,56 @@ public class TieredModelGenerator {
             }
 
             if (block.asItem() != Items.AIR) {
-                JsonObject inheritedItemModel = readJsonObject(resourceManager,
-                        Compat.rl(baseId.getNamespace(), "models/item/" + baseId.getPath() + ".json"));
-                if (inheritedItemModel != null) {
+                JsonObject tieredItemModel = createTieredNativeItemModel(baseId, resourceManager);
+                if (tieredItemModel != null) {
                     models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
-                            inheritedItemModel);
+                            tieredItemModel);
                 } else {
-                    models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
-                            createParentModel(baseId.getNamespace() + ":item/" + baseId.getPath()));
+                    JsonObject inheritedItemModel = readJsonObject(resourceManager,
+                            Compat.rl(baseId.getNamespace(), "models/item/" + baseId.getPath() + ".json"));
+                    if (inheritedItemModel != null) {
+                        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
+                                inheritedItemModel);
+                    } else {
+                        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
+                                createParentModel(baseId.getNamespace() + ":item/" + baseId.getPath()));
+                    }
                 }
             }
         }
+    }
+
+    private static JsonObject createTieredNativeItemModel(ResourceLocation baseId,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        String path = baseId.getPath();
+        ResourceLocation sourceModel;
+        Map<String, String> textures = new HashMap<>();
+
+        switch (path) {
+            case "clutch", "gearshift", "encased_chain_drive" -> {
+                sourceModel = Compat.rl("create", "block/" + path + "/item");
+                textures.put("1_0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("1_1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            case "adjustable_chain_gearshift" -> {
+                // Create reuses the encased-chain-drive item model and only swaps its side texture.
+                sourceModel = Compat.rl("create", "block/encased_chain_drive/item");
+                textures.put("side", "create:block/adjustable_chain_gearshift");
+                textures.put("1_0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("1_1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            case "rotation_speed_controller" -> {
+                sourceModel = Compat.rl("create", "block/rotation_speed_controller/item");
+                textures.put("0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("3", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            default -> {
+                return null;
+            }
+        }
+
+        return mutateModel(sourceModel, textures, Map.of("Axis", 0), -1,
+                Collections.emptySet(), resourceManager);
     }
 
     private static JsonObject readJsonObject(net.minecraft.server.packs.resources.ResourceManager resourceManager,
@@ -464,7 +503,9 @@ public class TieredModelGenerator {
             JsonObject model = JsonParser.parseReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))
                     .getAsJsonObject();
 
-            JsonObject texturesObj = new JsonObject();
+            JsonObject texturesObj = model.has("textures")
+                    ? model.getAsJsonObject("textures").deepCopy()
+                    : new JsonObject();
             textures.forEach(texturesObj::addProperty);
             model.add("textures", texturesObj);
 

@@ -1,6 +1,7 @@
 package com.createtiers.client;
 
 import com.createtiers.CreateTiers;
+import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
@@ -170,5 +171,21 @@ public class ClientEventHandler {
             }
             return -1;
         }, encasedCogItems);
+
+        java.util.List<net.minecraft.world.item.Item> nativeRelayItems = new java.util.ArrayList<>();
+        nativeRelayItems.addAll(ModBlocks.CLUTCH_ITEMS);
+        nativeRelayItems.addAll(ModBlocks.GEARSHIFT_ITEMS);
+        nativeRelayItems.addAll(ModBlocks.CHAIN_DRIVE_ITEMS);
+        nativeRelayItems.addAll(ModBlocks.CHAIN_GEARSHIFT_ITEMS);
+        nativeRelayItems.addAll(ModBlocks.SPEED_CONTROLLER_ITEMS);
+
+        event.register((stack, tintIndex) -> {
+            if (tintIndex == 0
+                    && stack.getItem() instanceof BlockItem blockItem
+                    && blockItem.getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
+                return nativeBlock.getTier().getShaftColor();
+            }
+            return -1;
+        }, nativeRelayItems.toArray(new net.minecraft.world.item.Item[0]));
     }
 }

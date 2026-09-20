@@ -42,6 +42,9 @@
 - Preserve attached tiers and source block identity across Create-native block-entity replacement paths, including vanilla shaft-to-belt round trips, steam powered-shaft round trips, and standard shaft/cog encasing/decasing. Belt pulleys persist their exact source block ID so calibrated vanilla shafts do not restore as intrinsic tiered shafts.
 - Treat intrinsic tiered-shaft belt provenance as authoritative tier state instead of mutable calibration, so clearing legacy attached-tier data cannot temporarily untier the pulley or make teardown restore a vanilla shaft.
 - Mirror Create's `axeOrPickaxe()` mining tags for generated cogwheel, gearbox, encased, clutch, gearshift, chain-drive, and speed-controller variants.
+- Keep the generic attached-tier renderer accent off intrinsic native tier blocks, removing the floating square/ring above tiered Rotation Speed Controllers.
+- Make tiered Rotation Speed Controller value boards expose the effective tier Max RPM instead of Create''s hard-coded 256 UI range.
+- Tint the shaft in tiered clutch, gearshift, encased/adjustable chain-drive, and Rotation Speed Controller item models while preserving Create''s original casing textures.
 
 ### Changed
 
@@ -57,6 +60,7 @@
 - Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.
 - Add Forge and NeoForge regression coverage for ordinary attached-tier belt/steam/encasing round trips, intrinsic belt block-entity NBT serialize/recreate/reload, legacy attached-tier belt data, and generated mining-tag parity.
 - Make runtime receipts evidence-backed: every required scenario must be emitted by a successfully completed GameTest in the current run before an exact-head pass receipt can be written.
+- Add native controller UI-range and client resource-contract coverage for intrinsic accent suppression and relay/control item shaft tinting.
 
 
 - Add every registered tier-upgrade output to the Create Tiers creative tab as a calibrated item stack.

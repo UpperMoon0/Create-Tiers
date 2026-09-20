@@ -62,6 +62,9 @@ public final class NativeRelayGameTests {
         if (controller.targetSpeed.getValue() != tier.getMaxRPM()) {
             helper.fail("Native Rotation Speed Controller did not initialize its tier RPM range");
         }
+        if (controller.targetSpeed.createBoard(null, null).maxValue() != tier.getMaxRPM()) {
+            helper.fail("Native Rotation Speed Controller UI did not expose its tier Max RPM");
+        }
 
         assertUpgradeTargetValidation(helper);
         assertTierUpgradeCreativeEntry(helper, tier);

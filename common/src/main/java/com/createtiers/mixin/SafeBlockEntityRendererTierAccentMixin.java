@@ -33,6 +33,13 @@ public abstract class SafeBlockEntityRendererTierAccentMixin {
             return;
         }
 
+        // Native Create Tiers blocks already express their tier through their own
+        // geometry/rotating shaft. The generic accent is only for an attached tier on
+        // an otherwise ordinary Create block.
+        if (AttachedTierVisuals.getAttachedTier(kinetic) == null) {
+            return;
+        }
+
         Color color = AttachedTierVisuals.getRenderedColor(kinetic);
         if (color == null) {
             return;
