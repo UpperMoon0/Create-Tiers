@@ -43,7 +43,7 @@ CreateTiers.registerTierUpgrades([
 ])
 ```
 
-Like `registerTiers`, the batch is atomic: an invalid tier or duplicate item+tier pair rejects the entire batch. Bare tier names such as `advanced` resolve to `createtiers:advanced`; integrations may also use a full namespaced tier ID.
+Like `registerTiers`, the batch is atomic: an invalid tier, invalid target, or duplicate item+tier pair rejects the entire batch. Upgrade targets are validated during startup before anything is committed: the item must exist, be a block item, and be backed by a Create `KineticBlockEntity`. Gauges and native Create Tiers components are rejected because they are not legal upgrade targets. Bare tier names such as `advanced` resolve to `createtiers:advanced`; integrations may also use a full namespaced tier ID.
 
 ### Custom recipes
 
@@ -183,6 +183,8 @@ CreateTiers.registerTiers([
 ```
 
 Batch registration is atomic: if any definition in the batch is invalid or conflicts with another tier, none of that batch is registered. Numeric fields must be whole 32-bit integers; fractional or overflowing values are rejected instead of truncated.
+
+Tier levels also define non-decreasing capability. A higher numeric tier may keep the same `maxRPM` or `maxSU`, but it cannot reduce either limit below the nearest lower registered tier. This invariant is checked across the complete registry even when tiers are registered out of level order or as an unordered batch.
 
 Tier IDs, numeric levels, and generated tier names must be unique. Generated names must also be valid Minecraft resource paths. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
 
