@@ -116,7 +116,7 @@ Upgraded components also inherit the tier's custom colors without replacing Crea
 Jade support is optional. When Jade is installed, Create Tiers adds tier information to Jade's existing Create tooltip instead of replacing Create's own kinetic information. Tiered and upgraded kinetic components show:
 
 - the effective tier display name;
-- whether the tier is **Intrinsic** (a native Create Tiers block) or **Calibrated** (attached to a normal Create block);
+- whether the tier is **Intrinsic** (a native Create Tiers block) or **Upgraded** (attached to a normal Create block);
 - the tier's **Max RPM**;
 - the tier's **Max SU**.
 
