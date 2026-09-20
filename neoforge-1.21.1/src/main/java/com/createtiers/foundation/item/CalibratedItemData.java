@@ -4,6 +4,7 @@ import com.createtiers.api.ITieredBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TierUpgradeRegistry;
+import com.createtiers.api.TieredNativeKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
 import net.minecraft.core.BlockPos;
@@ -73,6 +74,9 @@ public final class CalibratedItemData {
         }
         if (blockItem.getBlock() instanceof GaugeBlock) {
             throw new IllegalArgumentException("Create gauges are observation devices and cannot be tier-upgraded");
+        }
+        if (blockItem.getBlock() instanceof TieredNativeKineticBlock) {
+            throw new IllegalArgumentException("Native Create Tiers relay blocks already have an intrinsic tier");
         }
         if (!(blockItem.getBlock() instanceof EntityBlock entityBlock)) {
             throw new IllegalArgumentException("Tier upgrade target must have a block entity");

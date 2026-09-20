@@ -13,6 +13,7 @@
     "TieredShaftCalibrationMixin",
     "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
+    "SpeedControllerTierRangeMixin",
     "KineticBlockEntityAccessor",
     "KineticEffectHandlerAccessor",
     "KineticNetworkMixin",

@@ -27,14 +27,10 @@ public final class AttachedTierVisuals {
 
     /** Returns an attached tier or the intrinsic tier of a native relay/control block. */
     public static Tier getVisualTier(KineticBlockEntity blockEntity) {
-        Tier attached = getAttachedTier(blockEntity);
-        if (attached != null) {
-            return attached;
-        }
         if (blockEntity.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
             return nativeBlock.getTier();
         }
-        return null;
+        return getAttachedTier(blockEntity);
     }
 
     /**

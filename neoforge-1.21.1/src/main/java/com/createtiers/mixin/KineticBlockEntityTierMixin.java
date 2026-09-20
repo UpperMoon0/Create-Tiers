@@ -30,14 +30,11 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Override
     public Tier getTier() {
-        if (createtiers$attachedTier != null) {
-            return createtiers$attachedTier;
-        }
         KineticBlockEntity self = (KineticBlockEntity) (Object) this;
         if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
             return nativeBlock.getTier();
         }
-        return null;
+        return createtiers$attachedTier;
     }
 
     @Override
@@ -122,6 +119,12 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
     private void createtiers$loadTier(CompoundTag tag) {
         createtiers$attachedTierId = null;
         createtiers$attachedTier = null;
+
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock) {
+            return;
+        }
+
         if (!tag.contains(CREATETIERS$TIER_KEY)) {
             return;
         }
