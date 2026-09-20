@@ -287,7 +287,7 @@ public class DynamicServerPack implements PackResources {
 
         ensureResourcesGenerated();
 
-        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft")) {
+        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft") && !namespace.equals("create")) {
             return null;
         }
 
@@ -314,7 +314,7 @@ public class DynamicServerPack implements PackResources {
         }
         ensureResourcesGenerated();
 
-        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft")) {
+        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft") && !namespace.equals("create")) {
             return;
         }
 
@@ -347,7 +347,7 @@ public class DynamicServerPack implements PackResources {
 
     @Override
     public @NotNull Set<String> getNamespaces(@NotNull PackType type) {
-        return type == PackType.SERVER_DATA ? Set.of(CreateTiers.MOD_ID, "minecraft") : Set.of();
+        return type == PackType.SERVER_DATA ? Set.of(CreateTiers.MOD_ID, "minecraft", "create") : Set.of();
     }
 
     @SuppressWarnings("unchecked")

@@ -113,6 +113,7 @@ class DynamicServerPackTest {
         Set<ResourceLocation> listedCreateTags = new HashSet<>();
         pack.listResources(PackType.SERVER_DATA, "create", "tags", (location, supplier) -> listedCreateTags.add(location));
         assertTrue(listedCreateTags.contains(safeNbtTag));
+        assertTrue(pack.getNamespaces(PackType.SERVER_DATA).contains("create"));
         assertTrue(listedLoot.contains(gearboxLoot));
         assertTrue(listedRecipes.contains(defaultUpgrade));
         assertNull(pack.getResource(PackType.CLIENT_RESOURCES, pickaxeTag));
