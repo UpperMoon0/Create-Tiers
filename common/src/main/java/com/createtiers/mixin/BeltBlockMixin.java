@@ -45,12 +45,15 @@ public abstract class BeltBlockMixin {
                     target = "Lnet/minecraft/world/level/Level;removeBlockEntity(Lnet/minecraft/core/BlockPos;)V"))
     private void createtiers$captureTierBeforeBeltEntityRemoval(Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof IAttachedTierBlockEntity attached && attached.getAttachedTier() != null) {
+        if (blockEntity instanceof IAttachedTierBlockEntity tiered) {
             ResourceLocation sourceBlockId = blockEntity instanceof IReplacementSourceBlockEntity source
                     ? source.getCreateTiersReplacementSourceBlockId()
                     : null;
-            CREATETIERS$REMOVED_PULLEY_SOURCES.get().put(
-                    pos.immutable(), new PulleySource(attached.getAttachedTier(), sourceBlockId));
+            Tier effectiveTier = tiered.getTier();
+            if (effectiveTier != null || sourceBlockId != null) {
+                CREATETIERS$REMOVED_PULLEY_SOURCES.get().put(
+                        pos.immutable(), new PulleySource(effectiveTier, sourceBlockId));
+            }
         }
         level.removeBlockEntity(pos);
     }

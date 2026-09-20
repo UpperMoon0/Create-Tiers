@@ -5,6 +5,7 @@ import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
+import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
 import com.createtiers.foundation.utility.AttachedTierTransfer;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -12,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -46,8 +48,13 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Override
     public void setCreateTiersReplacementSourceBlockId(ResourceLocation id) {
+        if (java.util.Objects.equals(createtiers$replacementSourceBlockId, id)) {
+            return;
+        }
         createtiers$replacementSourceBlockId = id;
-        ((KineticBlockEntity) (Object) this).setChanged();
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        AdjustableKineticTierPolicy.refresh(self, getTier());
+        createtiers$rebuildKinetics();
     }
 
     @Override
@@ -56,7 +63,9 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
             return;
         }
         createtiers$replacementSourceBlockId = null;
-        ((KineticBlockEntity) (Object) this).setChanged();
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        AdjustableKineticTierPolicy.refresh(self, getTier());
+        createtiers$rebuildKinetics();
     }
 
     @Override
@@ -65,7 +74,21 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
             return nativeBlock.getTier();
         }
-        return createtiers$attachedTier;
+        Tier replacementTier = createtiers$getReplacementSourceTier();
+        return replacementTier != null ? replacementTier : createtiers$attachedTier;
+    }
+
+    @Unique
+    private Tier createtiers$getReplacementSourceTier() {
+        if (createtiers$replacementSourceBlockId == null) {
+            return null;
+        }
+        net.minecraft.world.level.block.Block source =
+                BuiltInRegistries.BLOCK.get(createtiers$replacementSourceBlockId);
+        if (!createtiers$replacementSourceBlockId.equals(BuiltInRegistries.BLOCK.getKey(source))) {
+            return null;
+        }
+        return source instanceof TieredShaftBlock shaft ? shaft.getTier() : null;
     }
 
     @Override
@@ -83,6 +106,9 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         KineticBlockEntity self = (KineticBlockEntity) (Object) this;
         if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock) {
             throw new IllegalStateException("Native Create Tiers relay blocks already have an intrinsic tier");
+        }
+        if (createtiers$getReplacementSourceTier() != null) {
+            throw new IllegalStateException("Replacement kinetic inherits an intrinsic tier from its source block");
         }
 
         ResourceLocation id = TierRegistry.getId(tier);

@@ -1,10 +1,12 @@
 package com.createtiers.foundation.utility;
 
 import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -44,9 +46,25 @@ public final class TierCalibration {
      * still use the shaft fallback for applying/changing a tier.
      */
     public static boolean canMutateWithShaft(KineticBlockEntity kinetic, Tier attached, Tier selected) {
+        if (hasIntrinsicReplacementSource(kinetic)) {
+            return false;
+        }
         boolean clearing = selected.equals(attached);
         boolean hasNormalItemForm = kinetic.getBlockState().getBlock().asItem() != Items.AIR;
         return !hasNormalItemForm || clearing;
+    }
+
+    private static boolean hasIntrinsicReplacementSource(KineticBlockEntity kinetic) {
+        if (!(kinetic instanceof IReplacementSourceBlockEntity source)) {
+            return false;
+        }
+        var id = source.getCreateTiersReplacementSourceBlockId();
+        if (id == null) {
+            return false;
+        }
+        var block = BuiltInRegistries.BLOCK.get(id);
+        return id.equals(BuiltInRegistries.BLOCK.getKey(block))
+                && block instanceof TieredShaftBlock;
     }
 
     public static boolean tryCalibrate(UseOnContext context) {

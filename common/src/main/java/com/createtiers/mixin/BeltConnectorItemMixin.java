@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -76,11 +77,15 @@ public abstract class BeltConnectorItemMixin {
         }
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof IAttachedTierBlockEntity attachable) {
-            attachable.setAttachedTier(source.tier());
-        }
         if (blockEntity instanceof IReplacementSourceBlockEntity replacementSource) {
             replacementSource.setCreateTiersReplacementSourceBlockId(source.blockId());
+        }
+
+        Block sourceBlock = BuiltInRegistries.BLOCK.get(source.blockId());
+        boolean intrinsicSource = sourceBlock instanceof TieredShaftBlock
+                && source.blockId().equals(BuiltInRegistries.BLOCK.getKey(sourceBlock));
+        if (!intrinsicSource && blockEntity instanceof IAttachedTierBlockEntity attachable) {
+            attachable.setAttachedTier(source.tier());
         }
     }
 
