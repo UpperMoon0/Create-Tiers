@@ -5,6 +5,7 @@ import com.createtiers.client.AttachedTierVisuals;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.kinetics.KineticDebugger;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
@@ -27,7 +28,8 @@ public abstract class SafeBlockEntityRendererTierAccentMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private void createtiers$renderAttachedTierAccent(BlockEntity blockEntity, float partialTicks, PoseStack poseStack,
             MultiBufferSource bufferSource, int light, int overlay, CallbackInfo ci) {
-        if (KineticDebugger.isActive() || !(blockEntity instanceof KineticBlockEntity kinetic)) {
+        if (KineticDebugger.isActive() || !(blockEntity instanceof KineticBlockEntity kinetic)
+                || kinetic instanceof BeltBlockEntity) {
             return;
         }
 

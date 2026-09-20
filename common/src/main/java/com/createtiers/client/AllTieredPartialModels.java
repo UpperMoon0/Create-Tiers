@@ -14,6 +14,10 @@ public class AllTieredPartialModels {
     public static final PartialModel ATTACHED_TIER_ACCENT =
             PartialModel.of(CreateTiers.asResource("block/tier_accent"));
 
+    /** Create belt pulley wooden body with the shaft removed; tiered shaft is rendered separately. */
+    public static final PartialModel BELT_PULLEY_BODY =
+            PartialModel.of(CreateTiers.asResource("block/belt_pulley_body"));
+
     public static final Map<String, TieredPartials> TIERS = new HashMap<>();
 
     public static class TieredPartials {

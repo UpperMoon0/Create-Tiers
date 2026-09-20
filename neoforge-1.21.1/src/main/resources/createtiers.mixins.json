@@ -22,6 +22,8 @@
     "SteamEnginePlacementHelperMixin"
   ],
   "client": [
+    "AbstractBlockEntityVisualAccessor",
+    "BeltVisualMixin",
     "KineticBlockEntityRendererTierColorMixin",
     "ModelManagerMixin",
     "RotatingInstanceTierColorMixin",
