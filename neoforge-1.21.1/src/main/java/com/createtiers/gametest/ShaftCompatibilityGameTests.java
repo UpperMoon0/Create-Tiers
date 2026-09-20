@@ -8,6 +8,7 @@ import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.decoration.encasing.EncasedBlock;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
@@ -16,8 +17,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -116,6 +119,124 @@ public final class ShaftCompatibilityGameTests {
         }
 
         helper.succeed();
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredShaftTierSurvivesBeltReplacement(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+
+        BlockPos start = new BlockPos(1, 1, 1);
+        BlockPos middle = new BlockPos(1, 1, 3);
+        BlockPos end = new BlockPos(1, 1, 5);
+        for (BlockPos relative : new BlockPos[]{start, middle, end}) {
+            BlockPos absolute = helper.absolutePos(relative);
+            helper.getLevel().setBlock(absolute, shaftState, 3);
+            attachTier(helper, absolute, tier, "Ordinary shaft could not receive the registered runtime tier");
+        }
+
+        BeltConnectorItem.createBelts(helper.getLevel(), helper.absolutePos(start), helper.absolutePos(end));
+
+        for (BlockPos relative : new BlockPos[]{start, middle, end}) {
+            BlockPos absolute = helper.absolutePos(relative);
+            if (!AllBlocks.BELT.has(helper.getLevel().getBlockState(absolute))) {
+                helper.fail("Registered-tier shaft was not converted into a Create belt pulley at " + relative);
+            }
+            assertAttachedTierAt(helper, absolute, tier,
+                    "Create belt replacement silently lost the shaft's attached tier at " + relative);
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredShaftTierSurvivesSteamPoweredShaftRoundTrip(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState engineState = AllBlocks.STEAM_ENGINE.getDefaultState();
+        Direction.Axis engineAxis = SteamEngineBlock.getFacing(engineState).getAxis();
+        Direction.Axis shaftAxis = engineAxis == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
+
+        BlockPos enginePos = helper.absolutePos(new BlockPos(4, 4, 4));
+        BlockPos shaftPos = SteamEngineBlock.getShaftPos(engineState, enginePos);
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, shaftAxis);
+        helper.getLevel().setBlock(shaftPos, shaftState, 3);
+        attachTier(helper, shaftPos, tier, "Ordinary steam input shaft could not receive the registered runtime tier");
+
+        // Exercise Create's real onPlace conversion, which bypasses switchToBlockState.
+        AllBlocks.STEAM_ENGINE.get().onPlace(
+                engineState, helper.getLevel(), enginePos, Blocks.AIR.defaultBlockState(), false);
+
+        BlockState poweredState = helper.getLevel().getBlockState(shaftPos);
+        if (!AllBlocks.POWERED_SHAFT.has(poweredState)) {
+            helper.fail("Steam engine did not convert the ordinary shaft into Create's powered shaft");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Steam shaft -> powered shaft conversion silently lost the attached tier");
+
+        ((PoweredShaftBlock) AllBlocks.POWERED_SHAFT.get())
+                .tick(poweredState, helper.getLevel(), shaftPos, helper.getLevel().random);
+
+        if (!AllBlocks.SHAFT.has(helper.getLevel().getBlockState(shaftPos))) {
+            helper.fail("Orphaned ordinary powered shaft did not revert to Create's shaft");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Powered shaft -> shaft recovery silently lost the attached tier");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredKineticTierSurvivesCreateEncasing(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+
+        BlockPos shaftPos = helper.absolutePos(new BlockPos(1, 1, 7));
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        helper.getLevel().setBlock(shaftPos, shaftState, 3);
+        attachTier(helper, shaftPos, tier, "Ordinary shaft could not receive the registered runtime tier");
+        ((EncasedBlock) AllBlocks.ANDESITE_ENCASED_SHAFT.get()).handleEncasing(
+                shaftState, helper.getLevel(), shaftPos, AllBlocks.ANDESITE_CASING.asStack(),
+                null, InteractionHand.MAIN_HAND, null);
+
+        if (!AllBlocks.ANDESITE_ENCASED_SHAFT.has(helper.getLevel().getBlockState(shaftPos))) {
+            helper.fail("Create shaft encasing did not produce the andesite encased shaft");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Shaft -> encased shaft conversion silently lost the attached tier");
+
+        BlockPos cogPos = helper.absolutePos(new BlockPos(3, 1, 7));
+        BlockState cogState = AllBlocks.COGWHEEL.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        helper.getLevel().setBlock(cogPos, cogState, 3);
+        attachTier(helper, cogPos, tier, "Ordinary cogwheel could not receive the registered runtime tier");
+        ((EncasedBlock) AllBlocks.ANDESITE_ENCASED_COGWHEEL.get()).handleEncasing(
+                cogState, helper.getLevel(), cogPos, AllBlocks.ANDESITE_CASING.asStack(),
+                null, InteractionHand.MAIN_HAND, null);
+
+        if (!AllBlocks.ANDESITE_ENCASED_COGWHEEL.has(helper.getLevel().getBlockState(cogPos))) {
+            helper.fail("Create cogwheel encasing did not produce the andesite encased cogwheel");
+        }
+        assertAttachedTierAt(helper, cogPos, tier,
+                "Cogwheel -> encased cogwheel conversion silently lost the attached tier");
+
+        helper.succeed();
+    }
+
+    private static void attachTier(GameTestHelper helper, BlockPos absolute, Tier tier, String message) {
+        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute);
+        if (!(blockEntity instanceof IAttachedTierBlockEntity attachable)) {
+            helper.fail(message + " (missing attached-tier interface)");
+            return;
+        }
+        attachable.setAttachedTier(tier);
+        GameTestSupport.assertAttachedTier(helper, attachable, tier, message);
+    }
+
+    private static void assertAttachedTierAt(GameTestHelper helper, BlockPos absolute, Tier tier, String message) {
+        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute);
+        if (!(blockEntity instanceof IAttachedTierBlockEntity attachable)) {
+            helper.fail(message + " (replacement block entity has no attached-tier interface)");
+            return;
+        }
+        GameTestSupport.assertAttachedTier(helper, attachable, tier, message);
     }
 
     private static TieredShaftBlock requireTieredShaft(GameTestHelper helper) {

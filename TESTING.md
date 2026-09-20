@@ -75,3 +75,14 @@ the same core and runtime workflows before packaging and publishing.
 The merge rule is simple: Required core verification and Required runtime
 verification must both be green for the exact final PR head. A green result from
 an older commit is not acceptable evidence.
+
+
+### Create-native transformation tier preservation
+
+Runtime GameTests cover ordinary attached tiers across Create transformations that replace block-entity types:
+
+- ordinary shaft -> belt pulley;
+- ordinary shaft -> steam powered shaft -> ordinary shaft;
+- ordinary shaft/cogwheel -> standard Create encased variants.
+
+The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.

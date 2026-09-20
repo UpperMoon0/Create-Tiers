@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -36,9 +37,19 @@ public final class NativeRelayGameTests {
         assertNative(helper, tier, "adjustable_chain_gearshift_gametest_native", new BlockPos(4, 1, 1));
         assertNative(helper, tier, "metal_girder_encased_shaft_gametest_native", new BlockPos(5, 1, 1));
 
+        assertAxeOrPickaxe(helper, "clutch_gametest_native");
+        assertAxeOrPickaxe(helper, "gearshift_gametest_native");
+        assertAxeOrPickaxe(helper, "encased_chain_drive_gametest_native");
+        assertAxeOrPickaxe(helper, "adjustable_chain_gearshift_gametest_native");
+
         Block controllerBlock = BuiltInRegistries.BLOCK.get(
                 ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID,
                         "rotation_speed_controller_gametest_native"));
+        if (!controllerBlock.defaultBlockState().is(BlockTags.MINEABLE_WITH_AXE)
+                || !controllerBlock.defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE)) {
+            helper.fail("Native Rotation Speed Controller does not mirror Create's axeOrPickaxe mining tags");
+        }
+
         SpeedControllerBlockEntity controller = GameTestSupport.placeBlockEntity(
                 helper, new BlockPos(6, 1, 1), controllerBlock.defaultBlockState(), SpeedControllerBlockEntity.class);
         IAttachedTierBlockEntity tieredController = GameTestSupport.requireAttachable(helper, controller);
@@ -53,6 +64,14 @@ public final class NativeRelayGameTests {
         assertUpgradeTargetValidation(helper);
 
         helper.succeed();
+    }
+
+    private static void assertAxeOrPickaxe(GameTestHelper helper, String path) {
+        Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, path));
+        if (!block.defaultBlockState().is(BlockTags.MINEABLE_WITH_AXE)
+                || !block.defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE)) {
+            helper.fail("Native tier block does not mirror Create's axeOrPickaxe mining tags: " + path);
+        }
     }
 
     private static void assertUpgradeTargetValidation(GameTestHelper helper) {

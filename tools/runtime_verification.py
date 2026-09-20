@@ -29,6 +29,10 @@ REQUIRED_SCENARIOS = (
     "native-relay-default-family",
     "tiered-shaft-belt",
     "tiered-shaft-steam-engine",
+    "registered-shaft-belt-tier-preservation",
+    "registered-shaft-steam-tier-preservation",
+    "registered-kinetic-encasing-tier-preservation",
+    "native-axe-or-pickaxe-parity",
 )
 
 
