@@ -142,6 +142,13 @@ final class GameTestSupport {
                 .setValue(BlockStateProperties.AXIS, Direction.Axis.X);
     }
 
+    static void succeed(GameTestHelper helper, String... scenarios) {
+        for (String scenario : scenarios) {
+            System.out.println("CREATE_TIERS_SCENARIO_PASS:" + scenario);
+        }
+        helper.succeed();
+    }
+
     static void assertFloat(GameTestHelper helper, float expected, float actual, String message) {
         if (Math.abs(expected - actual) > 0.0001f) {
             helper.fail(message + " (expected " + expected + ", got " + actual + ")");

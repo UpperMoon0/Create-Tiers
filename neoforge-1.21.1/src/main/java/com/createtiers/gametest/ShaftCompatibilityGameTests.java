@@ -147,7 +147,7 @@ public final class ShaftCompatibilityGameTests {
             helper.fail("Reloaded intrinsic belt restored a vanilla/untiered shaft instead of its source tiered shaft");
         }
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "tiered-shaft-belt");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -190,7 +190,7 @@ public final class ShaftCompatibilityGameTests {
             helper.fail("Orphaned tiered powered shaft reverted to the wrong shaft");
         }
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "tiered-shaft-steam-engine");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -227,7 +227,7 @@ public final class ShaftCompatibilityGameTests {
         assertAttachedTierAt(helper, restoredPos, tier,
                 "Belt pulley -> vanilla shaft restoration silently lost the attached tier");
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "registered-shaft-belt-tier-preservation");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -263,7 +263,7 @@ public final class ShaftCompatibilityGameTests {
         assertAttachedTierAt(helper, shaftPos, tier,
                 "Powered shaft -> shaft recovery silently lost the attached tier");
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "registered-shaft-steam-tier-preservation");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -314,7 +314,7 @@ public final class ShaftCompatibilityGameTests {
         assertAttachedTierAt(helper, cogPos, tier,
                 "Encased cogwheel -> vanilla cogwheel conversion silently lost the attached tier");
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "registered-kinetic-encasing-tier-preservation");
     }
 
     private static void decase(GameTestHelper helper, BlockPos absolute) {

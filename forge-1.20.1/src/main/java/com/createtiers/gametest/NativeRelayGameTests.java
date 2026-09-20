@@ -62,7 +62,7 @@ public final class NativeRelayGameTests {
 
         assertUpgradeTargetValidation(helper);
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "native-relay-default-family", "native-axe-or-pickaxe-parity");
     }
 
     private static void assertAxeOrPickaxe(GameTestHelper helper, String path) {

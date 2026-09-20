@@ -39,7 +39,7 @@ public final class AdjustableComponentGameTests {
         if (Math.abs(controller.targetSpeed.getValue()) > createMax) {
             helper.fail("Cleared Rotation Speed Controller did not restore Create's configured RPM range");
         }
-        helper.succeed();
+        GameTestSupport.succeed(helper, "rotation-speed-controller");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
@@ -61,6 +61,6 @@ public final class AdjustableComponentGameTests {
         if (Math.abs(motor.generatedSpeed.getValue()) > CreativeMotorBlockEntity.MAX_SPEED) {
             helper.fail("Cleared Creative Motor did not restore its vanilla RPM range");
         }
-        helper.succeed();
+        GameTestSupport.succeed(helper, "creative-motor");
     }
 }

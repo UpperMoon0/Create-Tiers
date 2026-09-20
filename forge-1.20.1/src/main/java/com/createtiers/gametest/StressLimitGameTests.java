@@ -25,7 +25,7 @@ public final class StressLimitGameTests {
         KineticNetwork network = GameTestSupport.network(10_000f, lowEntity, highEntity);
         GameTestSupport.assertFloat(helper, GameTestSupport.LOW_TIER.getMaxSU(), network.calculateCapacity(),
                 "Connected network did not clamp capacity to its lowest tier Max SU");
-        helper.succeed();
+        GameTestSupport.succeed(helper, "lowest-tier-max-su");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)

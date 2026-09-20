@@ -53,7 +53,7 @@ public final class CalibrationGameTests {
         GameTestSupport.assertAttachedTier(helper, attachable, tier,
                 "Attached tier was not restored from Create block-entity NBT");
         attachable.clearAttachedTier();
-        helper.succeed();
+        GameTestSupport.succeed(helper, "calibration-apply-clear", "calibration-nbt-persistence");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
@@ -71,7 +71,7 @@ public final class CalibrationGameTests {
         KineticNetwork cleared = GameTestSupport.network(10_000f, kinetic);
         GameTestSupport.assertFloat(helper, 10_000f, cleared.calculateCapacity(),
                 "Cleared calibration leaked into a rebuilt network");
-        helper.succeed();
+        GameTestSupport.succeed(helper, "calibration-network-rebuild");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
@@ -107,7 +107,7 @@ public final class CalibrationGameTests {
             helper.fail("Breaking a calibrated Create kinetic block did not preserve calibration on its item drop");
         }
 
-        helper.succeed();
+        GameTestSupport.succeed(helper, "calibration-recipe-item-roundtrip");
     }
 
 
@@ -130,7 +130,7 @@ public final class CalibrationGameTests {
         }
 
         attachable.clearAttachedTier();
-        helper.succeed();
+        GameTestSupport.succeed(helper, "shaft-cannot-bypass-item-recipe");
     }
 
 }

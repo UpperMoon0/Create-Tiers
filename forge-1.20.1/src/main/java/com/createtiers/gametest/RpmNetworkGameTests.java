@@ -22,7 +22,7 @@ public final class RpmNetworkGameTests {
         }
         GameTestSupport.assertPropagation(helper, new BlockPos(1, 1, 1),
                 GameTestSupport.HIGH_TIER, GameTestSupport.HIGH_TIER, createMax + 1f, true);
-        helper.succeed();
+        GameTestSupport.succeed(helper, "tiered-to-tiered-propagation");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
@@ -30,7 +30,7 @@ public final class RpmNetworkGameTests {
         int createMax = AllConfigs.server().kinetics.maxRotationSpeed.get();
         GameTestSupport.assertPropagation(helper, new BlockPos(1, 1, 1),
                 GameTestSupport.HIGH_TIER, null, createMax + 1f, false);
-        helper.succeed();
+        GameTestSupport.succeed(helper, "high-tier-to-create-receiver");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
@@ -38,6 +38,6 @@ public final class RpmNetworkGameTests {
         GameTestSupport.assertPropagation(helper, new BlockPos(1, 1, 1),
                 GameTestSupport.HIGH_TIER, GameTestSupport.LOW_TIER,
                 GameTestSupport.LOW_TIER.getMaxRPM() + 1f, false);
-        helper.succeed();
+        GameTestSupport.succeed(helper, "overspeed-rejection");
     }
 }
