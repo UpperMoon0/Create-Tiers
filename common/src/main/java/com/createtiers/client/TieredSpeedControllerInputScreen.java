@@ -52,7 +52,7 @@ public final class TieredSpeedControllerInputScreen extends Screen {
         validate();
     }
 
-    private static boolean isPartialSignedInteger(String value) {
+    static boolean isPartialSignedInteger(String value) {
         if (value.isEmpty() || "-".equals(value)) {
             return true;
         }
@@ -68,31 +68,31 @@ public final class TieredSpeedControllerInputScreen extends Screen {
         return true;
     }
 
-    private Integer parsedValue() {
-        if (input == null) {
+    static Integer parseSignedRpm(String text, int maxRpm) {
+        if (text == null || text.isEmpty() || "-".equals(text)) {
             return null;
         }
-        String text = input.getValue();
-        if (text.isEmpty() || "-".equals(text)) {
-            return null;
-        }
+        final int value;
         try {
-            return Integer.parseInt(text);
+            value = Integer.parseInt(text);
         } catch (NumberFormatException ignored) {
             return null;
         }
+        long magnitude = Math.abs((long) value);
+        return value != 0 && magnitude <= Math.max(1, maxRpm) ? value : null;
+    }
+
+    private Integer parsedValue() {
+        return input == null ? null : parseSignedRpm(input.getValue(), maxRpm);
     }
 
     private boolean validate() {
         Integer value = parsedValue();
         if (value == null) {
-            validationMessage = Component.translatable("createtiers.speed_controller.input.invalid");
-            return false;
-        }
-        long magnitude = Math.abs((long) value);
-        if (value == 0 || magnitude > maxRpm) {
-            validationMessage = Component.translatable(
-                    "createtiers.speed_controller.input.range", maxRpm);
+            String text = input == null ? "" : input.getValue();
+            validationMessage = text.isEmpty() || "-".equals(text)
+                    ? Component.translatable("createtiers.speed_controller.input.invalid")
+                    : Component.translatable("createtiers.speed_controller.input.range", maxRpm);
             return false;
         }
         validationMessage = Component.empty();

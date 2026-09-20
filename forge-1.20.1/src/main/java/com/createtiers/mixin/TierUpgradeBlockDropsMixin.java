@@ -2,8 +2,11 @@ package com.createtiers.mixin;
 
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
+import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.foundation.item.TierUpgradeItemData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
@@ -51,7 +54,11 @@ public abstract class TierUpgradeBlockDropsMixin {
 
         for (ItemStack drop : drops) {
             if (drop.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == state.getBlock()) {
-                TierUpgradeItemData.setTier(drop, blockEntity.getType(), tier);
+                var tierId = TierRegistry.getId(tier);
+                var itemId = BuiltInRegistries.ITEM.getKey(drop.getItem());
+                if (tierId != null && TierUpgradeRegistry.isRegistered(itemId, tierId)) {
+                    TierUpgradeItemData.setTier(drop, blockEntity.getType(), tier);
+                }
             }
         }
     }

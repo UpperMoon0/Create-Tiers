@@ -93,7 +93,7 @@ ServerEvents.recipes(event => {
 
 The resulting stack keeps the original Create item identity and stores the selected tier in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that upgraded machine preserves the tier on the matching dropped block item. A later recipe may upgrade that same base item to another registered tier while preserving its other item data.
 
-Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback interaction. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply, change, or clear the tier of a water wheel, press, mixer, motor, or other ordinary block item. Item-backed tier state is controlled exclusively through registered tier-upgrade recipes and preserved item data.
+Tier creation is recipe/item driven only. Itemless Create states such as belt pulleys and powered shafts cannot be upgraded directly and do not accept a reusable tiered-shaft interaction. They may carry an attached tier only while temporarily replacing a source block whose exact item+tier pair was registered, and that source provenance is preserved through the replacement round trip. This prevents an untiered vanilla shaft from becoming a belt or powered shaft and minting a tier without consuming the configured recipe inputs.
 
 This automatically covers Create kinetic families such as:
 
@@ -109,14 +109,13 @@ Attached tiers are stored in the target block entity's NBT and move through norm
 
 Native tiered shafts also participate in Create's shaft-only interactions. They can be used as belt pulleys and as steam-engine shafts. When Create temporarily replaces a tiered shaft with a belt pulley or powered steam-engine shaft, Create Tiers carries the intrinsic tier through that replacement and restores the same tiered shaft when the temporary state is removed, so RPM/SU limits are never bypassed by the conversion.
 
-Upgraded components also inherit the tier's custom colors without replacing Create's casing textures. Create cogwheel blocks, including encased cogwheels, use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to upgraded machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
+Upgraded components also inherit the tier's custom colors. In-world kinetic rendering keeps Create's casing/base materials intact and colors the mechanical parts exposed by Create's renderer. Recipe-produced upgraded **item models** use a general full-item `shaftColor` tint when the block has no specialized tint contract; cogwheels and mixed-material controls such as chain drives and speed controllers keep explicit shaft/cogwheel tint channels so their casings are not recolored. Create Tiers applies the runtime tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to upgraded machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
 
 ### Jade
 
 Jade support is optional. When Jade is installed, Create Tiers adds tier information to Jade's existing Create tooltip instead of replacing Create's own kinetic information. Tiered and upgraded kinetic components show:
 
 - the effective tier display name;
-- whether the tier is **Intrinsic** (a native Create Tiers block) or **Upgraded** (attached to a normal Create block);
 - the tier's **Max RPM**;
 - the tier's **Max SU**.
 

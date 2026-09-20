@@ -11,7 +11,6 @@
     "GirderBlockTieredShaftMixin",
     "KineticBlockEntityTierMixin",
     "TierUpgradeBlockDropsMixin",
-    "TieredShaftUpgradeMixin",
     "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
     "SpeedControllerTierRangeMixin",

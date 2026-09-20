@@ -7,6 +7,7 @@ import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
+import com.createtiers.foundation.utility.AttachedTierAuthorization;
 import com.createtiers.foundation.utility.AttachedTierTransfer;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -114,6 +115,10 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         if (id == null) {
             throw new IllegalArgumentException("Cannot attach an unregistered Create Tiers tier");
         }
+        if (!AttachedTierAuthorization.canCarry(self, tier)) {
+            throw new IllegalArgumentException(
+                    "Tier '" + id + "' is not registered for this Create kinetic or its replacement source");
+        }
         if (id.equals(createtiers$attachedTierId)) {
             return;
         }
@@ -180,8 +185,8 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Inject(method = "read", at = @At("RETURN"))
     private void createtiers$readAttachedTier(CompoundTag tag, boolean clientPacket, CallbackInfo ci) {
-        createtiers$loadTier(tag);
         createtiers$loadReplacementSource(tag);
+        createtiers$loadTier(tag);
         AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
     }
 
@@ -217,7 +222,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
             return;
         }
         Tier tier = TierRegistry.get(id);
-        if (tier != null) {
+        if (tier != null && AttachedTierAuthorization.canCarry(self, tier)) {
             createtiers$attachedTierId = id;
             createtiers$attachedTier = tier;
         }

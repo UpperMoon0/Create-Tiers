@@ -31,7 +31,6 @@
 - Generate pickaxe mining tags and loot for tiered gearboxes.
 - Use Minecraft 1.21.1 data-pack format 48 and the 1.21 singular `tags/block` / `loot_table` resource paths on NeoForge.
 - Show tier RPM/SU tooltips on normal and vertical tiered gearboxes.
-- Show registered encased kinetic variants in the Create Tiers creative tab.
 - Add the documented KubeJS registration overloads and descriptive validation for malformed batch tier definitions.
 - Correct GitHub issue tracker metadata.
 - Make native tiered shafts work as Create belt pulleys and steam-engine shafts while preserving the tier through belt/powered-shaft replacement and restoring the same tiered shaft on teardown (fixes #2).
@@ -52,9 +51,10 @@
 
 ### Changed
 
-- Replace universal reusable-shaft upgrading with registered item+tier variants. Packs can disable the default consumed-shaft recipe and define progression with any KubeJS recipe type; tiered shafts remain a fallback only for in-world kinetics with no normal item form.
+- Replace universal reusable-shaft upgrading with registered item+tier variants. Packs can disable the default consumed-shaft recipe and define progression with any KubeJS recipe type. Itemless Create replacement states can only inherit a tier from registered source provenance; they cannot mint tiers through an in-world interaction.
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
+- Expose every registered tier-upgrade output in the Create Tiers creative tab while keeping generated encased shaft/cogwheel variants out of the tab to avoid duplicate transmission entries.
 - Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
 
 ### Tests
@@ -64,8 +64,5 @@
 - Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.
 - Add Forge and NeoForge regression coverage for ordinary attached-tier belt/steam/encasing round trips, intrinsic belt block-entity NBT serialize/recreate/reload, legacy attached-tier belt data, and generated mining-tag parity.
 - Make runtime receipts evidence-backed: every required scenario must be emitted by a successfully completed GameTest in the current run before an exact-head pass receipt can be written.
-- Add native controller UI-range and client resource-contract coverage for intrinsic accent suppression and relay/control item shaft tinting.
-
-
-- Add every registered tier-upgrade output to the Create Tiers creative tab as a tier-upgraded item stack.
-- Remove generated encased shaft, cogwheel, and large-cogwheel variants from the Create Tiers creative tab.
+- Add executable client/JVM coverage for signed high-RPM controller input and generic baked-item tint insertion/preservation, alongside resource contracts.
+- Add Forge and NeoForge regressions proving itemless belt/powered-shaft states cannot mint tiers and unregistered tier data cannot survive onto item drops.

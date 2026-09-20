@@ -67,11 +67,5 @@ public class TieredKineticStats implements TooltipModifier {
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
 
-        if (block instanceof TieredShaftBlock) {
-            ModLang.translate("tooltip.in_world_tier_upgrade")
-                    .style(ChatFormatting.DARK_GRAY)
-                    .addTo(tooltip);
-        }
-
     }
 }

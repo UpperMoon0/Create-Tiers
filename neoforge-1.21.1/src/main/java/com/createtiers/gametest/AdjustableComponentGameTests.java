@@ -24,6 +24,7 @@ public final class AdjustableComponentGameTests {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         int createMax = AllConfigs.server().kinetics.maxRotationSpeed.get();
 
+        GameTestSupport.ensureUpgradeFor(AllBlocks.ROTATION_SPEED_CONTROLLER.get(), tier);
         SpeedControllerBlockEntity controller = GameTestSupport.placeBlockEntity(
                 helper, new BlockPos(1, 1, 1),
                 AllBlocks.ROTATION_SPEED_CONTROLLER.get().defaultBlockState(),
@@ -46,6 +47,7 @@ public final class AdjustableComponentGameTests {
     public static void creativeMotorUsesTierRangeAndRestoresVanillaRange(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
 
+        GameTestSupport.ensureUpgradeFor(AllBlocks.CREATIVE_MOTOR.get(), tier);
         CreativeMotorBlockEntity motor = GameTestSupport.placeBlockEntity(
                 helper, new BlockPos(1, 1, 1),
                 AllBlocks.CREATIVE_MOTOR.get().defaultBlockState(),

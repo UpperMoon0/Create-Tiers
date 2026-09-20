@@ -72,7 +72,7 @@ public abstract class BeltBlockMixin {
         Block sourceBlock = createtiers$resolveSourceBlock(source.blockId());
         if (sourceBlock == AllBlocks.SHAFT.get()) {
             boolean changed = level.setBlock(pos, requestedState, flags);
-            AttachedTierTransfer.restore(level, pos, source.tier());
+            AttachedTierTransfer.restore(level, pos, source.tier(), source.blockId());
             return changed;
         }
 
@@ -80,15 +80,8 @@ public abstract class BeltBlockMixin {
             return level.setBlock(pos, createtiers$copyShaftState(shaft.defaultBlockState(), requestedState), flags);
         }
 
-        // Backward compatibility for belts created before source identity was persisted.
-        TieredShaftBlock legacyShaft = createtiers$findTieredShaft(source.tier());
-        if (legacyShaft != null) {
-            return level.setBlock(pos,
-                    createtiers$copyShaftState(legacyShaft.defaultBlockState(), requestedState), flags);
-        }
-
         boolean changed = level.setBlock(pos, requestedState, flags);
-        AttachedTierTransfer.restore(level, pos, source.tier());
+        AttachedTierTransfer.restore(level, pos, source.tier(), source.blockId());
         return changed;
     }
 
@@ -119,13 +112,4 @@ public abstract class BeltBlockMixin {
         return replacement;
     }
 
-    @Unique
-    private static TieredShaftBlock createtiers$findTieredShaft(Tier tier) {
-        for (Block block : PlatformHelper.get().getShafts()) {
-            if (block instanceof TieredShaftBlock shaft && shaft.getTier().equals(tier)) {
-                return shaft;
-            }
-        }
-        return null;
-    }
 }

@@ -52,6 +52,11 @@ public final class TierUpgradeItemData {
         if (id == null) {
             throw new IllegalArgumentException("Cannot put an unregistered Create Tiers tier on an item");
         }
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (!TierUpgradeRegistry.isRegistered(itemId, id)) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade is not registered for item '" + itemId + "' and tier '" + id + "'");
+        }
 
         CustomData existing = stack.get(DataComponents.BLOCK_ENTITY_DATA);
         CompoundTag data = existing == null ? new CompoundTag() : existing.copyTag();
@@ -65,7 +70,11 @@ public final class TierUpgradeItemData {
             return null;
         }
         ResourceLocation id = ResourceLocation.tryParse(data.copyTag().getString(TIER_KEY));
-        return id == null ? null : TierRegistry.get(id);
+        if (id == null) {
+            return null;
+        }
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return TierUpgradeRegistry.isRegistered(itemId, id) ? TierRegistry.get(id) : null;
     }
 
     private static BlockEntityType<?> requireKineticType(ItemStack stack) {

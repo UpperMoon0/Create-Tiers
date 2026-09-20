@@ -33,14 +33,14 @@ public final class TierUpgradeTintedItemModel extends BakedModelWrapper<BakedMod
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource random) {
-        return tint(originalModel.getQuads(state, side, random));
+        return tintQuads(mode, originalModel.getQuads(state, side, random));
     }
 
     @NotNull
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
             @NotNull RandomSource random, @NotNull ModelData data, @Nullable RenderType renderType) {
-        return tint(originalModel.getQuads(state, side, random, data, renderType));
+        return tintQuads(mode, originalModel.getQuads(state, side, random, data, renderType));
     }
 
     @Override
@@ -69,14 +69,16 @@ public final class TierUpgradeTintedItemModel extends BakedModelWrapper<BakedMod
         return new TierUpgradeTintedItemModel(model, mode);
     }
 
-    private List<BakedQuad> tint(List<BakedQuad> quads) {
+    static List<BakedQuad> tintQuads(TierUpgradeItemTintPolicy.Mode mode, List<BakedQuad> quads) {
         List<BakedQuad> result = new ArrayList<>(quads.size());
         for (BakedQuad quad : quads) {
             if (quad.isTinted()) {
                 result.add(quad);
                 continue;
             }
-            int tintIndex = TierUpgradeItemTintPolicy.tintIndex(mode, quad.getSprite().contents().name());
+            int tintIndex = mode == TierUpgradeItemTintPolicy.Mode.FULL
+                    ? 0
+                    : TierUpgradeItemTintPolicy.tintIndex(mode, quad.getSprite().contents().name());
             if (tintIndex < 0) {
                 result.add(quad);
                 continue;

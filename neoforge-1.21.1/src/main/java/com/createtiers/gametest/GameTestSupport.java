@@ -56,6 +56,22 @@ final class GameTestSupport {
         return tier;
     }
 
+    static void ensureUpgradeFor(net.minecraft.world.level.block.Block block, Tier tier) {
+        ResourceLocation tierId = TierRegistry.getId(tier);
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(block.asItem());
+        if (tierId == null) {
+            throw new IllegalStateException("Test tier is not registered: " + tier);
+        }
+        if (!TierUpgradeRegistry.isRegistered(itemId, tierId)) {
+            TierUpgradeRegistry.unfreeze();
+            try {
+                TierUpgradeRegistry.register(itemId, tierId, false);
+            } finally {
+                TierUpgradeRegistry.freeze();
+            }
+        }
+    }
+
     static IAttachedTierBlockEntity requireAttachable(GameTestHelper helper, KineticBlockEntity kinetic) {
         if (kinetic instanceof IAttachedTierBlockEntity attachable) {
             return attachable;

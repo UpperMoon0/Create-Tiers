@@ -8,7 +8,6 @@ import com.createtiers.api.TierRegistry;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
-import com.createtiers.foundation.utility.InWorldTierUpgrade;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
@@ -90,9 +89,8 @@ public final class ShaftCompatibilityGameTests {
                     || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
                 helper.fail("Belt pulley at " + pos + " did not persist its exact intrinsic source shaft id");
             }
-            if (!(blockEntity instanceof KineticBlockEntity kinetic)
-                    || InWorldTierUpgrade.canApplyWithShaft(kinetic, attached.getAttachedTier(), tier)) {
-                helper.fail("Intrinsic shaft belt pulley can still be changed by the in-world tier-upgrade fallback");
+            if (!(blockEntity instanceof KineticBlockEntity)) {
+                helper.fail("Intrinsic shaft belt pulley lost its kinetic block entity");
             }
         }
 
@@ -126,10 +124,8 @@ public final class ShaftCompatibilityGameTests {
             if (!tier.equals(attachedReloaded.getTier())) {
                 helper.fail("Reloaded belt no longer derives its effective tier from intrinsic source provenance");
             }
-            if (!(reloaded instanceof KineticBlockEntity kineticReloaded)
-                    || InWorldTierUpgrade.canApplyWithShaft(
-                            kineticReloaded, attachedReloaded.getAttachedTier(), tier)) {
-                helper.fail("Legacy reloaded intrinsic belt can still clear its tier through the in-world tier-upgrade fallback");
+            if (!(reloaded instanceof KineticBlockEntity)) {
+                helper.fail("Reloaded intrinsic belt lost its kinetic block entity");
             }
 
             // Even a direct legacy-state clear must not make provenance-derived tier state disappear.
@@ -190,6 +186,90 @@ public final class ShaftCompatibilityGameTests {
         }
 
         GameTestSupport.succeed(helper, "tiered-shaft-steam-engine");
+    }
+
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void itemlessBeltCannotMintRegisteredTier(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos start = new BlockPos(1, 1, 1);
+        BlockPos end = new BlockPos(1, 1, 5);
+        helper.getLevel().setBlock(helper.absolutePos(start), shaftState, 3);
+        helper.getLevel().setBlock(helper.absolutePos(end), shaftState, 3);
+
+        BeltConnectorItem.createBelts(helper.getLevel(), helper.absolutePos(start), helper.absolutePos(end));
+        BlockPos beltPos = helper.absolutePos(start);
+        BlockEntity beltEntity = helper.getLevel().getBlockEntity(beltPos);
+        if (!(beltEntity instanceof KineticBlockEntity kinetic)
+                || !(beltEntity instanceof IAttachedTierBlockEntity attachable)) {
+            helper.fail("Vanilla shaft belt endpoint did not become an attachable kinetic block entity");
+            return;
+        }
+
+        try {
+            attachable.setAttachedTier(tier);
+            helper.fail("Itemless belt accepted a tier without a registered source item+tier pair");
+        } catch (IllegalArgumentException expected) {
+            // Expected: itemless states may only inherit an authorized tier from source provenance.
+        }
+
+        helper.getLevel().destroyBlock(beltPos, false);
+        BlockPos restoredPos = helper.absolutePos(end);
+        BlockState restored = helper.getLevel().getBlockState(restoredPos);
+        if (!AllBlocks.SHAFT.has(restored) || restored.getBlock() instanceof TieredShaftBlock) {
+            helper.fail("Untiered vanilla belt teardown minted an intrinsic tiered shaft");
+        }
+        BlockEntity restoredEntity = helper.getLevel().getBlockEntity(restoredPos);
+        if (restoredEntity instanceof IAttachedTierBlockEntity restoredTier && restoredTier.getTier() != null) {
+            helper.fail("Untiered vanilla belt teardown restored an attached tier");
+        }
+
+        GameTestSupport.succeed(helper, "itemless-belt-cannot-mint-tier");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void itemlessPoweredShaftCannotMintRegisteredTier(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState engineState = AllBlocks.STEAM_ENGINE.getDefaultState();
+        Direction.Axis engineAxis = SteamEngineBlock.getFacing(engineState).getAxis();
+        Direction.Axis shaftAxis = engineAxis == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
+        BlockPos enginePos = helper.absolutePos(new BlockPos(4, 4, 4));
+        BlockPos shaftPos = SteamEngineBlock.getShaftPos(engineState, enginePos);
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, shaftAxis);
+        helper.getLevel().setBlock(shaftPos, shaftState, 3);
+
+        AllBlocks.STEAM_ENGINE.get().onPlace(
+                engineState, helper.getLevel(), enginePos, Blocks.AIR.defaultBlockState(), false);
+        BlockState poweredState = helper.getLevel().getBlockState(shaftPos);
+        if (!AllBlocks.POWERED_SHAFT.has(poweredState)) {
+            helper.fail("Steam engine did not create the vanilla itemless powered shaft");
+        }
+
+        BlockEntity poweredEntity = helper.getLevel().getBlockEntity(shaftPos);
+        if (!(poweredEntity instanceof IAttachedTierBlockEntity attachable)) {
+            helper.fail("Powered shaft did not expose attached-tier runtime state");
+            return;
+        }
+        try {
+            attachable.setAttachedTier(tier);
+            helper.fail("Itemless powered shaft accepted a tier without registered source provenance");
+        } catch (IllegalArgumentException expected) {
+            // Expected.
+        }
+
+        ((PoweredShaftBlock) AllBlocks.POWERED_SHAFT.get())
+                .tick(poweredState, helper.getLevel(), shaftPos, helper.getLevel().random);
+        BlockState restored = helper.getLevel().getBlockState(shaftPos);
+        if (!AllBlocks.SHAFT.has(restored) || restored.getBlock() instanceof TieredShaftBlock) {
+            helper.fail("Untiered powered shaft recovery minted an intrinsic tiered shaft");
+        }
+        BlockEntity restoredEntity = helper.getLevel().getBlockEntity(shaftPos);
+        if (restoredEntity instanceof IAttachedTierBlockEntity restoredTier && restoredTier.getTier() != null) {
+            helper.fail("Untiered powered shaft recovery restored an attached tier");
+        }
+
+        GameTestSupport.succeed(helper, "itemless-powered-shaft-cannot-mint-tier");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -336,6 +416,7 @@ public final class ShaftCompatibilityGameTests {
             helper.fail(message + " (missing attached-tier interface)");
             return;
         }
+        GameTestSupport.ensureUpgradeFor(blockEntity.getBlockState().getBlock(), tier);
         attachable.setAttachedTier(tier);
         GameTestSupport.assertAttachedTier(helper, attachable, tier, message);
     }

@@ -4,7 +4,6 @@ import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.foundation.item.TierUpgradeItemData;
-import com.createtiers.foundation.utility.InWorldTierUpgrade;
 import com.createtiers.recipe.TierUpgradeRecipe;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
@@ -112,26 +111,43 @@ public final class TierUpgradeGameTests {
     }
 
 
+
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
-    public static void itemBackedTierCannotBypassRecipe(GameTestHelper helper) {
+    public static void unregisteredTierDataCannotBecomePersistentUpgrade(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
-        KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, new BlockPos(1, 1, 1));
+        ItemStack forged = AllBlocks.MILLSTONE.asStack();
+
+        try {
+            TierUpgradeItemData.setTier(forged, tier);
+            helper.fail("Unregistered item+tier pair accepted persistent tier item data");
+        } catch (IllegalArgumentException expected) {
+            // Expected: only registered item+tier variants may exist as upgraded items.
+        }
+
+        BlockPos relative = new BlockPos(1, 1, 1);
+        KineticBlockEntity kinetic = GameTestSupport.placeBlockEntity(
+                helper, relative, AllBlocks.MILLSTONE.getDefaultState(), KineticBlockEntity.class);
         IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
 
-        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, null, tier)) {
-            helper.fail("Item-backed Create kinetic accepted free tier application through the shaft fallback");
+        CompoundTag forgedNbt = kinetic.saveWithFullMetadata();
+        forgedNbt.putString(GameTestSupport.ATTACHED_TIER_NBT_KEY, GameTestSupport.ATTACHMENT_TIER_ID.toString());
+        kinetic.load(forgedNbt);
+        if (attachable.getAttachedTier() != null || attachable.getTier() != null) {
+            helper.fail("Unregistered attached tier was accepted from block-entity NBT");
         }
 
-        attachable.setAttachedTier(tier);
-        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, tier, tier)) {
-            helper.fail("Item-backed Create kinetic allowed a tiered shaft to clear its recipe-produced tier");
-        }
-        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, tier, GameTestSupport.HIGH_TIER)) {
-            helper.fail("Item-backed Create kinetic could change tiers through the shaft fallback");
+        BlockPos absolute = helper.absolutePos(relative);
+        ItemStack drop = Block.getDrops(kinetic.getBlockState(), helper.getLevel(), absolute, kinetic)
+                .stream()
+                .filter(stack -> stack.is(AllBlocks.MILLSTONE.get().asItem()))
+                .findFirst()
+                .orElse(ItemStack.EMPTY);
+        if (!drop.isEmpty() && TierUpgradeItemData.getTier(drop) != null) {
+            helper.fail("Unregistered attached tier persisted onto an item drop");
         }
 
-        attachable.clearAttachedTier();
-        GameTestSupport.succeed(helper, "shaft-cannot-bypass-item-recipe");
+        GameTestSupport.succeed(helper, "unregistered-tier-data-rejected");
     }
+
 
 }

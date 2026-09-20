@@ -99,6 +99,10 @@ tiered shaft identity.
 
 The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.
 
+Progression-bypass GameTests start from **untiered** vanilla shafts and verify that neither a belt pulley nor a powered shaft can acquire a tier merely because the state has no item form. Teardown/recovery must return an untiered vanilla shaft. A separate forged-NBT/drop regression verifies that an item+tier pair absent from `TierUpgradeRegistry` is rejected on item data, block-entity load, and matching drops.
+
+Client-side JVM tests execute the numeric Rotation Speed Controller input validation directly at positive/negative tier limits and invalid values. Loader-specific model tests transform real `BakedQuad` instances through `TierUpgradeTintedItemModel`, asserting that generic full-item tinting inserts channel 0 while pre-existing selective tint channels are preserved.
+
 
 ### Creative-tab upgrade entries
 
