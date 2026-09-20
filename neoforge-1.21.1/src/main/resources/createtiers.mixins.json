@@ -8,6 +8,7 @@
     "RotationPropagatorMixin",
     "KineticBlockEntityTierMixin",
     "CalibratedBlockDropsMixin",
+    "TieredShaftCalibrationMixin",
     "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
     "KineticBlockEntityAccessor",

@@ -38,6 +38,8 @@ The `input` item is automatically included in the shapeless crafting recipe; `in
 
 The crafted stack keeps the original Create item identity and stores the calibration in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that calibrated machine preserves the tier on the matching dropped block item. Recalibrating an already calibrated item through another recipe replaces only its tier while preserving its other item data.
 
+Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback calibration tool. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply or change the tier of a water wheel, press, mixer, motor, or other ordinary block item, so it cannot bypass the pack-defined recipe cost. Using the matching tiered shaft may still clear an existing calibration.
+
 This automatically covers Create kinetic families such as:
 
 - transmission and control: clutches, gearshifts, encased chain drives, adjustable chain gearshifts, belts, chain conveyors, gantry shafts, sequenced gearshifts, flywheels, and rotation speed controllers;

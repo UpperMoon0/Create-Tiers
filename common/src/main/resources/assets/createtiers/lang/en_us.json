@@ -11,5 +11,8 @@
   "createtiers.jade.max_su": "Max SU: %s SU",
   "config.jade.plugin_createtiers": "Create Tiers",
   "config.jade.plugin_createtiers.tier_info": "Tier Information",
-  "createtiers.tooltip.calibrated_tier": "Calibrated Tier: %s"
+  "createtiers.tooltip.calibrated_tier": "Calibrated Tier: %s",
+  "createtiers.tooltip.tier_calibration_fallback": "Sneak-use to calibrate Create kinetics with no normal item form",
+  "createtiers.message.tier_attached_fallback": "In-world kinetic tier set to %s",
+  "createtiers.message.tier_cleared": "Kinetic tier cleared; vanilla Create limits restored"
 }

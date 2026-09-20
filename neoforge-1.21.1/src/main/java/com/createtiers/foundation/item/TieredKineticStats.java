@@ -64,5 +64,11 @@ public class TieredKineticStats implements TooltipModifier {
                 .style(ChatFormatting.AQUA)
                 .addTo(tooltip);
 
+        if (block instanceof TieredShaftBlock) {
+            ModLang.translate("tooltip.tier_calibration_fallback")
+                    .style(ChatFormatting.DARK_GRAY)
+                    .addTo(tooltip);
+        }
+
     }
 }

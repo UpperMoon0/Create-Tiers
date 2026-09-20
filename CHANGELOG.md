@@ -32,7 +32,7 @@
 
 ### Changed
 
-- Replace the reusable tiered-shaft calibration key with recipe-defined upgrade costs; high-value generators and machines no longer receive an effectively free tier upgrade from owning one shaft.
+- Replace universal reusable-shaft calibration with recipe-defined upgrade costs for normal item-backed machines; high-value generators and machines can no longer receive an effectively free tier upgrade from owning one shaft. Tiered shafts remain a fallback only for in-world kinetics with no normal item form.
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
 - Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
