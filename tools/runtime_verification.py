@@ -1,10 +1,11 @@
-"""Small runtime verification harness for Create Tiers."""
+"""Runtime verification harness for Create Tiers."""
 from __future__ import annotations
 
 import argparse
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -34,6 +35,9 @@ REQUIRED_SCENARIOS = (
     "registered-kinetic-encasing-tier-preservation",
     "native-axe-or-pickaxe-parity",
 )
+
+SCENARIO_MARKER = "CREATE_TIERS_SCENARIO_PASS:"
+SCENARIO_PATTERN = re.compile(r"CREATE_TIERS_SCENARIO_PASS:([a-z0-9-]+)")
 
 
 def target_config(target: str) -> dict[str, object]:
@@ -66,9 +70,19 @@ def gradle_command(task: str) -> list[str]:
     return ["bash", "./gradlew", task, "--stacktrace", "--no-daemon"]
 
 
+def validate_scenario_evidence(observed: list[str] | set[str] | tuple[str, ...]) -> list[str]:
+    observed_set = set(observed)
+    required_set = set(REQUIRED_SCENARIOS)
+    missing = sorted(required_set - observed_set)
+    extra = sorted(observed_set - required_set)
+    if missing or extra:
+        raise ValueError(
+            f"runtime scenario evidence mismatch: missing={missing}, extra={extra}"
+        )
+    return [scenario for scenario in REQUIRED_SCENARIOS if scenario in observed_set]
+
+
 def run_target(target: str, expected_head: str | None = None) -> int:
-    # Keep diagnostic streaming from turning a successful runtime test into a
-    # Windows code-page failure when mods log Unicode characters.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
 
@@ -85,6 +99,7 @@ def run_target(target: str, expected_head: str | None = None) -> int:
     result_path = evidence / "result.json"
     command = gradle_command(str(config["gradle_task"]))
     started = time.monotonic()
+    observed_scenarios: set[str] = set()
 
     with process_log.open("w", encoding="utf-8", errors="replace") as log:
         log.write("$ " + " ".join(command) + "\n")
@@ -102,37 +117,100 @@ def run_target(target: str, expected_head: str | None = None) -> int:
         for line in process.stdout:
             sys.stdout.write(line)
             log.write(line)
-        return_code = process.wait()
+            match = SCENARIO_PATTERN.search(line)
+            if match:
+                observed_scenarios.add(match.group(1))
+        process_return_code = process.wait()
+
+    verification_error: str | None = None
+    effective_return_code = process_return_code
+    observed_ordered = [
+        scenario for scenario in REQUIRED_SCENARIOS if scenario in observed_scenarios
+    ]
+    missing_scenarios = sorted(set(REQUIRED_SCENARIOS) - observed_scenarios)
+    extra_scenarios = sorted(observed_scenarios - set(REQUIRED_SCENARIOS))
+
+    if process_return_code == 0:
+        try:
+            observed_ordered = validate_scenario_evidence(observed_scenarios)
+        except ValueError as exc:
+            verification_error = str(exc)
+            effective_return_code = 2
+            print(verification_error, file=sys.stderr)
 
     result = {
         "target": target,
         "task": config["gradle_task"],
         "required_scenarios": list(REQUIRED_SCENARIOS),
+        "observed_scenarios": observed_ordered,
+        "missing_scenarios": missing_scenarios,
+        "extra_scenarios": extra_scenarios,
         "commit": actual_head,
         "dirty": dirty,
         "elapsed_seconds": round(time.monotonic() - started, 3),
-        "passed": return_code == 0,
-        "return_code": return_code,
+        "passed": effective_return_code == 0,
+        "process_return_code": process_return_code,
+        "return_code": effective_return_code,
+        "verification_error": verification_error,
     }
-    result_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return return_code
+    result_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return effective_return_code
 
 
-def receipt_payload(target: str, head: str) -> dict[str, object]:
+def receipt_payload(target: str, head: str, executed_scenarios: list[str] | None = None) -> dict[str, object]:
     config = target_config(target)
+    executed = list(REQUIRED_SCENARIOS) if executed_scenarios is None else list(executed_scenarios)
     return {
         "target": target,
         "head": head,
         "gradle_task": config["gradle_task"],
         "required_scenarios": list(REQUIRED_SCENARIOS),
+        "executed_scenarios": executed,
     }
 
 
-def write_receipt(directory: Path, target: str, head: str) -> Path:
+def load_runtime_evidence(
+    target: str,
+    head: str,
+    evidence_root: Path = Path("build/runtime-evidence"),
+) -> list[str]:
+    result_path = evidence_root / target / "result.json"
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"missing or invalid runtime evidence {result_path}") from exc
+
+    if payload.get("target") != target:
+        raise ValueError(
+            f"runtime evidence target mismatch: expected {target}, got {payload.get('target')}"
+        )
+    if payload.get("commit") != head:
+        raise ValueError(
+            f"runtime evidence head mismatch: expected {head}, got {payload.get('commit')}"
+        )
+    if payload.get("passed") is not True or payload.get("return_code") != 0:
+        raise ValueError(f"runtime evidence is not a passing run: {result_path}")
+
+    observed = payload.get("observed_scenarios")
+    if not isinstance(observed, list) or not all(isinstance(item, str) for item in observed):
+        raise ValueError(f"runtime evidence has invalid observed_scenarios: {result_path}")
+    return validate_scenario_evidence(observed)
+
+
+def write_receipt(
+    directory: Path,
+    target: str,
+    head: str,
+    evidence_root: Path = Path("build/runtime-evidence"),
+) -> Path:
+    executed = load_runtime_evidence(target, head, evidence_root)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"{target}.pass"
     path.write_text(
-        json.dumps(receipt_payload(target, head), sort_keys=True) + "\n",
+        json.dumps(receipt_payload(target, head, executed), sort_keys=True) + "\n",
         encoding="utf-8",
     )
     return path
@@ -152,7 +230,7 @@ def verify_receipts(directory: Path, head: str) -> None:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise ValueError(f"invalid receipt {path}") from exc
-        expected = receipt_payload(target, head)
+        expected = receipt_payload(target, head, list(REQUIRED_SCENARIOS))
         if payload != expected:
             raise ValueError(
                 f"stale or malformed receipt {path}: expected {expected}, got {payload}"
@@ -186,7 +264,11 @@ def main() -> int:
         target = os.environ.get("CREATE_TIERS_TARGET")
         if not target:
             parser.error("--write-receipt requires CREATE_TIERS_TARGET")
-        write_receipt(args.write_receipt, target, args.head)
+        try:
+            write_receipt(args.write_receipt, target, args.head)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         return 0
     if args.verify_receipts:
         if not args.head:
