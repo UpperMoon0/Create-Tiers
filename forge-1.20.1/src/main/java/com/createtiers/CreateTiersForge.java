@@ -2,6 +2,7 @@ package com.createtiers;
 
 import com.createtiers.registry.ModBlocks;
 import com.createtiers.registry.ModCreativeTabs;
+import com.createtiers.registry.ModRecipes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -21,6 +22,7 @@ public class CreateTiersForge {
 
         ModCreativeTabs.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModRecipes.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
 

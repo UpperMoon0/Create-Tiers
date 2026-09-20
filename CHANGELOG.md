@@ -5,7 +5,8 @@
 ### Added
 
 - Support tier calibration on every Create `KineticBlockEntity`-backed component across Forge 1.20.1 and NeoForge 1.21.1 without cloning upstream machine classes.
-- Sneak-use a tiered shaft to apply its tier to an ordinary Create kinetic component; use the same tier again to clear it. The shaft is reusable.
+- Add data-driven `createtiers:calibration` crafting recipes that output the original Create block item carrying the selected tier, so packs can price each machine/tier upgrade appropriately.
+- Preserve calibrated tier data through vanilla item placement and matching block drops on both supported loaders.
 - Persist attached tiers in block-entity NBT and rebuild the kinetic connection when calibration changes.
 - Apply attached-tier custom colors to ordinary Create kinetics: dedicated cogwheels use `cogwheelColor`, other rotating/mechanical parts use `shaftColor`, and specialized machines receive a subtle tier-colored accent when their renderer has no suitable tintable part.
 - Keep attached-tier visuals consistent across Flywheel and fallback block-entity rendering while preserving Create's overstress and kinetic-debugger feedback.
@@ -31,6 +32,7 @@
 
 ### Changed
 
+- Replace the reusable tiered-shaft calibration key with recipe-defined upgrade costs; high-value generators and machines no longer receive an effectively free tier upgrade from owning one shaft.
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
 - Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
@@ -38,5 +40,5 @@
 ### Tests
 
 - Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
-- Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, adjustable kinetic components, and native tiered-shaft belt/steam-engine interoperability.
+- Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, calibrated recipe item placement/drop round-tripping, adjustable kinetic components, and native tiered-shaft belt/steam-engine interoperability.
 - Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.

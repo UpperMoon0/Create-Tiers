@@ -2,6 +2,7 @@ package com.createtiers;
 
 import com.createtiers.registry.ModBlocks;
 import com.createtiers.registry.ModCreativeTabs;
+import com.createtiers.registry.ModRecipes;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -18,6 +19,7 @@ public class CreateTiersNeoForge {
 
         ModCreativeTabs.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModRecipes.register(modEventBus);
 
         CreateTiers.LOGGER.info("Create Tiers (NeoForge 1.21.1) initialized");
     }

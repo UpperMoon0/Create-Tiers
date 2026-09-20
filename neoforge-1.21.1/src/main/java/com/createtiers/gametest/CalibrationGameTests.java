@@ -3,12 +3,21 @@ package com.createtiers.gametest;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
+import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.recipe.CalibrationRecipe;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -63,4 +72,41 @@ public final class CalibrationGameTests {
                 "Cleared calibration leaked into a rebuilt network");
         helper.succeed();
     }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
+    public static void calibrationRecipeItemRoundTrip(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        CalibrationRecipe recipe = new CalibrationRecipe(
+                GameTestSupport.ATTACHMENT_TIER_ID,
+                BuiltInRegistries.ITEM.getKey(AllBlocks.SHAFT.get().asItem()),
+                java.util.List.of(Ingredient.of(Items.IRON_INGOT)));
+
+        ItemStack calibrated = recipe.getResultItem(helper.getLevel().registryAccess()).copy();
+        if (!tier.equals(CalibratedItemData.getTier(calibrated))) {
+            helper.fail("Calibration recipe preview did not output the base Create item carrying its tier");
+        }
+
+        BlockPos relative = new BlockPos(1, 1, 1);
+        KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, relative);
+        BlockPos absolute = helper.absolutePos(relative);
+        if (!BlockItem.updateCustomBlockEntityTag(helper.getLevel(), null, absolute, calibrated)) {
+            helper.fail("Vanilla BlockItem placement data did not apply calibration to the placed kinetic block entity");
+        }
+
+        IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
+        GameTestSupport.assertAttachedTier(helper, attachable, tier,
+                "Recipe-produced calibrated item did not restore its tier on placement");
+
+        ItemStack preservedDrop = Block.getDrops(kinetic.getBlockState(), helper.getLevel(), absolute, kinetic)
+                .stream()
+                .filter(stack -> stack.is(AllBlocks.SHAFT.get().asItem()))
+                .findFirst()
+                .orElse(ItemStack.EMPTY);
+        if (preservedDrop.isEmpty() || !tier.equals(CalibratedItemData.getTier(preservedDrop))) {
+            helper.fail("Breaking a calibrated Create kinetic block did not preserve calibration on its item drop");
+        }
+
+        helper.succeed();
+    }
+
 }

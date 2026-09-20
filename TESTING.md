@@ -24,7 +24,8 @@ infrastructure.
 Both forge-1.20.1 and neoforge-1.21.1 must cover tiered-to-tiered propagation,
 high-tier to ordinary Create receivers, overspeed rejection, lowest-tier Max SU,
 calibration apply/clear and NBT persistence, rebuilt-network behavior after
-calibration, Rotation Speed Controller range, Creative Motor range, tiered-shaft belt creation/teardown, and tiered-shaft steam-engine powered-shaft conversion/recovery.
+calibration, recipe-produced calibrated item data surviving placement and drops,
+Rotation Speed Controller range, Creative Motor range, tiered-shaft belt creation/teardown, and tiered-shaft steam-engine powered-shaft conversion/recovery.
 
 tools/runtime_verification.py owns the two-target CI matrix and the scenario list
 written into exact-head .pass receipts. Missing, extra, malformed, or stale

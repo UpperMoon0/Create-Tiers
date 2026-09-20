@@ -18,7 +18,25 @@ Untiered Create components always keep Create's normal configured maximum RPM. A
 
 Create's kinetic system is much broader than shafts and cogwheels. Create Tiers therefore supports every current `KineticBlockEntity`-backed Create component generically instead of copying dozens of upstream machine classes.
 
-**Sneak-use a tiered shaft on a Create kinetic component** to calibrate that component to the shaft's tier. Sneak-use the same tier again to clear the attachment and restore ordinary Create limits. The shaft is a reusable calibration key; it is not consumed.
+Ordinary Create kinetics are calibrated **as items through recipes**. A `createtiers:calibration` recipe takes the original Create block item plus pack-defined upgrade ingredients and outputs that same block item carrying the selected tier. Create Tiers does not register duplicate tiered water wheels, presses, mixers, or other upstream machines.
+
+For example, a pack can make an advanced large water wheel meaningfully more expensive than an advanced shaft:
+
+```json
+{
+  "type": "createtiers:calibration",
+  "tier": "createtiers:advanced",
+  "input": "create:large_water_wheel",
+  "ingredients": [
+    { "item": "minecraft:diamond" },
+    { "item": "create:precision_mechanism" }
+  ]
+}
+```
+
+The `input` item is automatically included in the shapeless crafting recipe; `ingredients` contains the additional upgrade cost and accepts one to eight ingredients. Recipe authors decide which components can reach each tier and how expensive that upgrade is. With no matching recipe, there is no survival crafting path for that block/tier combination.
+
+The crafted stack keeps the original Create item identity and stores the calibration in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that calibrated machine preserves the tier on the matching dropped block item. Recalibrating an already calibrated item through another recipe replaces only its tier while preserving its other item data.
 
 This automatically covers Create kinetic families such as:
 
@@ -30,7 +48,7 @@ This automatically covers Create kinetic families such as:
 
 Speedometers and stressometers are deliberately not calibratable: they are observation devices and retain Create Tiers' unlimited RPM observation exemption.
 
-Attached tiers are stored in the target block entity's NBT and move with normal Create block-entity serialization. Changing or clearing a tier detaches and reattaches the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
+Attached tiers are stored in the target block entity's NBT and move through normal Create block-entity serialization. Recipe output, placement, and matching block drops preserve the same registered tier ID. When tier state changes, Create Tiers rebuilds the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
 
 Native tiered shafts also participate in Create's shaft-only interactions. They can be used as belt pulleys and as steam-engine shafts. When Create temporarily replaces a tiered shaft with a belt pulley or powered steam-engine shaft, Create Tiers carries the intrinsic tier through that replacement and restores the same tiered shaft when the temporary state is removed, so RPM/SU limits are never bypassed by the conversion.
 

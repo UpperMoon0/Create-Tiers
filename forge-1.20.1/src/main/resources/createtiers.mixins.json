@@ -7,7 +7,7 @@
   "mixins": [
     "RotationPropagatorMixin",
     "KineticBlockEntityTierMixin",
-    "TieredShaftCalibrationMixin",
+    "CalibratedBlockDropsMixin",
     "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
     "KineticBlockEntityAccessor",
