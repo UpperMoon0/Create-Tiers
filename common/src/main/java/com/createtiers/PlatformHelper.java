@@ -32,6 +32,8 @@ public interface PlatformHelper {
 
     List<Block> getGearboxes();
 
+    List<Block> getGirderEncasedShafts();
+
     List<Item> getGearboxItems();
 
     static PlatformHelper get() {
