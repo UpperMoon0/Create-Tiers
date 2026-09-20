@@ -6,6 +6,7 @@ import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TierUpgradeRegistry;
+import com.createtiers.registry.CreateEncasingVariants;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -100,13 +101,21 @@ public class DynamicServerPack implements PackResources {
         blocks.add("createtiers:powered_shaft_" + name);
         blocks.add("createtiers:cogwheel_" + name);
         blocks.add("createtiers:large_cogwheel_" + name);
-        blocks.add("createtiers:andesite_encased_shaft_" + name);
-        blocks.add("createtiers:brass_encased_shaft_" + name);
-        blocks.add("createtiers:andesite_encased_cogwheel_" + name);
-        blocks.add("createtiers:brass_encased_cogwheel_" + name);
-        blocks.add("createtiers:andesite_encased_large_cogwheel_" + name);
-        blocks.add("createtiers:brass_encased_large_cogwheel_" + name);
         blocks.add("createtiers:gearbox_" + name);
+
+        CreateEncasingVariants.shaftVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.cogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.largeCogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+
+        blocks.add("createtiers:clutch_" + name);
+        blocks.add("createtiers:gearshift_" + name);
+        blocks.add("createtiers:encased_chain_drive_" + name);
+        blocks.add("createtiers:adjustable_chain_gearshift_" + name);
+        blocks.add("createtiers:rotation_speed_controller_" + name);
+        blocks.add("createtiers:metal_girder_encased_shaft_" + name);
     }
 
     private static void generateLootTables() {
@@ -117,12 +126,23 @@ public class DynamicServerPack implements PackResources {
             generateBlockLootTable("large_cogwheel_" + name);
             generateBlockLootTable("gearbox_" + name);
 
-            generateEncasedBlockLootTable("andesite_encased_shaft_" + name, "shaft_" + name);
-            generateEncasedBlockLootTable("brass_encased_shaft_" + name, "shaft_" + name);
-            generateEncasedBlockLootTable("andesite_encased_cogwheel_" + name, "cogwheel_" + name);
-            generateEncasedBlockLootTable("brass_encased_cogwheel_" + name, "cogwheel_" + name);
-            generateEncasedBlockLootTable("andesite_encased_large_cogwheel_" + name, "large_cogwheel_" + name);
-            generateEncasedBlockLootTable("brass_encased_large_cogwheel_" + name, "large_cogwheel_" + name);
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.shaftVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "shaft_" + name);
+            }
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.cogwheelVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "cogwheel_" + name);
+            }
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.largeCogwheelVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "large_cogwheel_" + name);
+            }
+
+            generateBlockLootTable("clutch_" + name);
+            generateBlockLootTable("gearshift_" + name);
+            generateBlockLootTable("encased_chain_drive_" + name);
+            generateBlockLootTable("adjustable_chain_gearshift_" + name);
+            generateBlockLootTable("rotation_speed_controller_" + name);
+            generateMultiDropLootTable("metal_girder_encased_shaft_" + name,
+                    "create:metal_girder", CreateTiers.MOD_ID + ":shaft_" + name);
         }
     }
 
@@ -166,29 +186,41 @@ public class DynamicServerPack implements PackResources {
                 createSingleDropLootTable(CreateTiers.MOD_ID + ":" + dropBlockName));
     }
 
+    private static void generateMultiDropLootTable(String blockName, String... itemIds) {
+        LOOT_TABLES.put(
+                Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
+                createMultiDropLootTable(itemIds));
+    }
+
     private static JsonObject createSingleDropLootTable(String itemId) {
+        return createMultiDropLootTable(itemId);
+    }
+
+    private static JsonObject createMultiDropLootTable(String... itemIds) {
         JsonObject lootTable = new JsonObject();
         lootTable.addProperty("type", "minecraft:block");
 
         var pools = new com.google.gson.JsonArray();
-        var pool = new JsonObject();
-        pool.addProperty("rolls", 1);
-        pool.addProperty("bonus_rolls", 0);
+        for (String itemId : itemIds) {
+            var pool = new JsonObject();
+            pool.addProperty("rolls", 1);
+            pool.addProperty("bonus_rolls", 0);
 
-        var entries = new com.google.gson.JsonArray();
-        var entry = new JsonObject();
-        entry.addProperty("type", "minecraft:item");
-        entry.addProperty("name", itemId);
-        entries.add(entry);
-        pool.add("entries", entries);
+            var entries = new com.google.gson.JsonArray();
+            var entry = new JsonObject();
+            entry.addProperty("type", "minecraft:item");
+            entry.addProperty("name", itemId);
+            entries.add(entry);
+            pool.add("entries", entries);
 
-        var conditions = new com.google.gson.JsonArray();
-        var condition = new JsonObject();
-        condition.addProperty("condition", "minecraft:survives_explosion");
-        conditions.add(condition);
-        pool.add("conditions", conditions);
+            var conditions = new com.google.gson.JsonArray();
+            var condition = new JsonObject();
+            condition.addProperty("condition", "minecraft:survives_explosion");
+            conditions.add(condition);
+            pool.add("conditions", conditions);
+            pools.add(pool);
+        }
 
-        pools.add(pool);
         lootTable.add("pools", pools);
         return lootTable;
     }
