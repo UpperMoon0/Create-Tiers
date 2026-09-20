@@ -13,13 +13,13 @@ class TierLimitPolicyTest {
 
     @Test
     void tieredComponentUsesItsOwnLimit() {
-        Tier tier = new Tier(2, "advanced", 1024, 4096);
+        Tier tier = new Tier("advanced", 1024, 4096);
         assertEquals(1024, TierLimitPolicy.allowedRPM(tier, 256, false));
     }
 
     @Test
     void gaugeBypassRemainsUnlimited() {
-        Tier tier = new Tier(1, "basic", 128, 512);
+        Tier tier = new Tier("basic", 128, 512);
         assertEquals(Integer.MAX_VALUE, TierLimitPolicy.allowedRPM(tier, 256, true));
         assertEquals(Integer.MAX_VALUE, TierLimitPolicy.allowedRPM(null, 256, true));
     }

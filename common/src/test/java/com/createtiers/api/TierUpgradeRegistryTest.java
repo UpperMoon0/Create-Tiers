@@ -24,8 +24,8 @@ class TierUpgradeRegistryTest {
     void setUp() {
         TierUpgradeRegistry.clear();
         TierRegistry.clear();
-        TierRegistry.register(id("createtiers:basic"), new Tier(1, "basic", 256, 1024));
-        TierRegistry.register(id("createtiers:advanced"), new Tier(2, "advanced", 512, 4096));
+        TierRegistry.register(id("createtiers:basic"), new Tier("basic", 256, 1024));
+        TierRegistry.register(id("createtiers:advanced"), new Tier("advanced", 512, 4096));
     }
 
     @AfterEach

@@ -28,7 +28,7 @@ class DynamicServerPackTest {
         TierRegistry.clear();
         DynamicServerPack.clear();
         TierRegistry.register(ResourceLocation.fromNamespaceAndPath("createtiers", "basic"),
-                new Tier(1, "basic", 256, 1024));
+                new Tier("basic", 256, 1024));
         TierUpgradeRegistry.register(
                 ResourceLocation.fromNamespaceAndPath("create", "large_water_wheel"),
                 ResourceLocation.fromNamespaceAndPath("createtiers", "basic"),
