@@ -53,9 +53,11 @@ public final class NativeRelayGameTests {
 
     private static void assertNative(GameTestHelper helper, Tier tier, String path, BlockPos pos) {
         Block block = BuiltInRegistries.BLOCK.get(new net.minecraft.resources.ResourceLocation(CreateTiers.MOD_ID, path));
-        if (!(block instanceof TieredNativeKineticBlock nativeBlock)) {
+        if (!(block instanceof TieredNativeKineticBlock)) {
             helper.fail("Missing native default tier block: " + path);
+            return;
         }
+        TieredNativeKineticBlock nativeBlock = (TieredNativeKineticBlock) block;
 
         KineticBlockEntity blockEntity = GameTestSupport.placeBlockEntity(
                 helper, pos, block.defaultBlockState(), KineticBlockEntity.class);
