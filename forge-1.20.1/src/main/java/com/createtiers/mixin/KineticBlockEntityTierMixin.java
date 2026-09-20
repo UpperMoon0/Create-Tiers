@@ -132,7 +132,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
         createtiers$attachedTierId = null;
         createtiers$attachedTier = null;
-        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, null);
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
         createtiers$rebuildKinetics();
     }
 
