@@ -23,12 +23,12 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 final class GameTestSupport {
     static final String TEMPLATE = "empty";
     static final String ATTACHED_TIER_NBT_KEY = "CreateTiersTier";
-    static final Tier LOW_TIER = new Tier(1, "gametest_low", 128, 512);
-    static final Tier HIGH_TIER = new Tier(2, "gametest_high", 1024, 4096);
+    static final Tier LOW_TIER = new Tier("gametest_low", 128, 512);
+    static final Tier HIGH_TIER = new Tier("gametest_high", 1024, 4096);
     static final ResourceLocation ATTACHMENT_TIER_ID =
             ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "gametest_attachment");
     static final Tier ATTACHMENT_TIER =
-            new Tier(Integer.MAX_VALUE - 7, "gametest_attachment", 1024, 4096);
+            new Tier("gametest_attachment", 1024, 4096);
 
     private GameTestSupport() {
     }
