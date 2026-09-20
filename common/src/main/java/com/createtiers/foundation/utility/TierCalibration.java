@@ -37,6 +37,18 @@ public final class TierCalibration {
      * @return {@code true} when the interaction belongs to Create Tiers and normal
      *         BlockItem placement should be suppressed
      */
+
+    /**
+     * Policy seam used by runtime tests: item-backed kinetics may only be cleared
+     * with the exact attached tier, while components with no normal item form may
+     * still use the shaft fallback for applying/changing a tier.
+     */
+    public static boolean canMutateWithShaft(KineticBlockEntity kinetic, Tier attached, Tier selected) {
+        boolean clearing = selected.equals(attached);
+        boolean hasNormalItemForm = kinetic.getBlockState().getBlock().asItem() != Items.AIR;
+        return !hasNormalItemForm || clearing;
+    }
+
     public static boolean tryCalibrate(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null || !player.isShiftKeyDown()) {
@@ -70,12 +82,11 @@ public final class TierCalibration {
 
         Tier selected = shaft.getTier();
         boolean clearing = selected.equals(attached);
-        boolean hasNormalItemForm = kinetic.getBlockState().getBlock().asItem() != Items.AIR;
 
         // Item-backed machines must pay their recipe-defined calibration cost.
         // Keeping exact-tier clearing here also provides a clean escape hatch for
         // worlds/items created by earlier PR builds without reopening the free upgrade.
-        if (hasNormalItemForm && !clearing) {
+        if (!canMutateWithShaft(kinetic, attached, selected)) {
             return false;
         }
 

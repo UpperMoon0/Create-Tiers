@@ -23,6 +23,7 @@ REQUIRED_SCENARIOS = (
     "calibration-nbt-persistence",
     "calibration-network-rebuild",
     "calibration-recipe-item-roundtrip",
+    "shaft-cannot-bypass-item-recipe",
     "rotation-speed-controller",
     "creative-motor",
     "tiered-shaft-belt",

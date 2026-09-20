@@ -4,6 +4,7 @@ import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.foundation.utility.TierCalibration;
 import com.createtiers.recipe.CalibrationRecipe;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
@@ -106,6 +107,29 @@ public final class CalibrationGameTests {
             helper.fail("Breaking a calibrated Create kinetic block did not preserve calibration on its item drop");
         }
 
+        helper.succeed();
+    }
+
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
+    public static void itemBackedCalibrationCannotBypassRecipe(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, new BlockPos(1, 1, 1));
+        IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
+
+        if (TierCalibration.canMutateWithShaft(kinetic, null, tier)) {
+            helper.fail("Item-backed Create kinetic accepted free tier application through the shaft fallback");
+        }
+
+        attachable.setAttachedTier(tier);
+        if (!TierCalibration.canMutateWithShaft(kinetic, tier, tier)) {
+            helper.fail("Matching tiered shaft could not clear an existing item-backed calibration");
+        }
+        if (TierCalibration.canMutateWithShaft(kinetic, tier, GameTestSupport.HIGH_TIER)) {
+            helper.fail("Item-backed Create kinetic could change tiers through the shaft fallback");
+        }
+
+        attachable.clearAttachedTier();
         helper.succeed();
     }
 
