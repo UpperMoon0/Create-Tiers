@@ -10,6 +10,8 @@ import net.minecraft.world.level.block.Block;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Discovers the standard Create encasing variants available in the running Create version.
@@ -39,10 +41,19 @@ public final class CreateEncasingVariants {
     }
 
     private static List<Variant> discover(Block base, String suffix, List<Block> fallback) {
-        List<Block> candidates = new ArrayList<>(EncasingRegistry.getVariants(base));
-        if (candidates.isEmpty()) {
-            candidates.addAll(fallback);
+        Set<Block> candidates = new LinkedHashSet<>(EncasingRegistry.getVariants(base));
+
+        // Do not depend on EncasingRegistry callback order during the shared block-register event.
+        // Scan the finalized Create namespace as a second source of truth, then keep the explicit
+        // current-version fallback for unusually early initialization.
+        for (Block block : BuiltInRegistries.BLOCK) {
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
+            if (id != null && "create".equals(id.getNamespace()) && id.getPath().endsWith(suffix)
+                    && block instanceof EncasedBlock) {
+                candidates.add(block);
+            }
         }
+        candidates.addAll(fallback);
 
         List<Variant> variants = new ArrayList<>();
         for (Block block : candidates) {

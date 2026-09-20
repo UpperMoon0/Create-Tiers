@@ -51,6 +51,7 @@ class ResourceContractTests(unittest.TestCase):
     def test_standard_create_encasings_are_discovered_not_hardcoded_in_registration(self):
         discovery = ENCASING_DISCOVERY.read_text(encoding="utf-8")
         self.assertIn("EncasingRegistry.getVariants(base)", discovery)
+        self.assertIn("for (Block block : BuiltInRegistries.BLOCK)", discovery)
         self.assertIn('"create".equals(id.getNamespace())', discovery)
         for path in (FORGE_MODEL_GENERATOR, NEO_MODEL_GENERATOR, FORGE_SERVER_PACK, NEO_SERVER_PACK):
             source = path.read_text(encoding="utf-8")
