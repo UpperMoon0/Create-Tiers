@@ -5,6 +5,7 @@ import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -48,7 +49,37 @@ public final class NativeRelayGameTests {
             helper.fail("Native Rotation Speed Controller did not initialize its tier RPM range");
         }
 
+        assertUpgradeTargetValidation(helper);
+
         helper.succeed();
+    }
+
+    private static void assertUpgradeTargetValidation(GameTestHelper helper) {
+        assertValidUpgradeTarget(helper, new net.minecraft.resources.ResourceLocation("create", "large_water_wheel"));
+
+        assertInvalidUpgradeTarget(helper, new net.minecraft.resources.ResourceLocation("minecraft", "does_not_exist"));
+        assertInvalidUpgradeTarget(helper, new net.minecraft.resources.ResourceLocation("minecraft", "stick"));
+        assertInvalidUpgradeTarget(helper, new net.minecraft.resources.ResourceLocation("minecraft", "stone"));
+        assertInvalidUpgradeTarget(helper, new net.minecraft.resources.ResourceLocation("create", "speedometer"));
+        assertInvalidUpgradeTarget(helper,
+                new net.minecraft.resources.ResourceLocation(CreateTiers.MOD_ID, "clutch_gametest_native"));
+    }
+
+    private static void assertValidUpgradeTarget(GameTestHelper helper, net.minecraft.resources.ResourceLocation id) {
+        try {
+            TierUpgradeRegistry.validateTarget(id);
+        } catch (IllegalArgumentException ex) {
+            helper.fail("Expected valid tier upgrade target " + id + ": " + ex.getMessage());
+        }
+    }
+
+    private static void assertInvalidUpgradeTarget(GameTestHelper helper, net.minecraft.resources.ResourceLocation id) {
+        try {
+            TierUpgradeRegistry.validateTarget(id);
+            helper.fail("Expected invalid tier upgrade target to be rejected: " + id);
+        } catch (IllegalArgumentException expected) {
+            // Expected validation failure.
+        }
     }
 
     private static void assertNative(GameTestHelper helper, Tier tier, String path, BlockPos pos) {

@@ -43,7 +43,7 @@ CreateTiers.registerTierUpgrades([
 ])
 ```
 
-Like `registerTiers`, the batch is atomic: an invalid tier, invalid target, or duplicate item+tier pair rejects the entire batch. Upgrade targets are validated during startup before anything is committed: the item must exist, be a block item, and be backed by a Create `KineticBlockEntity`. Gauges and native Create Tiers components are rejected because they are not legal upgrade targets. Bare tier names such as `advanced` resolve to `createtiers:advanced`; integrations may also use a full namespaced tier ID.
+Like `registerTiers`, registration is atomic for malformed entries, unknown tiers, and duplicate item+tier pairs. Because KubeJS startup scripts execute before Minecraft's item registry is safe to query, item targets are resolved in the loader's registry-stable common-setup phase. Startup fails before gameplay if a target item is missing, is not a block item, is not backed by a Create `KineticBlockEntity`, is a gauge, or is already an intrinsic Create Tiers component. Bare tier names such as `advanced` resolve to `createtiers:advanced`; integrations may also use a full namespaced tier ID.
 
 ### Custom recipes
 

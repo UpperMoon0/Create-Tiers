@@ -57,27 +57,6 @@ class TierUpgradeRegistryTest {
     }
 
     @Test
-    void invalidTargetFailsImmediatelyWithoutMutation() {
-        assertThrows(IllegalArgumentException.class, () -> TierUpgradeRegistry.register(
-                id("minecraft:does_not_exist"), id("createtiers:basic"), true));
-        assertThrows(IllegalArgumentException.class, () -> TierUpgradeRegistry.register(
-                id("minecraft:stick"), id("createtiers:basic"), true));
-        assertThrows(IllegalArgumentException.class, () -> TierUpgradeRegistry.register(
-                id("minecraft:stone"), id("createtiers:basic"), true));
-        assertEquals(0, TierUpgradeRegistry.size());
-    }
-
-    @Test
-    void invalidTargetInBatchKeepsEarlierValidEntryUncommitted() {
-        ResourceLocation valid = id("create:large_water_wheel");
-        assertThrows(IllegalArgumentException.class, () -> TierUpgradeRegistry.registerAll(List.of(
-                new TierUpgradeRegistry.Registration(valid, id("createtiers:basic"), true),
-                new TierUpgradeRegistry.Registration(id("minecraft:stick"), id("createtiers:advanced"), false))));
-        assertEquals(0, TierUpgradeRegistry.size());
-        assertFalse(TierUpgradeRegistry.isRegistered(valid, id("createtiers:basic")));
-    }
-
-    @Test
     void duplicatePairAndFrozenMutationAreRejected() {
         ResourceLocation item = id("create:large_water_wheel");
         TierUpgradeRegistry.register(item, id("createtiers:basic"), true);

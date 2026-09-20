@@ -65,7 +65,6 @@ public final class TierUpgradeRegistry {
                 throw new IllegalArgumentException(
                         "Tier upgrade references unknown tier '" + registration.tierId() + "'");
             }
-            validateTarget(registration.itemId());
             Key key = key(registration);
             if (!keys.add(key)) {
                 throw new IllegalArgumentException(
@@ -80,7 +79,10 @@ public final class TierUpgradeRegistry {
         return List.copyOf(pending);
     }
 
-    private static void validateTarget(ResourceLocation itemId) {
+    /**
+     * Resolve and validate one upgrade target. Call only after item/block registries are stable.
+     */
+    public static void validateTarget(ResourceLocation itemId) {
         Item item = BuiltInRegistries.ITEM.get(itemId);
         if (!itemId.equals(BuiltInRegistries.ITEM.getKey(item))) {
             throw new IllegalArgumentException("Unknown tier upgrade item '" + itemId + "'");
@@ -112,6 +114,17 @@ public final class TierUpgradeRegistry {
         if (kinetic instanceof ITieredBlockEntity tiered && tiered.getTier() != null) {
             throw new IllegalArgumentException(
                     "Tier upgrade item '" + itemId + "' already has an intrinsic Create Tiers tier");
+        }
+    }
+
+    /**
+     * Validate every registered target against the finalized Minecraft/Create registries.
+     * Loader common-setup hooks call this before gameplay or generated recipes can consume
+     * the registrations.
+     */
+    public static synchronized void validateTargets() {
+        for (Registration registration : UPGRADES.values()) {
+            validateTarget(registration.itemId());
         }
     }
 

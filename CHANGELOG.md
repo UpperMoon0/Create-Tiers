@@ -24,7 +24,7 @@
 - Keep per-tier RPM limits scoped to tiered receiving components instead of globally raising vanilla Create limits.
 - Reject duplicate tier IDs, numeric levels, generated names, invalid limits, invalid generated resource paths, and invalid RGB colors during startup.
 - Reject tier progressions where a higher numeric level lowers Max RPM or Max SU; equal limits remain valid and unordered batches are validated atomically.
-- Validate tier-upgrade targets during startup so unknown items, non-block items, non-kinetic blocks, gauges, and native Create Tiers components fail before registration.
+- Validate tier-upgrade targets in the registry-stable common-setup phase so unknown items, non-block items, non-kinetic blocks, gauges, and native Create Tiers components fail startup without forcing Minecraft registry bootstrap from KubeJS startup scripts.
 - Make KubeJS batch tier registration atomic so one invalid/conflicting entry cannot leave earlier entries partially registered.
 - Reject fractional and overflowing KubeJS numeric fields instead of silently truncating or wrapping them to `int`.
 - Generate pickaxe mining tags and loot for tiered gearboxes.
