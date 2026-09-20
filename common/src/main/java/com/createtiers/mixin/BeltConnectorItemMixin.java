@@ -1,12 +1,15 @@
 package com.createtiers.mixin;
 
 import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,7 +30,11 @@ import java.util.Map;
 public abstract class BeltConnectorItemMixin {
 
     @Unique
-    private static final ThreadLocal<Map<BlockPos, Tier>> CREATETIERS$PULLEY_TIERS =
+    private record PulleySource(Tier tier, ResourceLocation blockId) {
+    }
+
+    @Unique
+    private static final ThreadLocal<Map<BlockPos, PulleySource>> CREATETIERS$PULLEY_SOURCES =
             ThreadLocal.withInitial(HashMap::new);
 
     @Redirect(
@@ -48,7 +55,9 @@ public abstract class BeltConnectorItemMixin {
             tier = shaft.getTier();
         }
         if (tier != null) {
-            CREATETIERS$PULLEY_TIERS.get().put(pos.immutable(), tier);
+            ResourceLocation sourceBlockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+            CREATETIERS$PULLEY_SOURCES.get().put(
+                    pos.immutable(), new PulleySource(tier, sourceBlockId));
         }
         return level.destroyBlock(pos, drop);
     }
@@ -59,22 +68,25 @@ public abstract class BeltConnectorItemMixin {
                     value = "INVOKE",
                     target = "Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;switchToBlockState(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"))
     private static void createtiers$restoreTierAfterBeltReplacement(Level level, BlockPos pos, BlockState newState) {
-        Tier tier = CREATETIERS$PULLEY_TIERS.get().remove(pos);
+        PulleySource source = CREATETIERS$PULLEY_SOURCES.get().remove(pos);
         KineticBlockEntity.switchToBlockState(level, pos, newState);
 
-        if (tier == null || level.isClientSide || !AllBlocks.BELT.has(level.getBlockState(pos))) {
+        if (source == null || level.isClientSide || !AllBlocks.BELT.has(level.getBlockState(pos))) {
             return;
         }
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof IAttachedTierBlockEntity attachable) {
-            attachable.setAttachedTier(tier);
+            attachable.setAttachedTier(source.tier());
+        }
+        if (blockEntity instanceof IReplacementSourceBlockEntity replacementSource) {
+            replacementSource.setCreateTiersReplacementSourceBlockId(source.blockId());
         }
     }
 
     @Inject(method = "createBelts", at = @At("RETURN"))
     private static void createtiers$clearCapturedPulleyTiers(Level level, BlockPos start, BlockPos end,
             CallbackInfo ci) {
-        CREATETIERS$PULLEY_TIERS.remove();
+        CREATETIERS$PULLEY_SOURCES.remove();
     }
 }

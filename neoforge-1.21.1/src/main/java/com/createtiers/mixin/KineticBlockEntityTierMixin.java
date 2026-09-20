@@ -1,6 +1,7 @@
 package com.createtiers.mixin;
 
 import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
@@ -21,16 +22,42 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Adds optional persisted tier state to every Create kinetic block entity. */
 @Mixin(value = KineticBlockEntity.class, remap = false)
-public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockEntity {
+public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockEntity, IReplacementSourceBlockEntity {
 
     @Unique
     private static final String CREATETIERS$TIER_KEY = "CreateTiersTier";
+
+    @Unique
+    private static final String CREATETIERS$SOURCE_BLOCK_KEY = "CreateTiersReplacementSourceBlock";
 
     @Unique
     private ResourceLocation createtiers$attachedTierId;
 
     @Unique
     private Tier createtiers$attachedTier;
+
+    @Unique
+    private ResourceLocation createtiers$replacementSourceBlockId;
+
+    @Override
+    public ResourceLocation getCreateTiersReplacementSourceBlockId() {
+        return createtiers$replacementSourceBlockId;
+    }
+
+    @Override
+    public void setCreateTiersReplacementSourceBlockId(ResourceLocation id) {
+        createtiers$replacementSourceBlockId = id;
+        ((KineticBlockEntity) (Object) this).setChanged();
+    }
+
+    @Override
+    public void clearCreateTiersReplacementSourceBlockId() {
+        if (createtiers$replacementSourceBlockId == null) {
+            return;
+        }
+        createtiers$replacementSourceBlockId = null;
+        ((KineticBlockEntity) (Object) this).setChanged();
+    }
 
     @Override
     public Tier getTier() {
@@ -122,13 +149,30 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         if (createtiers$attachedTierId != null) {
             tag.putString(CREATETIERS$TIER_KEY, createtiers$attachedTierId.toString());
         }
+        if (createtiers$replacementSourceBlockId != null) {
+            tag.putString(CREATETIERS$SOURCE_BLOCK_KEY, createtiers$replacementSourceBlockId.toString());
+        }
     }
 
     @Inject(method = "read", at = @At("RETURN"))
     private void createtiers$readAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
             boolean clientPacket, CallbackInfo ci) {
         createtiers$loadTier(tag);
+        createtiers$loadReplacementSource(tag);
         AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
+    }
+
+    @Unique
+    private void createtiers$loadReplacementSource(CompoundTag tag) {
+        createtiers$replacementSourceBlockId = null;
+        if (!tag.contains(CREATETIERS$SOURCE_BLOCK_KEY)) {
+            return;
+        }
+
+        ResourceLocation id = ResourceLocation.tryParse(tag.getString(CREATETIERS$SOURCE_BLOCK_KEY));
+        if (id != null) {
+            createtiers$replacementSourceBlockId = id;
+        }
     }
 
     @Unique
