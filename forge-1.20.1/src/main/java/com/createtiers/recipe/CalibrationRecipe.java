@@ -35,13 +35,15 @@ public final class CalibrationRecipe extends ShapelessRecipe {
     private final Tier tier;
     private final List<Ingredient> extraIngredients;
 
-    public CalibrationRecipe(ResourceLocation tierId, ResourceLocation inputId, List<Ingredient> extraIngredients) {
-        this(tierId, inputId, resolveInput(inputId), resolveTier(tierId), validateIngredients(extraIngredients));
+    public CalibrationRecipe(ResourceLocation recipeId, ResourceLocation tierId, ResourceLocation inputId,
+            List<Ingredient> extraIngredients) {
+        this(recipeId, tierId, inputId, resolveInput(inputId), resolveTier(tierId),
+                validateIngredients(extraIngredients));
     }
 
-    private CalibrationRecipe(ResourceLocation tierId, ResourceLocation inputId, Item inputItem, Tier tier,
-            List<Ingredient> extraIngredients) {
-        super("", CraftingBookCategory.MISC,
+    private CalibrationRecipe(ResourceLocation recipeId, ResourceLocation tierId, ResourceLocation inputId,
+            Item inputItem, Tier tier, List<Ingredient> extraIngredients) {
+        super(recipeId, "", CraftingBookCategory.MISC,
                 CalibratedItemData.calibratedCopy(new ItemStack(inputItem), tier),
                 allIngredients(inputItem, extraIngredients));
         this.tierId = tierId;
@@ -125,7 +127,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
             List<Ingredient> ingredients = new ArrayList<>(array.size());
             array.forEach(element -> ingredients.add(Ingredient.fromJson(element, false)));
             try {
-                return new CalibrationRecipe(tierId, inputId, ingredients);
+                return new CalibrationRecipe(recipeId, tierId, inputId, ingredients);
             } catch (IllegalArgumentException ex) {
                 throw new JsonParseException("Invalid calibration recipe " + recipeId + ": " + ex.getMessage(), ex);
             }
@@ -140,7 +142,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
             for (int i = 0; i < count; i++) {
                 ingredients.add(Ingredient.fromNetwork(buffer));
             }
-            return new CalibrationRecipe(tierId, inputId, ingredients);
+            return new CalibrationRecipe(recipeId, tierId, inputId, ingredients);
         }
 
         @Override
