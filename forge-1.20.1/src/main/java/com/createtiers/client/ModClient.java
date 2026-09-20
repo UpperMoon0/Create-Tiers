@@ -8,6 +8,7 @@ import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllPartialModels;
@@ -62,6 +63,7 @@ public class ModClient {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TIERED_SHAFT.get(), TieredKineticBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.TIERED_POWERED_SHAFT.get(), TieredKineticBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TIERED_COGWHEEL.get(), TieredKineticBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TIERED_GEARBOX.get(), TieredKineticBlockEntityRenderer::new);
     }
@@ -93,6 +95,11 @@ public class ModClient {
     public static void registerVisualizers(FMLClientSetupEvent event) {
         SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_SHAFT.get())
                 .factory(TieredShaftVisual::create)
+                .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
+                .apply();
+
+        SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_POWERED_SHAFT.get())
+                .factory(TieredPoweredShaftVisual::create)
                 .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
                 .apply();
 
@@ -132,6 +139,44 @@ public class ModClient {
         if (block instanceof TieredCogwheelBlock cog) return cog.getTier();
         if (block instanceof TieredEncasedCogwheelBlock encasedCog) return encasedCog.getTier();
         return null;
+    }
+
+    public static class TieredPoweredShaftVisual
+            extends SingleAxisRotatingVisual<TieredPoweredShaftBlockEntity> {
+        private final Tier tier;
+
+        public static BlockEntityVisual<TieredPoweredShaftBlockEntity> create(VisualizationContext context,
+                TieredPoweredShaftBlockEntity blockEntity, float partialTick) {
+            Tier tier = blockEntity.getTier();
+            if (tier == null) return null;
+            Model model = safePartial(AllTieredPartialModels.forTier(tier).POWERED_SHAFT);
+            if (model == null) return null;
+            return new TieredPoweredShaftVisual(context, blockEntity, partialTick, model, tier);
+        }
+
+        private TieredPoweredShaftVisual(VisualizationContext context,
+                TieredPoweredShaftBlockEntity blockEntity, float partialTick, Model model, Tier tier) {
+            super(context, blockEntity, partialTick, model);
+            this.tier = tier;
+            applyTierColor();
+        }
+
+        private void applyTierColor() {
+            rotatingModel.setColor(new Color(tier.getShaftColor()));
+            rotatingModel.setChanged();
+        }
+
+        @Override
+        public void update(float pt) {
+            super.update(pt);
+            applyTierColor();
+        }
+
+        @Override
+        public void tick(Context context) {
+            super.tick(context);
+            applyTierColor();
+        }
     }
 
     public static class TieredShaftVisual {

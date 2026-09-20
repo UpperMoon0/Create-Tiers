@@ -10,6 +10,8 @@ public interface PlatformHelper {
 
     BlockEntityType<?> getTieredShaftType();
 
+    BlockEntityType<?> getTieredPoweredShaftType();
+
     BlockEntityType<?> getTieredCogwheelType();
 
     BlockEntityType<?> getTieredGearboxType();
@@ -17,6 +19,8 @@ public interface PlatformHelper {
     List<Block> getShafts();
 
     List<Item> getShaftItems();
+
+    List<Block> getPoweredShafts();
 
     List<Block> getCogwheels();
 

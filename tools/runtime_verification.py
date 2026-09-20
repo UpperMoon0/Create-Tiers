@@ -24,6 +24,8 @@ REQUIRED_SCENARIOS = (
     "calibration-network-rebuild",
     "rotation-speed-controller",
     "creative-motor",
+    "tiered-shaft-belt",
+    "tiered-shaft-steam-engine",
 )
 
 
@@ -52,8 +54,9 @@ def checkout_state() -> tuple[str, bool]:
 
 
 def gradle_command(task: str) -> list[str]:
-    wrapper = "gradlew.bat" if os.name == "nt" else "./gradlew"
-    return [wrapper, task, "--stacktrace", "--no-daemon"]
+    if os.name == "nt":
+        return ["gradlew.bat", task, "--stacktrace", "--no-daemon"]
+    return ["bash", "./gradlew", task, "--stacktrace", "--no-daemon"]
 
 
 def run_target(target: str, expected_head: str | None = None) -> int:

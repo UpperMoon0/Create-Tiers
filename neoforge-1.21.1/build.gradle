@@ -241,3 +241,13 @@ idea {
         downloadJavadoc = true
     }
 }
+
+
+def prepareGameTestKubeJs = tasks.register('prepareGameTestKubeJs', Copy) {
+    from rootProject.file('tools/gametest/kubejs/startup_scripts')
+    into layout.projectDirectory.dir('run/kubejs/startup_scripts')
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    dependsOn prepareGameTestKubeJs
+}

@@ -19,6 +19,7 @@ public class AllTieredPartialModels {
     public static class TieredPartials {
         public final PartialModel SHAFT;
         public final PartialModel SHAFT_HALF;
+        public final PartialModel POWERED_SHAFT;
         public final PartialModel COGWHEEL_SHAFTLESS;
         public final PartialModel LARGE_COGWHEEL_SHAFTLESS;
         public final PartialModel COGWHEEL_SHAFT;
@@ -30,6 +31,7 @@ public class AllTieredPartialModels {
             String prefix = "block/" + tierName + "/";
             SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "shaft"));
             SHAFT_HALF = PartialModel.of(CreateTiers.asResource(prefix + "shaft_half"));
+            POWERED_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "powered_shaft"));
             COGWHEEL_SHAFTLESS = PartialModel.of(CreateTiers.asResource(prefix + "cogwheel_shaftless"));
             LARGE_COGWHEEL_SHAFTLESS = PartialModel.of(CreateTiers.asResource(prefix + "large_cogwheel_shaftless"));
             COGWHEEL_SHAFT = PartialModel.of(CreateTiers.asResource(prefix + "cogwheel_shaft"));

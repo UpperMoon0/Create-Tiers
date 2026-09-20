@@ -47,11 +47,13 @@ public class TieredModelGenerator {
             Map<ResourceLocation, JsonObject> blockstates, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String tierName = tier.getName();
         generateShaftModels(tierName, models, resourceManager);
+        generatePoweredShaftModel(tierName, models, resourceManager);
         generateCogwheelShaftModel(tierName, models, resourceManager);
         generateCogwheelModels(tierName, false, models, resourceManager);
         generateCogwheelModels(tierName, true, models, resourceManager);
         generateItemModels(tierName, models);
         generateShaftBlockstate(tierName, blockstates);
+        generatePoweredShaftBlockstate(tierName, blockstates);
         generateCogwheelBlockstate(tierName, false, blockstates);
         generateCogwheelBlockstate(tierName, true, blockstates);
 
@@ -82,6 +84,7 @@ public class TieredModelGenerator {
         String displayName = tier.getDisplayName();
 
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.shaft_" + tierName, displayName + " Shaft");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.powered_shaft_" + tierName, displayName + " Powered Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.cogwheel_" + tierName, displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.large_cogwheel_" + tierName, "Large " + displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.gearbox_" + tierName, displayName + " Gearbox");
@@ -163,6 +166,17 @@ public class TieredModelGenerator {
         models.put(
                 Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
                 mutateModel(Compat.rl("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+    }
+
+    private static void generatePoweredShaftModel(String tierName, Map<ResourceLocation, JsonElement> models,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        Map<String, String> textures = Map.of(
+                "2", CreateTiers.MOD_ID + ":block/grayscale/axis_top",
+                "3", CreateTiers.MOD_ID + ":block/grayscale/axis",
+                "particle", CreateTiers.MOD_ID + ":block/grayscale/axis");
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/powered_shaft"),
+                mutateModel(Compat.rl("create", "block/powered_shaft"), textures, Map.of(), 0,
+                        Collections.emptySet(), resourceManager));
     }
 
     private static void generateCogwheelShaftModel(String tierName, Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
@@ -386,6 +400,32 @@ public class TieredModelGenerator {
                 "block/" + tierName + "/shaft");
         blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
                 createAxisBlockstate(modelLocation));
+    }
+
+    private static void generatePoweredShaftBlockstate(String tierName,
+            Map<ResourceLocation, JsonObject> blockstates) {
+        ResourceLocation model = Compat.rl(CreateTiers.MOD_ID, "block/" + tierName + "/powered_shaft");
+        JsonObject root = new JsonObject();
+        JsonObject variants = new JsonObject();
+
+        JsonObject x = new JsonObject();
+        x.addProperty("model", model.toString());
+        x.addProperty("x", 90);
+        x.addProperty("y", 90);
+        variants.add("axis=x", x);
+
+        JsonObject y = new JsonObject();
+        y.addProperty("model", model.toString());
+        variants.add("axis=y", y);
+
+        JsonObject z = new JsonObject();
+        z.addProperty("model", model.toString());
+        z.addProperty("x", 90);
+        z.addProperty("y", 180);
+        variants.add("axis=z", z);
+
+        root.add("variants", variants);
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/powered_shaft_" + tierName), root);
     }
 
     private static void generateCogwheelBlockstate(String tierName, boolean isLarge,

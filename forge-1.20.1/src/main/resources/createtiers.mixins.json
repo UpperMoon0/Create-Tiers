@@ -12,7 +12,13 @@
     "SpeedGaugeBlockEntityMixin",
     "KineticBlockEntityAccessor",
     "KineticEffectHandlerAccessor",
-    "KineticNetworkMixin"
+    "KineticNetworkMixin",
+    "ShaftBlockMixin",
+    "BeltConnectorItemMixin",
+    "BeltBlockMixin",
+    "PoweredShaftBlockMixin",
+    "SteamEngineBlockMixin",
+    "SteamEnginePlacementHelperMixin"
   ],
   "client": [
     "KineticBlockEntityRendererTierColorMixin",

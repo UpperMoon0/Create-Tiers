@@ -32,6 +32,8 @@ Speedometers and stressometers are deliberately not calibratable: they are obser
 
 Attached tiers are stored in the target block entity's NBT and move with normal Create block-entity serialization. Changing or clearing a tier detaches and reattaches the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
 
+Native tiered shafts also participate in Create's shaft-only interactions. They can be used as belt pulleys and as steam-engine shafts. When Create temporarily replaces a tiered shaft with a belt pulley or powered steam-engine shaft, Create Tiers carries the intrinsic tier through that replacement and restores the same tiered shaft when the temporary state is removed, so RPM/SU limits are never bypassed by the conversion.
+
 Calibrated components also inherit the tier's custom colors without replacing Create's casing textures. Create cogwheel blocks, including encased cogwheels, use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to calibrated machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
 
 ### Jade
@@ -44,6 +46,10 @@ Jade support is optional. When Jade is installed, Create Tiers adds tier informa
 - the tier's **Max SU**.
 
 The Jade payload is generated from the server-side block entity, so multiplayer clients see the authoritative tier rather than relying on locally inferred state. Untiered Create blocks do not receive extra Create Tiers Jade lines.
+
+## Compatibility credit
+
+Thanks to **MoonScenty** and [CreateTiersEngineCompat](https://github.com/MoonScenty/CreateTiersEngineCompat) for independently identifying and documenting the tiered-shaft belt/steam-engine compatibility gap that led to the native fix in Create Tiers.
 
 ## Registering tiers
 

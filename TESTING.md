@@ -11,8 +11,8 @@ gates green.
 | --- | --- | --- |
 | Harness contracts | Supported targets, CI matrix generation, required scenario declarations, exact-head receipt validation | Minecraft behavior |
 | JVM tests | Loader-independent tier policy and render math on both targets, plus loader-owned API/resource/KubeJS regressions | Real kinetic graph behavior |
-| Forge + NeoForge GameTests | Real Create kinetic propagation, overspeed semantics, stress caps, calibration/persistence, adjustable Create components | Final rendered pixels, every third-party Create addon |
-| Narrow integration smoke | Reserved for custom shafts/belts/steam-engine compatibility and lightweight Jade/color checks | General modpack compatibility |
+| Forge + NeoForge GameTests | Real Create kinetic propagation, overspeed semantics, stress caps, calibration/persistence, adjustable Create components, and native tiered-shaft belt/steam-engine interoperability | Final rendered pixels, every third-party Create addon |
+| Narrow integration smoke | Reserved for lightweight Jade/color checks and future interactions that require a real client | General modpack compatibility |
 | Release gate | The same core and runtime contract completed for the exact release commit before packaging | Behavior outside the declared contract |
 
 No framebuffer/pixel harness is used today. If a genuine rendering regression
@@ -24,7 +24,7 @@ infrastructure.
 Both forge-1.20.1 and neoforge-1.21.1 must cover tiered-to-tiered propagation,
 high-tier to ordinary Create receivers, overspeed rejection, lowest-tier Max SU,
 calibration apply/clear and NBT persistence, rebuilt-network behavior after
-calibration, Rotation Speed Controller range, and Creative Motor range.
+calibration, Rotation Speed Controller range, Creative Motor range, tiered-shaft belt creation/teardown, and tiered-shaft steam-engine powered-shaft conversion/recovery.
 
 tools/runtime_verification.py owns the two-target CI matrix and the scenario list
 written into exact-head .pass receipts. Missing, extra, malformed, or stale

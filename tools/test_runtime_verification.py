@@ -14,6 +14,22 @@ class RuntimeVerificationTest(unittest.TestCase):
             self.assertEqual(list(verification.REQUIRED_SCENARIOS), cell["required_scenarios"])
             self.assertEqual(verification.TARGETS[cell["target"]], cell["gradle_task"])
 
+    def test_gradle_command_uses_explicit_shell_on_posix(self):
+        original_name = verification.os.name
+        try:
+            verification.os.name = "posix"
+            self.assertEqual(
+                ["bash", "./gradlew", ":example", "--stacktrace", "--no-daemon"],
+                verification.gradle_command(":example"),
+            )
+            verification.os.name = "nt"
+            self.assertEqual(
+                ["gradlew.bat", ":example", "--stacktrace", "--no-daemon"],
+                verification.gradle_command(":example"),
+            )
+        finally:
+            verification.os.name = original_name
+
     def test_unknown_target_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "unknown target"):
             verification.target_config("forge-9.99")

@@ -83,6 +83,7 @@ public class DynamicServerPack implements PackResources {
             shaftTag.addProperty("replace", false);
             var values = new com.google.gson.JsonArray();
             values.add("createtiers:shaft_" + tier.getName());
+            values.add("createtiers:powered_shaft_" + tier.getName());
             shaftTag.add("values", values);
             TAGS.put(Compat.rl(CreateTiers.MOD_ID, "tags/blocks/" + tier.getName() + "_shafts"), shaftTag);
         }
@@ -91,6 +92,7 @@ public class DynamicServerPack implements PackResources {
     private static void addTierBlocks(com.google.gson.JsonArray blocks, Tier tier) {
         String name = tier.getName();
         blocks.add("createtiers:shaft_" + name);
+        blocks.add("createtiers:powered_shaft_" + name);
         blocks.add("createtiers:cogwheel_" + name);
         blocks.add("createtiers:large_cogwheel_" + name);
         blocks.add("createtiers:andesite_encased_shaft_" + name);

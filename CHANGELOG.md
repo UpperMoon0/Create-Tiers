@@ -25,14 +25,16 @@
 - Show registered encased kinetic variants in the Create Tiers creative tab.
 - Add the documented KubeJS registration overloads and descriptive validation for malformed batch tier definitions.
 - Correct GitHub issue tracker metadata.
+- Make native tiered shafts work as Create belt pulleys and steam-engine shafts while preserving the tier through belt/powered-shaft replacement and restoring the same tiered shaft on teardown (fixes #2).
 
 ### Changed
 
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
-- Build Forge 1.20.1 and NeoForge 1.21.1 in parallel on pull requests while running the shared unit suite through NeoForge, then run a focused NeoForge GameTest suite; releases remain push-to-main only.
+- Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
 
 ### Tests
 
 - Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
-- Added NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, and generic tier attachment on an ordinary Create kinetic block entity.
+- Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, adjustable kinetic components, and native tiered-shaft belt/steam-engine interoperability.
+- Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.

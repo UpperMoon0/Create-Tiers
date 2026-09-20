@@ -13,6 +13,8 @@ import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredGearboxBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
+import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.foundation.item.TieredVerticalGearboxItem;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.EncasingRegistry;
@@ -40,6 +42,8 @@ public class ModBlocks implements PlatformHelper {
     public static final List<Block> SHAFTS = new ArrayList<>();
     public static final List<Item> SHAFT_ITEMS = new ArrayList<>();
 
+    public static final List<Block> POWERED_SHAFTS = new ArrayList<>();
+
     public static final List<Block> COGWHEELS = new ArrayList<>();
     public static final List<Item> COGWHEEL_ITEMS = new ArrayList<>();
 
@@ -59,6 +63,7 @@ public class ModBlocks implements PlatformHelper {
     public static final List<Item> GEARBOX_ITEMS = new ArrayList<>();
 
     public static RegistryObject<BlockEntityType<TieredShaftBlockEntity>> TIERED_SHAFT;
+    public static RegistryObject<BlockEntityType<TieredPoweredShaftBlockEntity>> TIERED_POWERED_SHAFT;
     public static RegistryObject<BlockEntityType<TieredCogwheelBlockEntity>> TIERED_COGWHEEL;
     public static RegistryObject<BlockEntityType<TieredGearboxBlockEntity>> TIERED_GEARBOX;
 
@@ -70,6 +75,10 @@ public class ModBlocks implements PlatformHelper {
             allShaftBlocks.addAll(ENCASED_SHAFTS);
             return BlockEntityType.Builder.of(TieredShaftBlockEntity::new, allShaftBlocks.toArray(new Block[0])).build(null);
         });
+
+        TIERED_POWERED_SHAFT = BLOCK_ENTITIES.register("tiered_powered_shaft", () ->
+                BlockEntityType.Builder.of(TieredPoweredShaftBlockEntity::new,
+                        POWERED_SHAFTS.toArray(new Block[0])).build(null));
 
         TIERED_COGWHEEL = BLOCK_ENTITIES.register("tiered_cogwheel", () -> {
             List<Block> allCogwheelBlocks = new ArrayList<>(COGWHEELS);
@@ -106,6 +115,13 @@ public class ModBlocks implements PlatformHelper {
                         .requiresCorrectToolForDrops(), tier);
 
                 SHAFTS.add(shaftBlock);
+
+                Block poweredShaftBlock = new TieredPoweredShaftBlock(BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.METAL)
+                        .noOcclusion()
+                        .strength(3.0f, 4.8f)
+                        .requiresCorrectToolForDrops(), tier);
+                POWERED_SHAFTS.add(poweredShaftBlock);
 
                 Block cogwheelBlock = new TieredCogwheelBlock(BlockBehaviour.Properties.of()
                         .mapColor(MapColor.METAL)
@@ -179,6 +195,7 @@ public class ModBlocks implements PlatformHelper {
             final int index = i;
             Tier tier = tiers.get(i);
             event.register(Registries.BLOCK, CreateTiers.asResource("shaft_" + tier.getName()), () -> SHAFTS.get(index));
+            event.register(Registries.BLOCK, CreateTiers.asResource("powered_shaft_" + tier.getName()), () -> POWERED_SHAFTS.get(index));
             event.register(Registries.BLOCK, CreateTiers.asResource("cogwheel_" + tier.getName()), () -> COGWHEELS.get(index));
             event.register(Registries.BLOCK, CreateTiers.asResource("large_cogwheel_" + tier.getName()), () -> LARGE_COGWHEELS.get(index));
 
@@ -324,6 +341,11 @@ public class ModBlocks implements PlatformHelper {
     }
 
     @Override
+    public BlockEntityType<?> getTieredPoweredShaftType() {
+        return TIERED_POWERED_SHAFT.get();
+    }
+
+    @Override
     public BlockEntityType<?> getTieredCogwheelType() {
         return TIERED_COGWHEEL.get();
     }
@@ -351,6 +373,11 @@ public class ModBlocks implements PlatformHelper {
     @Override
     public List<Item> getShaftItems() {
         return Collections.unmodifiableList(SHAFT_ITEMS);
+    }
+
+    @Override
+    public List<Block> getPoweredShafts() {
+        return Collections.unmodifiableList(POWERED_SHAFTS);
     }
 
     @Override
