@@ -103,7 +103,7 @@ This automatically covers Create kinetic families such as:
 - generators: creative motors, water wheels, large water wheels, hand cranks, valve handles, steam engines, and windmill bearings;
 - any future Create component that participates through `KineticBlockEntity`, unless Create Tiers deliberately exempts it.
 
-Speedometers and stressometers are deliberately not calibratable: they are observation devices and retain Create Tiers' unlimited RPM observation exemption.
+Speedometers and stressometers are deliberately not tier-upgrade targets: they are observation devices and retain Create Tiers' unlimited RPM observation exemption.
 
 Attached tiers are stored in the target block entity's NBT and move through normal Create block-entity serialization. Recipe output, placement, and matching block drops preserve the same registered tier ID. When tier state changes, Create Tiers rebuilds the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through tier attachment.
 
@@ -113,7 +113,7 @@ Upgraded components also inherit the tier's custom colors without replacing Crea
 
 ### Jade
 
-Jade support is optional. When Jade is installed, Create Tiers adds tier information to Jade's existing Create tooltip instead of replacing Create's own kinetic information. Tiered and calibrated kinetic components show:
+Jade support is optional. When Jade is installed, Create Tiers adds tier information to Jade's existing Create tooltip instead of replacing Create's own kinetic information. Tiered and upgraded kinetic components show:
 
 - the effective tier display name;
 - whether the tier is **Intrinsic** (a native Create Tiers block) or **Calibrated** (attached to a normal Create block);
