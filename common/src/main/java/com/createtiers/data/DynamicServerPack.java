@@ -84,6 +84,15 @@ public class DynamicServerPack implements PackResources {
         mineablePickaxe.add("values", blocks);
         TAGS.put(Compat.rl("minecraft", "tags/blocks/mineable/pickaxe"), mineablePickaxe);
 
+        JsonObject mineableAxe = new JsonObject();
+        mineableAxe.addProperty("replace", false);
+        var axeBlocks = new com.google.gson.JsonArray();
+        for (Tier tier : TierRegistry.getAllTiers()) {
+            addAxeOrPickaxeTierBlocks(axeBlocks, tier);
+        }
+        mineableAxe.add("values", axeBlocks);
+        TAGS.put(Compat.rl("minecraft", "tags/blocks/mineable/axe"), mineableAxe);
+
         JsonObject safeNbt = new JsonObject();
         safeNbt.addProperty("replace", false);
         var safeNbtBlocks = new com.google.gson.JsonArray();
@@ -125,6 +134,28 @@ public class DynamicServerPack implements PackResources {
         blocks.add("createtiers:adjustable_chain_gearshift_" + name);
         blocks.add("createtiers:rotation_speed_controller_" + name);
         blocks.add("createtiers:metal_girder_encased_shaft_" + name);
+    }
+
+    private static void addAxeOrPickaxeTierBlocks(com.google.gson.JsonArray blocks, Tier tier) {
+        String name = tier.getName();
+
+        // Mirror the corresponding upstream Create registrations using axeOrPickaxe().
+        blocks.add("createtiers:cogwheel_" + name);
+        blocks.add("createtiers:large_cogwheel_" + name);
+        blocks.add("createtiers:gearbox_" + name);
+
+        CreateEncasingVariants.shaftVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.cogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.largeCogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+
+        blocks.add("createtiers:clutch_" + name);
+        blocks.add("createtiers:gearshift_" + name);
+        blocks.add("createtiers:encased_chain_drive_" + name);
+        blocks.add("createtiers:adjustable_chain_gearshift_" + name);
+        blocks.add("createtiers:rotation_speed_controller_" + name);
     }
 
     private static void generateLootTables() {
