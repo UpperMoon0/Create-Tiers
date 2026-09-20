@@ -12,33 +12,88 @@ Each tier defines:
 - **Max SU** — a hard stress-cap for the connected Create kinetic network. If multiple tiered components are present, the lowest Max SU wins.
 - **Shaft and cogwheel colors** — used by the generated models and kinetic rendering.
 
-Untiered Create components always keep Create's normal configured maximum RPM. A high-speed tiered network therefore does **not** make ordinary Create components high-RPM-safe unless they are explicitly tier-calibrated.
+Untiered Create components always keep Create's normal configured maximum RPM. A high-speed tiered network therefore does **not** make ordinary Create components high-RPM-safe unless they are explicitly tier-upgraded.
 
 ## Tiering Create components
 
-Create's kinetic system is much broader than shafts and cogwheels. Create Tiers therefore supports every current `KineticBlockEntity`-backed Create component generically instead of copying dozens of upstream machine classes.
+Create's kinetic system is much broader than shafts and cogwheels. Create Tiers therefore supports ordinary `KineticBlockEntity`-backed Create components as **registered tier-upgrade variants** instead of cloning upstream machine classes.
 
-Ordinary Create kinetics are calibrated **as items through recipes**. A `createtiers:calibration` recipe takes the original Create block item plus pack-defined upgrade ingredients and outputs that same block item carrying the selected tier. Create Tiers does not register duplicate tiered water wheels, presses, mixers, or other upstream machines.
+Tier-upgrade registration is separate from recipe registration. A registration says that a specific item is allowed to exist with a specific tier:
 
-For example, a pack can make an advanced large water wheel meaningfully more expensive than an advanced shaft:
-
-```json
-{
-  "type": "createtiers:calibration",
-  "tier": "createtiers:advanced",
-  "input": "create:large_water_wheel",
-  "ingredients": [
-    { "item": "minecraft:diamond" },
-    { "item": "create:precision_mechanism" }
-  ]
-}
+```javascript
+// kubejs/startup_scripts/create_tiers.js
+CreateTiers.registerTierUpgrade('create:large_water_wheel', 'advanced')
 ```
 
-The `input` item is automatically included in the shapeless crafting recipe; `ingredients` contains the additional upgrade cost and accepts one to eight ingredients. Recipe authors decide which components can reach each tier and how expensive that upgrade is. With no matching recipe, there is no survival crafting path for that block/tier combination.
+By default, Create Tiers generates a simple shapeless fallback recipe that consumes the base item plus the matching tiered shaft. For example, the registration above consumes a `create:large_water_wheel` and a `createtiers:shaft_advanced`. The tiered shaft is consumed; it is not a reusable upgrade key.
 
-The crafted stack keeps the original Create item identity and stores the calibration in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that calibrated machine preserves the tier on the matching dropped block item. Recalibrating an already calibrated item through another recipe replaces only its tier while preserving its other item data.
+Disable the built-in recipe when the pack wants to own progression completely:
 
-Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback calibration tool. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply or change the tier of a water wheel, press, mixer, motor, or other ordinary block item, so it cannot bypass the pack-defined recipe cost. Using the matching tiered shaft may still clear an existing calibration.
+```javascript
+CreateTiers.registerTierUpgrade('create:large_water_wheel', 'advanced', false)
+```
+
+Batch registration is also available:
+
+```javascript
+CreateTiers.registerTierUpgrades([
+  { item: 'create:water_wheel', tier: 'advanced' },
+  { item: 'create:large_water_wheel', tier: 'advanced', defaultRecipe: false },
+  { item: 'create:large_water_wheel', tier: 'elite', defaultRecipe: false }
+])
+```
+
+Like `registerTiers`, the batch is atomic: an invalid tier or duplicate item+tier pair rejects the entire batch. Bare tier names such as `advanced` resolve to `createtiers:advanced`; integrations may also use a full namespaced tier ID.
+
+### Custom recipes
+
+`registerTierUpgrade` does **not** lock an upgrade to the crafting table. `CreateTiers.tieredItem(item, tier)` returns the registered tiered `ItemStack`, so KubeJS can use it as the output of any recipe type that accepts an item stack.
+
+For a normal crafting recipe:
+
+```javascript
+ServerEvents.recipes(event => {
+  const advancedWheel = CreateTiers.tieredItem('create:large_water_wheel', 'advanced')
+
+  event.shaped(advancedWheel, [
+    'ABA',
+    'BCB',
+    'ABA'
+  ], {
+    A: 'minecraft:diamond',
+    B: 'create:precision_mechanism',
+    C: 'create:large_water_wheel'
+  })
+})
+```
+
+The same output can be used with Create Mechanical Crafting or a third-party machine recipe:
+
+```javascript
+ServerEvents.recipes(event => {
+  const advancedWheel = CreateTiers.tieredItem('create:large_water_wheel', 'advanced')
+
+  event.recipes.create.mechanical_crafting(advancedWheel, [
+    ' AAA ',
+    'ABBBA',
+    'ABCBA',
+    'ABBBA',
+    ' AAA '
+  ], {
+    A: 'create:brass_sheet',
+    B: 'create:precision_mechanism',
+    C: 'create:large_water_wheel'
+  })
+
+  // Other mods can use the same advancedWheel output in their own recipe builders.
+})
+```
+
+`tieredItem` refuses item+tier pairs that were never registered. This keeps the legal variant list deterministic while leaving the actual progression path entirely under the pack's control.
+
+The resulting stack keeps the original Create item identity and stores the selected tier in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that upgraded machine preserves the tier on the matching dropped block item. A later recipe may upgrade that same base item to another registered tier while preserving its other item data.
+
+Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback interaction. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply or change the tier of a water wheel, press, mixer, motor, or other ordinary block item. Using the matching tiered shaft may still clear an existing attached tier.
 
 This automatically covers Create kinetic families such as:
 
@@ -50,11 +105,11 @@ This automatically covers Create kinetic families such as:
 
 Speedometers and stressometers are deliberately not calibratable: they are observation devices and retain Create Tiers' unlimited RPM observation exemption.
 
-Attached tiers are stored in the target block entity's NBT and move through normal Create block-entity serialization. Recipe output, placement, and matching block drops preserve the same registered tier ID. When tier state changes, Create Tiers rebuilds the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through calibration.
+Attached tiers are stored in the target block entity's NBT and move through normal Create block-entity serialization. Recipe output, placement, and matching block drops preserve the same registered tier ID. When tier state changes, Create Tiers rebuilds the component's kinetic connection so the new RPM/SU policy is enforced immediately. Native Create Tiers blocks keep their intrinsic tier and cannot be double-tiered through tier attachment.
 
 Native tiered shafts also participate in Create's shaft-only interactions. They can be used as belt pulleys and as steam-engine shafts. When Create temporarily replaces a tiered shaft with a belt pulley or powered steam-engine shaft, Create Tiers carries the intrinsic tier through that replacement and restores the same tiered shaft when the temporary state is removed, so RPM/SU limits are never bypassed by the conversion.
 
-Calibrated components also inherit the tier's custom colors without replacing Create's casing textures. Create cogwheel blocks, including encased cogwheels, use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to calibrated machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
+Upgraded components also inherit the tier's custom colors without replacing Create's casing textures. Create cogwheel blocks, including encased cogwheels, use `cogwheelColor`; other tintable rotating/mechanical parts use `shaftColor`. Create Tiers applies the tint through both Flywheel and fallback block-entity rendering, preserves Create's red/green overstress feedback, and adds a small tier-colored top-edge accent to upgraded machines whose specialized renderer does not expose a suitable rotating part. Create's kinetic debugger takes visual priority while it is active.
 
 ### Jade
 

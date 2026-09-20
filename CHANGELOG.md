@@ -5,8 +5,10 @@
 ### Added
 
 - Support tier calibration on every Create `KineticBlockEntity`-backed component across Forge 1.20.1 and NeoForge 1.21.1 without cloning upstream machine classes.
-- Add data-driven `createtiers:calibration` crafting recipes that output the original Create block item carrying the selected tier, so packs can price each machine/tier upgrade appropriately.
-- Preserve calibrated tier data through vanilla item placement and matching block drops on both supported loaders.
+- Add startup `registerTierUpgrade` / `registerTierUpgrades` APIs that register legal item+tier variants independently from recipe choice.
+- Add `CreateTiers.tieredItem(item, tier)` for KubeJS recipes, allowing the same registered output to be used by crafting tables, Create Mechanical Crafting, or third-party machine recipe types.
+- Generate an optional default `createtiers:tier_upgrade` shapeless recipe for each registration; it consumes the base item plus the matching tiered shaft and can be disabled per registration.
+- Preserve tier-upgrade item data through vanilla item placement and matching block drops on both supported loaders.
 - Persist attached tiers in block-entity NBT and rebuild the kinetic connection when calibration changes.
 - Apply attached-tier custom colors to ordinary Create kinetics: dedicated cogwheels use `cogwheelColor`, other rotating/mechanical parts use `shaftColor`, and specialized machines receive a subtle tier-colored accent when their renderer has no suitable tintable part.
 - Keep attached-tier visuals consistent across Flywheel and fallback block-entity rendering while preserving Create's overstress and kinetic-debugger feedback.
@@ -32,7 +34,7 @@
 
 ### Changed
 
-- Replace universal reusable-shaft calibration with recipe-defined upgrade costs for normal item-backed machines; high-value generators and machines can no longer receive an effectively free tier upgrade from owning one shaft. Tiered shafts remain a fallback only for in-world kinetics with no normal item form.
+- Replace universal reusable-shaft upgrading with registered item+tier variants. Packs can disable the default consumed-shaft recipe and define progression with any KubeJS recipe type; tiered shafts remain a fallback only for in-world kinetics with no normal item form.
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
 - Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
