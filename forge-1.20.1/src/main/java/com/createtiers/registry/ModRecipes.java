@@ -12,8 +12,8 @@ public final class ModRecipes {
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, CreateTiers.MOD_ID);
 
-    public static final RegistryObject<RecipeSerializer<CalibrationRecipe>> CALIBRATION =
-            SERIALIZERS.register("calibration", CalibrationRecipe.Serializer::new);
+    public static final RegistryObject<RecipeSerializer<CalibrationRecipe>> TIER_UPGRADE =
+            SERIALIZERS.register("tier_upgrade", CalibrationRecipe.Serializer::new);
 
     private ModRecipes() {
     }

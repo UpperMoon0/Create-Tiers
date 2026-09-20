@@ -2,6 +2,7 @@ package com.createtiers.recipe;
 
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.foundation.item.CalibratedItemData;
 import com.createtiers.registry.ModRecipes;
 import com.google.gson.JsonArray;
@@ -25,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shapeless calibration recipe. The output keeps the same Create block item and stores
+ * Shapeless built-in tier-upgrade recipe. The output keeps the same Create block item and stores
  * the selected tier in vanilla BlockEntityTag data so normal BlockItem placement restores it.
  */
 public final class CalibrationRecipe extends ShapelessRecipe {
@@ -37,7 +38,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
 
     public CalibrationRecipe(ResourceLocation recipeId, ResourceLocation tierId, ResourceLocation inputId,
             List<Ingredient> extraIngredients) {
-        this(recipeId, tierId, inputId, resolveInput(inputId), resolveTier(tierId),
+        this(recipeId, tierId, inputId, resolveInput(inputId), resolveTier(inputId, tierId),
                 validateIngredients(extraIngredients));
     }
 
@@ -66,7 +67,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return ModRecipes.CALIBRATION.get();
+        return ModRecipes.TIER_UPGRADE.get();
     }
 
     public ResourceLocation tierId() {
@@ -84,25 +85,29 @@ public final class CalibrationRecipe extends ShapelessRecipe {
     private static Item resolveInput(ResourceLocation id) {
         Item item = BuiltInRegistries.ITEM.get(id);
         if (!id.equals(BuiltInRegistries.ITEM.getKey(item))) {
-            throw new IllegalArgumentException("Unknown calibration input item: " + id);
+            throw new IllegalArgumentException("Unknown tier upgrade input item: " + id);
         }
         return item;
     }
 
-    private static Tier resolveTier(ResourceLocation id) {
-        Tier tier = TierRegistry.get(id);
+    private static Tier resolveTier(ResourceLocation inputId, ResourceLocation tierId) {
+        Tier tier = TierRegistry.get(tierId);
         if (tier == null) {
-            throw new IllegalArgumentException("Unknown Create Tiers calibration tier: " + id);
+            throw new IllegalArgumentException("Unknown Create Tiers tier: " + tierId);
+        }
+        if (!TierUpgradeRegistry.isRegistered(inputId, tierId)) {
+            throw new IllegalArgumentException(
+                    "Unregistered tier upgrade pair: item '" + inputId + "', tier '" + tierId + "'");
         }
         return tier;
     }
 
     private static List<Ingredient> validateIngredients(List<Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
-            throw new IllegalArgumentException("Calibration recipe requires at least one upgrade ingredient");
+            throw new IllegalArgumentException("Tier upgrade recipe requires at least one upgrade ingredient");
         }
         if (ingredients.size() > 8) {
-            throw new IllegalArgumentException("Calibration recipe supports at most eight upgrade ingredients");
+            throw new IllegalArgumentException("Tier upgrade recipe supports at most eight upgrade ingredients");
         }
         return List.copyOf(ingredients);
     }
@@ -121,7 +126,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
             ResourceLocation inputId = new ResourceLocation(GsonHelper.getAsString(json, "input"));
             JsonArray array = GsonHelper.getAsJsonArray(json, "ingredients");
             if (array.size() < 1 || array.size() > 8) {
-                throw new JsonParseException("Create Tiers calibration recipes require 1-8 upgrade ingredients");
+                throw new JsonParseException("Create Tiers tier upgrade recipes require 1-8 upgrade ingredients");
             }
 
             List<Ingredient> ingredients = new ArrayList<>(array.size());

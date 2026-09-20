@@ -12,8 +12,8 @@ public final class ModRecipes {
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, CreateTiers.MOD_ID);
 
-    public static final DeferredHolder<RecipeSerializer<?>, CalibrationRecipe.Serializer> CALIBRATION =
-            SERIALIZERS.register("calibration", CalibrationRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeSerializer<?>, CalibrationRecipe.Serializer> TIER_UPGRADE =
+            SERIALIZERS.register("tier_upgrade", CalibrationRecipe.Serializer::new);
 
     private ModRecipes() {
     }

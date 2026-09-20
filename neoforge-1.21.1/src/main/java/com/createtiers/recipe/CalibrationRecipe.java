@@ -2,6 +2,7 @@ package com.createtiers.recipe;
 
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.foundation.item.CalibratedItemData;
 import com.createtiers.registry.ModRecipes;
 import com.mojang.serialization.DataResult;
@@ -25,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shapeless calibration recipe. The output keeps the same Create block item and stores
+ * Shapeless built-in tier-upgrade recipe. The output keeps the same Create block item and stores
  * the selected tier in vanilla block-entity item data so normal BlockItem placement restores it.
  */
 public final class CalibrationRecipe extends ShapelessRecipe {
@@ -36,7 +37,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
     private final List<Ingredient> extraIngredients;
 
     public CalibrationRecipe(ResourceLocation tierId, ResourceLocation inputId, List<Ingredient> extraIngredients) {
-        this(tierId, inputId, resolveInput(inputId), resolveTier(tierId), requireIngredients(extraIngredients));
+        this(tierId, inputId, resolveInput(inputId), resolveTier(inputId, tierId), requireIngredients(extraIngredients));
     }
 
     private CalibrationRecipe(ResourceLocation tierId, ResourceLocation inputId, Item inputItem, Tier tier,
@@ -63,7 +64,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return ModRecipes.CALIBRATION.get();
+        return ModRecipes.TIER_UPGRADE.get();
     }
 
     public ResourceLocation tierId() {
@@ -81,35 +82,39 @@ public final class CalibrationRecipe extends ShapelessRecipe {
     private static Item resolveInput(ResourceLocation id) {
         Item item = BuiltInRegistries.ITEM.get(id);
         if (!id.equals(BuiltInRegistries.ITEM.getKey(item))) {
-            throw new IllegalArgumentException("Unknown calibration input item: " + id);
+            throw new IllegalArgumentException("Unknown tier upgrade input item: " + id);
         }
         return item;
     }
 
-    private static Tier resolveTier(ResourceLocation id) {
-        Tier tier = TierRegistry.get(id);
+    private static Tier resolveTier(ResourceLocation inputId, ResourceLocation tierId) {
+        Tier tier = TierRegistry.get(tierId);
         if (tier == null) {
-            throw new IllegalArgumentException("Unknown Create Tiers calibration tier: " + id);
+            throw new IllegalArgumentException("Unknown Create Tiers tier: " + tierId);
+        }
+        if (!TierUpgradeRegistry.isRegistered(inputId, tierId)) {
+            throw new IllegalArgumentException(
+                    "Unregistered tier upgrade pair: item '" + inputId + "', tier '" + tierId + "'");
         }
         return tier;
     }
 
     private static List<Ingredient> requireIngredients(List<Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
-            throw new IllegalArgumentException("Calibration recipe requires at least one upgrade ingredient");
+            throw new IllegalArgumentException("Tier upgrade recipe requires at least one upgrade ingredient");
         }
         if (ingredients.size() > 8) {
-            throw new IllegalArgumentException("Calibration recipe supports at most eight upgrade ingredients");
+            throw new IllegalArgumentException("Tier upgrade recipe supports at most eight upgrade ingredients");
         }
         return List.copyOf(ingredients);
     }
 
     private static DataResult<List<Ingredient>> validateIngredients(List<Ingredient> ingredients) {
         if (ingredients.isEmpty()) {
-            return DataResult.error(() -> "Calibration recipe requires at least one upgrade ingredient");
+            return DataResult.error(() -> "Tier upgrade recipe requires at least one upgrade ingredient");
         }
         if (ingredients.size() > 8) {
-            return DataResult.error(() -> "Calibration recipe supports at most eight upgrade ingredients");
+            return DataResult.error(() -> "Tier upgrade recipe supports at most eight upgrade ingredients");
         }
         return DataResult.success(List.copyOf(ingredients));
     }

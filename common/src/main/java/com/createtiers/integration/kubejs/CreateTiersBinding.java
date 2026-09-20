@@ -3,7 +3,12 @@ package com.createtiers.integration.kubejs;
 import com.createtiers.Compat;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
+import com.createtiers.foundation.item.CalibratedItemData;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +100,61 @@ public class CreateTiersBinding {
         registerCustomTier(namespace, name, level, maxRPM, maxSU, color, color);
     }
 
+    public static void registerTierUpgrade(String item, String tier) {
+        registerTierUpgrade(item, tier, true);
+    }
+
+    public static void registerTierUpgrade(String item, String tier, boolean defaultRecipe) {
+        ResourceLocation itemId = parseResourceLocation(item, "item", false);
+        ResourceLocation tierId = parseResourceLocation(tier, "tier", true);
+        TierUpgradeRegistry.register(itemId, tierId, defaultRecipe);
+        LOGGER.info("Registered tier upgrade '{} -> {}' (defaultRecipe={})", itemId, tierId, defaultRecipe);
+    }
+
+    public static void registerTierUpgrades(List<Map<String, Object>> upgrades) {
+        if (upgrades == null) {
+            throw new IllegalArgumentException("CreateTiers.registerTierUpgrades requires an upgrade list");
+        }
+
+        List<TierUpgradeRegistry.Registration> registrations = new java.util.ArrayList<>(upgrades.size());
+        for (int index = 0; index < upgrades.size(); index++) {
+            Map<String, Object> data = upgrades.get(index);
+            if (data == null) {
+                throw new IllegalArgumentException("Create Tiers tier upgrade entry #" + index + " cannot be null");
+            }
+            registrations.add(new TierUpgradeRegistry.Registration(
+                    parseResourceLocation(requireUpgradeString(data, "item", index), "item", false),
+                    parseResourceLocation(requireUpgradeString(data, "tier", index), "tier", true),
+                    optionalBoolean(data, "defaultRecipe", true, index)));
+        }
+
+        TierUpgradeRegistry.registerAll(registrations);
+        LOGGER.info("Registered {} tier upgrades via registerTierUpgrades batch call", registrations.size());
+    }
+
+    /**
+     * Build a registered tiered item for use as the output of any KubeJS recipe type.
+     */
+    public static ItemStack tieredItem(String item, String tier) {
+        ResourceLocation itemId = parseResourceLocation(item, "item", false);
+        ResourceLocation tierId = parseResourceLocation(tier, "tier", true);
+
+        if (!TierUpgradeRegistry.isRegistered(itemId, tierId)) {
+            throw new IllegalArgumentException(
+                    "No tier upgrade is registered for item '" + itemId + "' and tier '" + tierId + "'");
+        }
+
+        Item input = BuiltInRegistries.ITEM.get(itemId);
+        if (!itemId.equals(BuiltInRegistries.ITEM.getKey(input))) {
+            throw new IllegalArgumentException("Unknown tier upgrade item: " + itemId);
+        }
+        Tier resolvedTier = TierRegistry.get(tierId);
+        if (resolvedTier == null) {
+            throw new IllegalArgumentException("Unknown Create Tiers tier: " + tierId);
+        }
+        return CalibratedItemData.calibratedCopy(new ItemStack(input), resolvedTier);
+    }
+
     public static Tier getTier(String name) {
         return TierRegistry.get(rl("createtiers", name));
     }
@@ -156,6 +216,42 @@ public class CreateTiersBinding {
             return fallback;
         }
         return requireNumber(data, key, index);
+    }
+
+    private static String requireUpgradeString(Map<String, Object> data, String key, int index) {
+        Object value = data.get(key);
+        if (!(value instanceof String string) || string.isBlank()) {
+            throw upgradeFieldError(index, key, "must be a non-empty string");
+        }
+        return string;
+    }
+
+    private static boolean optionalBoolean(Map<String, Object> data, String key, boolean fallback, int index) {
+        if (!data.containsKey(key)) {
+            return fallback;
+        }
+        Object value = data.get(key);
+        if (!(value instanceof Boolean bool)) {
+            throw upgradeFieldError(index, key, "must be a boolean");
+        }
+        return bool;
+    }
+
+    private static ResourceLocation parseResourceLocation(String value, String field, boolean defaultTierNamespace) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Create Tiers " + field + " cannot be blank");
+        }
+        String normalized = defaultTierNamespace && value.indexOf(':') < 0 ? "createtiers:" + value : value;
+        ResourceLocation id = ResourceLocation.tryParse(normalized);
+        if (id == null) {
+            throw new IllegalArgumentException("Invalid Create Tiers " + field + " id: " + value);
+        }
+        return id;
+    }
+
+    private static IllegalArgumentException upgradeFieldError(int index, String field, String reason) {
+        return new IllegalArgumentException(
+                "Create Tiers tier upgrade entry #" + index + " field '" + field + "' " + reason);
     }
 
     private static IllegalArgumentException fieldError(int index, String field, String reason) {
