@@ -4,6 +4,7 @@ import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
@@ -11,6 +12,7 @@ import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -32,17 +34,26 @@ final class GameTestSupport {
     }
 
     static Tier ensureAttachmentTier() {
-        Tier existing = TierRegistry.get(ATTACHMENT_TIER_ID);
-        if (existing != null) {
-            return existing;
+        Tier tier = TierRegistry.get(ATTACHMENT_TIER_ID);
+        if (tier == null) {
+            TierRegistry.unfreeze();
+            try {
+                tier = TierRegistry.register(ATTACHMENT_TIER_ID, ATTACHMENT_TIER);
+            } finally {
+                TierRegistry.freeze();
+            }
         }
 
-        TierRegistry.unfreeze();
-        try {
-            return TierRegistry.register(ATTACHMENT_TIER_ID, ATTACHMENT_TIER);
-        } finally {
-            TierRegistry.freeze();
+        ResourceLocation shaftItemId = BuiltInRegistries.ITEM.getKey(AllBlocks.SHAFT.get().asItem());
+        if (!TierUpgradeRegistry.isRegistered(shaftItemId, ATTACHMENT_TIER_ID)) {
+            TierUpgradeRegistry.unfreeze();
+            try {
+                TierUpgradeRegistry.register(shaftItemId, ATTACHMENT_TIER_ID, false);
+            } finally {
+                TierUpgradeRegistry.freeze();
+            }
         }
+        return tier;
     }
 
     static IAttachedTierBlockEntity requireAttachable(GameTestHelper helper, KineticBlockEntity kinetic) {

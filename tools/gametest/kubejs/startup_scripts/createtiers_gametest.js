@@ -9,3 +9,8 @@ CreateTiers.registerTier(
     0x44AAEE,
     'GameTest Native'
 )
+
+CreateTiers.registerTierUpgrade(
+    'create:shaft',
+    'gametest_native'
+)

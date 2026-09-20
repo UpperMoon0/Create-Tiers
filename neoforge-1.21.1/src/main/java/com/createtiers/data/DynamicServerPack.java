@@ -5,6 +5,7 @@ import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -31,9 +32,11 @@ public class DynamicServerPack implements PackResources {
     private static final String NAME = "createtiers:dynamic_server";
     private static final String BLOCK_TAG_ROOT = "tags/block";
     private static final String LOOT_TABLE_ROOT = "loot_table";
+    private static final String RECIPE_ROOT = "recipe";
 
     private static final Map<ResourceLocation, JsonObject> TAGS = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, JsonObject> LOOT_TABLES = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, JsonObject> RECIPES = new ConcurrentHashMap<>();
     private static volatile boolean resourcesGenerated = false;
 
     private final PackMetadataSection metadata;
@@ -45,24 +48,27 @@ public class DynamicServerPack implements PackResources {
     }
 
     public static void generateResources() {
-        if (resourcesGenerated || !TierRegistry.isFrozen()) {
+        if (resourcesGenerated || !TierRegistry.isFrozen() || !TierUpgradeRegistry.isFrozen()) {
             return;
         }
 
         synchronized (DynamicServerPack.class) {
-            if (resourcesGenerated || !TierRegistry.isFrozen()) {
+            if (resourcesGenerated || !TierRegistry.isFrozen() || !TierUpgradeRegistry.isFrozen()) {
                 return;
             }
 
             TAGS.clear();
             LOOT_TABLES.clear();
+            RECIPES.clear();
             if (TierRegistry.size() > 0) {
                 generateMiningTags();
                 generateLootTables();
+                generateDefaultTierUpgradeRecipes();
             }
             resourcesGenerated = true;
-            CreateTiers.LOGGER.info("Dynamic server data generated from {} finalized tiers. Tags: {}, Loot Tables: {}",
-                    TierRegistry.size(), TAGS.size(), LOOT_TABLES.size());
+            CreateTiers.LOGGER.info(
+                    "Dynamic server data generated from {} finalized tiers and {} tier upgrades. Tags: {}, Loot Tables: {}, Recipes: {}",
+                    TierRegistry.size(), TierUpgradeRegistry.size(), TAGS.size(), LOOT_TABLES.size(), RECIPES.size());
         }
     }
 
@@ -125,6 +131,32 @@ public class DynamicServerPack implements PackResources {
         }
     }
 
+    private static void generateDefaultTierUpgradeRecipes() {
+        for (TierUpgradeRegistry.Registration upgrade : TierUpgradeRegistry.getAll()) {
+            if (!upgrade.defaultRecipe()) continue;
+            Tier tier = TierRegistry.get(upgrade.tierId());
+            if (tier == null) {
+                throw new IllegalStateException("Tier upgrade references missing finalized tier: " + upgrade.tierId());
+            }
+
+            JsonObject recipe = new JsonObject();
+            recipe.addProperty("type", CreateTiers.MOD_ID + ":tier_upgrade");
+            recipe.addProperty("tier", upgrade.tierId().toString());
+            recipe.addProperty("input", upgrade.itemId().toString());
+
+            var ingredients = new com.google.gson.JsonArray();
+            JsonObject shaft = new JsonObject();
+            shaft.addProperty("item", CreateTiers.MOD_ID + ":shaft_" + tier.getName());
+            ingredients.add(shaft);
+            recipe.add("ingredients", ingredients);
+
+            String path = RECIPE_ROOT + "/tier_upgrade/"
+                    + upgrade.tierId().getNamespace() + "/" + upgrade.tierId().getPath() + "/"
+                    + upgrade.itemId().getNamespace() + "/" + upgrade.itemId().getPath();
+            RECIPES.put(Compat.rl(CreateTiers.MOD_ID, path), recipe);
+        }
+    }
+
     private static void generateBlockLootTable(String blockName) {
         LOOT_TABLES.put(
                 Compat.rl(CreateTiers.MOD_ID, LOOT_TABLE_ROOT + "/blocks/" + blockName),
@@ -167,6 +199,7 @@ public class DynamicServerPack implements PackResources {
     public static void clear() {
         TAGS.clear();
         LOOT_TABLES.clear();
+        RECIPES.clear();
         resourcesGenerated = false;
     }
 
@@ -180,6 +213,10 @@ public class DynamicServerPack implements PackResources {
 
     public static Map<ResourceLocation, JsonObject> getLootTables() {
         return LOOT_TABLES;
+    }
+
+    public static Map<ResourceLocation, JsonObject> getRecipes() {
+        return RECIPES;
     }
 
     @Override
@@ -233,6 +270,10 @@ public class DynamicServerPack implements PackResources {
             JsonObject json = LOOT_TABLES.get(Compat.rl(namespace, path.substring(0, path.length() - 5)));
             return json == null ? null : () -> stream(json);
         }
+        if (namespace.equals(CreateTiers.MOD_ID) && path.startsWith(RECIPE_ROOT + "/") && path.endsWith(".json")) {
+            JsonObject json = RECIPES.get(Compat.rl(namespace, path.substring(0, path.length() - 5)));
+            return json == null ? null : () -> stream(json);
+        }
         return null;
     }
 
@@ -258,6 +299,14 @@ public class DynamicServerPack implements PackResources {
         if (namespace.equals(CreateTiers.MOD_ID)
                 && (path.startsWith(LOOT_TABLE_ROOT + "/") || path.equals(LOOT_TABLE_ROOT))) {
             LOOT_TABLES.forEach((loc, json) -> {
+                if (loc.getPath().startsWith(path)) {
+                    output.accept(Compat.withSuffix(loc, ".json"), () -> stream(json));
+                }
+            });
+        }
+        if (namespace.equals(CreateTiers.MOD_ID)
+                && (path.startsWith(RECIPE_ROOT + "/") || path.equals(RECIPE_ROOT))) {
+            RECIPES.forEach((loc, json) -> {
                 if (loc.getPath().startsWith(path)) {
                     output.accept(Compat.withSuffix(loc, ".json"), () -> stream(json));
                 }

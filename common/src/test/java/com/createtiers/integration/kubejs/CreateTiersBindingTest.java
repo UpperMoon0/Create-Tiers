@@ -2,6 +2,8 @@ package com.createtiers.integration.kubejs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +11,8 @@ import java.util.Map;
 
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,11 +21,13 @@ class CreateTiersBindingTest {
 
     @BeforeEach
     void setUp() {
+        TierUpgradeRegistry.clear();
         TierRegistry.clear();
     }
 
     @AfterEach
     void tearDown() {
+        TierUpgradeRegistry.clear();
         TierRegistry.clear();
     }
 
@@ -105,5 +111,37 @@ class CreateTiersBindingTest {
         assertEquals(0xFFFFFF, basic.getCogwheelColor());
         assertEquals(0x334455, advanced.getShaftColor());
         assertEquals(0x334455, advanced.getCogwheelColor());
+    }
+    @Test
+    void tierUpgradeRegistrationIsIndependentFromRecipeChoice() {
+        CreateTiersBinding.registerTier("advanced", 2, 512, 4096);
+        CreateTiersBinding.registerTierUpgrade("create:large_water_wheel", "advanced", false);
+
+        ResourceLocation item = ResourceLocation.tryParse("create:large_water_wheel");
+        ResourceLocation tier = ResourceLocation.tryParse("createtiers:advanced");
+        assertTrue(TierUpgradeRegistry.isRegistered(item, tier));
+        assertFalse(TierUpgradeRegistry.get(item, tier).defaultRecipe());
+    }
+
+    @Test
+    void tierUpgradeBatchDefaultsRecipeAndIsAtomic() {
+        CreateTiersBinding.registerTier("basic", 1, 256, 1024);
+        CreateTiersBinding.registerTier("advanced", 2, 512, 4096);
+
+        assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTierUpgrades(List.of(
+                Map.of("item", "create:shaft", "tier", "basic"),
+                Map.of("item", "create:shaft", "tier", "missing", "defaultRecipe", false))));
+        assertEquals(0, TierUpgradeRegistry.size());
+
+        CreateTiersBinding.registerTierUpgrades(List.of(
+                Map.of("item", "create:shaft", "tier", "basic"),
+                Map.of("item", "create:large_water_wheel", "tier", "advanced", "defaultRecipe", false)));
+
+        assertTrue(TierUpgradeRegistry.get(
+                ResourceLocation.tryParse("create:shaft"),
+                ResourceLocation.tryParse("createtiers:basic")).defaultRecipe());
+        assertFalse(TierUpgradeRegistry.get(
+                ResourceLocation.tryParse("create:large_water_wheel"),
+                ResourceLocation.tryParse("createtiers:advanced")).defaultRecipe());
     }
 }

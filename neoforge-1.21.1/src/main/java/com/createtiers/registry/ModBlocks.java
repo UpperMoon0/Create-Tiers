@@ -4,6 +4,7 @@ import com.createtiers.PlatformHelper;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
 import com.createtiers.content.kinetics.TieredCogwheelBlockItem;
@@ -208,6 +209,7 @@ public class ModBlocks implements PlatformHelper {
         }
 
         TierRegistry.freeze();
+        TierUpgradeRegistry.freeze();
         registerEncasingVariants();
     }
 
