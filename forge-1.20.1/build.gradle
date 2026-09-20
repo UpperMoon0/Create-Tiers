@@ -53,10 +53,23 @@ sourceSets {
             srcDir 'src/generated/resources'
         }
     }
+    test {
+        java {
+            srcDir '../common/src/test/java'
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
 }
 
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+        content { includeGroup 'org.spongepowered' }
+    }
     flatDir {
         dir 'libs'
     }
@@ -104,7 +117,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor "org.spongepowered.mixin:0.8.7:processor"
+    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
     implementation fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
     implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
     compileOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}")
@@ -122,6 +135,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:spark-361579:${spark_version}")
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
     implementation fg.deobf("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}")
+
+    testImplementation platform('org.junit:junit-bom:5.10.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 mixin {
     add sourceSets.main, "createtiers-refmap.json"
@@ -159,5 +176,13 @@ tasks.named('processResources', ProcessResources).configure {
 
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
+    }
+}
+
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
     }
 }

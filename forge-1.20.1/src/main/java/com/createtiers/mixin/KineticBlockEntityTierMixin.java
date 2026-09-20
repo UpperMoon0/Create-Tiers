@@ -91,7 +91,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         }
     }
 
-    @Inject(method = "read", at = @At("TAIL"))
+    @Inject(method = "read", at = @At("RETURN"))
     private void createtiers$readAttachedTier(CompoundTag tag, boolean clientPacket, CallbackInfo ci) {
         createtiers$loadTier(tag);
         AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, createtiers$attachedTier);

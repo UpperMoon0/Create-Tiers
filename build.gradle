@@ -17,3 +17,37 @@ allprojects {
         }
     }
 }
+
+def pythonCommand = System.getProperty('os.name').toLowerCase().contains('windows')
+        ? ['py', '-3']
+        : ['python3']
+
+tasks.register('harnessTest', Exec) {
+    group = 'verification'
+    description = 'Run the lightweight verification harness self-tests.'
+    commandLine(*(pythonCommand + ['-m', 'unittest', 'discover', '-s', 'tools', '-p', 'test_*.py', '-v']))
+}
+
+tasks.register('testAllTargets') {
+    group = 'verification'
+    description = 'Run JVM tests for every supported loader target.'
+    dependsOn ':forge-1.20.1:test', ':neoforge-1.21.1:test'
+}
+
+tasks.register('buildAllTargets') {
+    group = 'verification'
+    description = 'Build every supported loader target.'
+    dependsOn ':forge-1.20.1:build', ':neoforge-1.21.1:build'
+}
+
+tasks.register('gameTestAllTargets') {
+    group = 'verification'
+    description = 'Run the runtime GameTest suites for every supported loader target.'
+    dependsOn ':forge-1.20.1:runGameTestServer', ':neoforge-1.21.1:runGameTestServer'
+}
+
+tasks.register('verify') {
+    group = 'verification'
+    description = 'Run harness, JVM/build, and runtime verification for every supported target.'
+    dependsOn 'harnessTest', 'buildAllTargets', 'gameTestAllTargets'
+}

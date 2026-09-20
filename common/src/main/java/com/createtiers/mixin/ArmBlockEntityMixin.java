@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 @Mixin(value = ArmBlockEntity.class, remap = false)
 public abstract class ArmBlockEntityMixin {
 
-    @ModifyConstant(method = "tickMovementProgress()Z", constant = @Constant(intValue = 256))
-    private int createtiers$tierMovementSpeedCeiling(int vanillaCeiling) {
+    @ModifyConstant(method = "tickMovementProgress()Z", constant = @Constant(floatValue = 256.0f))
+    private float createtiers$tierMovementSpeedCeiling(float vanillaCeiling) {
         if ((Object) this instanceof ITieredBlockEntity tiered) {
             Tier tier = tiered.getTier();
             if (tier != null) {

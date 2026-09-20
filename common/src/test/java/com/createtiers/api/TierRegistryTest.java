@@ -16,6 +16,15 @@ import org.junit.jupiter.api.Test;
 
 class TierRegistryTest {
 
+    private static ResourceLocation id(String namespace, String path) {
+        ResourceLocation value = ResourceLocation.tryParse(namespace + ":" + path);
+        if (value == null) {
+            throw new AssertionError("Invalid test resource location: " + namespace + ":" + path);
+        }
+        return value;
+    }
+
+
     @BeforeEach
     void setUp() {
         TierRegistry.clear();
@@ -30,7 +39,7 @@ class TierRegistryTest {
     void duplicateIdIsRejectedWithoutMutatingLevelLookup() {
         Tier first = new Tier(1, "basic", 256, 1024);
         Tier second = new Tier(2, "advanced", 512, 2048);
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("createtiers", "basic");
+        ResourceLocation id = id("createtiers", "basic");
 
         TierRegistry.register(id, first);
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(id, second));
@@ -42,22 +51,22 @@ class TierRegistryTest {
 
     @Test
     void duplicateLevelIsRejected() {
-        TierRegistry.register(ResourceLocation.fromNamespaceAndPath("createtiers", "basic"),
+        TierRegistry.register(id("createtiers", "basic"),
                 new Tier(1, "basic", 256, 1024));
 
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("othermod", "advanced"),
+                id("othermod", "advanced"),
                 new Tier(1, "advanced", 512, 2048)));
         assertEquals(1, TierRegistry.size());
     }
 
     @Test
     void generatedNamesMustBeUniqueAcrossNamespaces() {
-        TierRegistry.register(ResourceLocation.fromNamespaceAndPath("pack_a", "steel"),
+        TierRegistry.register(id("pack_a", "steel"),
                 new Tier(1, "steel", 256, 1024));
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("pack_b", "steel"),
+                id("pack_b", "steel"),
                 new Tier(2, "steel", 512, 2048)));
         assertTrue(error.getMessage().contains("Generated component names must be unique"));
     }
@@ -65,19 +74,19 @@ class TierRegistryTest {
     @Test
     void invalidLimitsLevelsAndColorsAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_level"),
+                id("createtiers", "bad_level"),
                 new Tier(0, "bad_level", 256, 1024)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_rpm"),
+                id("createtiers", "bad_rpm"),
                 new Tier(1, "bad_rpm", 0, 1024)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_su"),
+                id("createtiers", "bad_su"),
                 new Tier(1, "bad_su", 256, 0)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_shaft_color"),
+                id("createtiers", "bad_shaft_color"),
                 new Tier(1, "bad_shaft_color", 256, 1024, -1, 0xFFFFFF, null)));
         assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "bad_cog_color"),
+                id("createtiers", "bad_cog_color"),
                 new Tier(1, "bad_cog_color", 256, 1024, 0xFFFFFF, 0x1000000, null)));
         assertEquals(0, TierRegistry.size());
     }
@@ -85,7 +94,7 @@ class TierRegistryTest {
     @Test
     void invalidGeneratedResourceNameIsRejectedAtRegistration() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "safe_lookup_id"),
+                id("createtiers", "safe_lookup_id"),
                 new Tier(1, "Bad Name", 256, 1024)));
 
         assertTrue(error.getMessage().contains("invalid in Minecraft resource paths"));
@@ -94,8 +103,8 @@ class TierRegistryTest {
 
     @Test
     void batchRegistrationIsAtomicWhenLaterEntryConflicts() {
-        ResourceLocation basicId = ResourceLocation.fromNamespaceAndPath("createtiers", "basic");
-        ResourceLocation advancedId = ResourceLocation.fromNamespaceAndPath("createtiers", "advanced");
+        ResourceLocation basicId = id("createtiers", "basic");
+        ResourceLocation advancedId = id("createtiers", "advanced");
         Map<ResourceLocation, Tier> registrations = new LinkedHashMap<>();
         registrations.put(basicId, new Tier(1, "basic", 256, 1024));
         registrations.put(advancedId, new Tier(1, "advanced", 512, 2048));
@@ -109,8 +118,8 @@ class TierRegistryTest {
 
     @Test
     void validBatchCommitsAllTiersAndReadsBackInLevelOrder() {
-        ResourceLocation highId = ResourceLocation.fromNamespaceAndPath("createtiers", "high");
-        ResourceLocation lowId = ResourceLocation.fromNamespaceAndPath("createtiers", "low");
+        ResourceLocation highId = id("createtiers", "high");
+        ResourceLocation lowId = id("createtiers", "low");
         Tier high = new Tier(2, "high", 512, 4096);
         Tier low = new Tier(1, "low", 256, 1024);
         Map<ResourceLocation, Tier> registrations = new LinkedHashMap<>();
@@ -125,16 +134,16 @@ class TierRegistryTest {
 
     @Test
     void frozenRegistryRejectsSingleAndBatchMutationsWithoutChangingContents() {
-        ResourceLocation basicId = ResourceLocation.fromNamespaceAndPath("createtiers", "basic");
+        ResourceLocation basicId = id("createtiers", "basic");
         Tier basic = new Tier(1, "basic", 256, 1024);
         TierRegistry.register(basicId, basic);
         TierRegistry.freeze();
 
         assertThrows(IllegalStateException.class, () -> TierRegistry.register(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "advanced"),
+                id("createtiers", "advanced"),
                 new Tier(2, "advanced", 512, 2048)));
         assertThrows(IllegalStateException.class, () -> TierRegistry.registerAll(Map.of(
-                ResourceLocation.fromNamespaceAndPath("createtiers", "elite"),
+                id("createtiers", "elite"),
                 new Tier(3, "elite", 1024, 4096))));
 
         assertTrue(TierRegistry.isFrozen());

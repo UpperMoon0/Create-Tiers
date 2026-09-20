@@ -53,6 +53,7 @@ sourceSets {
     }
     test {
         java {
+            srcDir '../common/src/test/java'
             srcDir 'src/test/java'
         }
         resources {
@@ -232,15 +233,6 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-
-tasks.register('testUnit', Test) {
-    testClassesDirs = sourceSets.test.output
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
 }
 
 idea {
