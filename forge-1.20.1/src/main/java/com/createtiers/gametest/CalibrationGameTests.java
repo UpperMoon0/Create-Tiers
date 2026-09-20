@@ -78,6 +78,7 @@ public final class CalibrationGameTests {
     public static void calibrationRecipeItemRoundTrip(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         CalibrationRecipe recipe = new CalibrationRecipe(
+                new net.minecraft.resources.ResourceLocation(CreateTiers.MOD_ID, "gametest_calibration_recipe"),
                 GameTestSupport.ATTACHMENT_TIER_ID,
                 BuiltInRegistries.ITEM.getKey(AllBlocks.SHAFT.get().asItem()),
                 java.util.List.of(Ingredient.of(Items.IRON_INGOT)));
