@@ -58,3 +58,6 @@
 - Add Forge and NeoForge regression coverage for ordinary attached-tier belt/steam/encasing round trips, intrinsic belt block-entity NBT serialize/recreate/reload, legacy attached-tier belt data, and generated mining-tag parity.
 - Make runtime receipts evidence-backed: every required scenario must be emitted by a successfully completed GameTest in the current run before an exact-head pass receipt can be written.
 
+
+- Add every registered tier-upgrade output to the Create Tiers creative tab as a calibrated item stack.
+- Remove generated encased shaft, cogwheel, and large-cogwheel variants from the Create Tiers creative tab.

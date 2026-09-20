@@ -34,6 +34,7 @@ REQUIRED_SCENARIOS = (
     "registered-shaft-steam-tier-preservation",
     "registered-kinetic-encasing-tier-preservation",
     "native-axe-or-pickaxe-parity",
+    "tier-upgrade-creative-tab-entry",
 )
 
 SCENARIO_MARKER = "CREATE_TIERS_SCENARIO_PASS:"

@@ -6,6 +6,9 @@ import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.api.TierUpgradeRegistry;
+import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.registry.CommonCreativeTab;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -62,8 +65,12 @@ public final class NativeRelayGameTests {
         }
 
         assertUpgradeTargetValidation(helper);
+        assertTierUpgradeCreativeEntry(helper, tier);
 
-        GameTestSupport.succeed(helper, "native-relay-default-family", "native-axe-or-pickaxe-parity");
+        GameTestSupport.succeed(helper,
+                "native-relay-default-family",
+                "native-axe-or-pickaxe-parity",
+                "tier-upgrade-creative-tab-entry");
     }
 
     private static void assertAxeOrPickaxe(GameTestHelper helper, String path) {
@@ -71,6 +78,15 @@ public final class NativeRelayGameTests {
         if (!block.defaultBlockState().is(BlockTags.MINEABLE_WITH_AXE)
                 || !block.defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE)) {
             helper.fail("Native tier block does not mirror Create's axeOrPickaxe mining tags: " + path);
+        }
+    }
+
+    private static void assertTierUpgradeCreativeEntry(GameTestHelper helper, Tier tier) {
+        boolean found = CommonCreativeTab.tierUpgradeEntries().stream()
+                .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
+                        && tier.equals(CalibratedItemData.getTier(stack)));
+        if (!found) {
+            helper.fail("Registered tier-upgrade output is missing from the Create Tiers creative tab");
         }
     }
 

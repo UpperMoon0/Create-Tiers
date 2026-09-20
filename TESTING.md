@@ -98,3 +98,10 @@ remain effectively tiered from source provenance and restore the original intrin
 tiered shaft identity.
 
 The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.
+
+
+### Creative-tab upgrade entries
+
+The Create Tiers creative tab exposes every registered `registerTierUpgrade(item, tier)` pair as a real calibrated item stack using the same item data path as recipe outputs. Runtime GameTests verify the startup fixture's registered `create:shaft` upgrade appears with the expected tier.
+
+Generated encased shaft, encased cogwheel, and encased large-cogwheel items are intentionally omitted from the mod creative tab. Resource-contract coverage prevents those generated encased item lists from being reintroduced there.

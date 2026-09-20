@@ -13,6 +13,7 @@ NEO_MODEL_GENERATOR = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/clie
 ENCASING_DISCOVERY = ROOT / "common/src/main/java/com/createtiers/registry/CreateEncasingVariants.java"
 FORGE_SERVER_PACK = ROOT / "common/src/main/java/com/createtiers/data/DynamicServerPack.java"
 NEO_SERVER_PACK = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/data/DynamicServerPack.java"
+CREATIVE_TAB = ROOT / "common/src/main/java/com/createtiers/registry/CommonCreativeTab.java"
 
 
 class ResourceContractTests(unittest.TestCase):
@@ -47,6 +48,16 @@ class ResourceContractTests(unittest.TestCase):
             self.assertIn("TieredNativeKineticBlock", source)
             self.assertIn('"blockstates/" + baseId.getPath() + ".json"', source)
             self.assertIn('"models/item/" + baseId.getPath() + ".json"', source)
+
+    def test_creative_tab_exposes_registered_upgrades_without_encased_variant_clutter(self):
+        source = CREATIVE_TAB.read_text(encoding="utf-8")
+        self.assertIn("tierUpgradeEntries().forEach(output::accept)", source)
+        self.assertIn("TierUpgradeRegistry.getAll()", source)
+        self.assertIn("CalibratedItemData.calibratedCopy", source)
+
+        self.assertNotIn("ModBlocks.ENCASED_SHAFT_ITEMS", source)
+        self.assertNotIn("ModBlocks.ENCASED_COGWHEEL_ITEMS", source)
+        self.assertNotIn("ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS", source)
 
     def test_standard_create_encasings_are_discovered_not_hardcoded_in_registration(self):
         discovery = ENCASING_DISCOVERY.read_text(encoding="utf-8")
