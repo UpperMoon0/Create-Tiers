@@ -41,6 +41,7 @@ public class TierRegistry {
     public static synchronized Tier register(ResourceLocation id, Tier tier) {
         validateMutable();
         validateRegistration(id, tier, TIERS.keySet(), TIERS_BY_LEVEL.keySet(), registeredNames());
+        validateMonotonicLimits(List.of(tier));
         put(id, tier);
         return tier;
     }
@@ -66,6 +67,8 @@ public class TierRegistry {
             levels.add(entry.getValue().getTier());
             names.add(entry.getValue().getName());
         }
+
+        validateMonotonicLimits(registrations.values());
 
         List<Tier> registered = new ArrayList<>(registrations.size());
         for (Map.Entry<ResourceLocation, Tier> entry : registrations.entrySet()) {
@@ -96,6 +99,29 @@ public class TierRegistry {
         if (names.contains(tier.getName())) {
             throw new IllegalArgumentException(
                     "Tier generated name '" + tier.getName() + "' is already registered. Generated component names must be unique across namespaces.");
+        }
+    }
+
+    private static void validateMonotonicLimits(Collection<Tier> pending) {
+        List<Tier> ordered = new ArrayList<>(TIERS.values());
+        ordered.addAll(pending);
+        ordered.sort(Comparator.comparingInt(Tier::getTier));
+
+        for (int i = 1; i < ordered.size(); i++) {
+            Tier lower = ordered.get(i - 1);
+            Tier higher = ordered.get(i);
+            if (higher.getMaxRPM() < lower.getMaxRPM()) {
+                throw new IllegalArgumentException(
+                        "Tier level " + higher.getTier() + " ('" + higher.getName() + "') maxRPM "
+                                + higher.getMaxRPM() + " cannot be lower than tier level "
+                                + lower.getTier() + " ('" + lower.getName() + "') maxRPM " + lower.getMaxRPM());
+            }
+            if (higher.getMaxSU() < lower.getMaxSU()) {
+                throw new IllegalArgumentException(
+                        "Tier level " + higher.getTier() + " ('" + higher.getName() + "') maxSU "
+                                + higher.getMaxSU() + " cannot be lower than tier level "
+                                + lower.getTier() + " ('" + lower.getName() + "') maxSU " + lower.getMaxSU());
+            }
         }
     }
 

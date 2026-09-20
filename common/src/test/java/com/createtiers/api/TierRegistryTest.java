@@ -133,6 +133,61 @@ class TierRegistryTest {
     }
 
     @Test
+    void higherTierCannotRegressRpmOrSu() {
+        TierRegistry.register(id("createtiers", "basic"),
+                new Tier(1, "basic", 256, 1024));
+
+        IllegalArgumentException rpm = assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                id("createtiers", "bad_rpm"),
+                new Tier(2, "bad_rpm", 128, 2048)));
+        assertTrue(rpm.getMessage().contains("maxRPM"));
+
+        IllegalArgumentException su = assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                id("createtiers", "bad_su"),
+                new Tier(2, "bad_su", 512, 512)));
+        assertTrue(su.getMessage().contains("maxSU"));
+        assertEquals(1, TierRegistry.size());
+    }
+
+    @Test
+    void lowerTierInsertedLaterCannotExceedExistingHigherTier() {
+        TierRegistry.register(id("createtiers", "advanced"),
+                new Tier(2, "advanced", 512, 4096));
+
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.register(
+                id("createtiers", "basic"),
+                new Tier(1, "basic", 1024, 1024)));
+        assertEquals(1, TierRegistry.size());
+    }
+
+    @Test
+    void unorderedBatchValidatesMonotonicLimitsAtomically() {
+        Map<ResourceLocation, Tier> invalid = new LinkedHashMap<>();
+        invalid.put(id("createtiers", "elite"), new Tier(3, "elite", 1024, 2048));
+        invalid.put(id("createtiers", "basic"), new Tier(1, "basic", 256, 1024));
+        invalid.put(id("createtiers", "advanced"), new Tier(2, "advanced", 512, 4096));
+
+        assertThrows(IllegalArgumentException.class, () -> TierRegistry.registerAll(invalid));
+        assertEquals(0, TierRegistry.size());
+
+        Map<ResourceLocation, Tier> valid = new LinkedHashMap<>();
+        valid.put(id("createtiers", "elite"), new Tier(3, "elite", 1024, 8192));
+        valid.put(id("createtiers", "basic"), new Tier(1, "basic", 256, 1024));
+        valid.put(id("createtiers", "advanced"), new Tier(2, "advanced", 512, 4096));
+        TierRegistry.registerAll(valid);
+        assertEquals(3, TierRegistry.size());
+    }
+
+    @Test
+    void equalLimitsAcrossAdjacentTiersRemainValid() {
+        TierRegistry.register(id("createtiers", "basic"),
+                new Tier(1, "basic", 256, 1024));
+        TierRegistry.register(id("createtiers", "advanced"),
+                new Tier(2, "advanced", 256, 1024));
+        assertEquals(2, TierRegistry.size());
+    }
+
+    @Test
     void frozenRegistryRejectsSingleAndBatchMutationsWithoutChangingContents() {
         ResourceLocation basicId = id("createtiers", "basic");
         Tier basic = new Tier(1, "basic", 256, 1024);

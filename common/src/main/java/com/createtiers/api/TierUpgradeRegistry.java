@@ -1,6 +1,14 @@
 package com.createtiers.api;
 
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.gauge.GaugeBlock;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +65,7 @@ public final class TierUpgradeRegistry {
                 throw new IllegalArgumentException(
                         "Tier upgrade references unknown tier '" + registration.tierId() + "'");
             }
+            validateTarget(registration.itemId());
             Key key = key(registration);
             if (!keys.add(key)) {
                 throw new IllegalArgumentException(
@@ -69,6 +78,41 @@ public final class TierUpgradeRegistry {
             UPGRADES.put(key(registration), registration);
         }
         return List.copyOf(pending);
+    }
+
+    private static void validateTarget(ResourceLocation itemId) {
+        Item item = BuiltInRegistries.ITEM.get(itemId);
+        if (!itemId.equals(BuiltInRegistries.ITEM.getKey(item))) {
+            throw new IllegalArgumentException("Unknown tier upgrade item '" + itemId + "'");
+        }
+        if (!(item instanceof BlockItem blockItem)) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' must be a block item");
+        }
+
+        var block = blockItem.getBlock();
+        if (block instanceof GaugeBlock) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' is a Create gauge; observation devices cannot be tier-upgraded");
+        }
+        if (block instanceof TieredNativeKineticBlock) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' is already an intrinsic Create Tiers block");
+        }
+        if (!(block instanceof EntityBlock entityBlock)) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' must have a block entity");
+        }
+
+        BlockEntity blockEntity = entityBlock.newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
+        if (!(blockEntity instanceof KineticBlockEntity kinetic)) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' must be backed by a Create KineticBlockEntity");
+        }
+        if (kinetic instanceof ITieredBlockEntity tiered && tiered.getTier() != null) {
+            throw new IllegalArgumentException(
+                    "Tier upgrade item '" + itemId + "' already has an intrinsic Create Tiers tier");
+        }
     }
 
     private static Key key(Registration registration) {
