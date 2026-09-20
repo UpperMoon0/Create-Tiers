@@ -9,7 +9,7 @@ gates green.
 
 | Layer | What it proves | What it does not prove |
 | --- | --- | --- |
-| Harness contracts | Supported targets, CI matrix generation, required scenario declarations, exact-head receipt validation | Minecraft behavior |
+| Harness contracts | Supported targets, CI matrix generation, runtime scenario-evidence parsing, and exact-head receipt validation | Minecraft behavior itself |
 | JVM tests | Loader-independent tier policy and render math on both targets, plus loader-owned API/resource/KubeJS regressions | Real kinetic graph behavior |
 | Forge + NeoForge GameTests | Real Create kinetic propagation, overspeed semantics, stress caps, tier-upgrade/persistence behavior, native relay/control registration, adjustable Create components, and native tiered-shaft belt/steam-engine interoperability | Final rendered pixels, every third-party Create addon |
 | Narrow integration smoke | Reserved for lightweight Jade/color checks and future interactions that require a real client | General modpack compatibility |
@@ -27,10 +27,15 @@ attached-tier apply/clear and NBT persistence, rebuilt-network behavior after ti
 registered tier-upgrade item data surviving placement and drops,
 Rotation Speed Controller range, Creative Motor range, default native clutch/gearshift/chain-drive/controller registration, tiered-shaft belt creation/teardown, and tiered-shaft steam-engine powered-shaft conversion/recovery.
 
-tools/runtime_verification.py owns the two-target CI matrix and the scenario list
-written into exact-head .pass receipts. Missing, extra, malformed, or stale
-receipts fail the required runtime gate. Each runtime run also writes
-build/runtime-evidence/<target>/result.json and process.log.
+tools/runtime_verification.py owns the two-target CI matrix and required scenario set.
+Each successful GameTest emits a `CREATE_TIERS_SCENARIO_PASS:<scenario>` marker only
+after its assertions complete. The runtime harness parses those markers and fails
+even after a zero Gradle exit if a required scenario is missing or undeclared
+scenario evidence appears. Receipt creation then re-reads that exact run's
+`result.json` and refuses to issue a pass receipt unless the observed scenario set
+and commit match. Missing, extra, malformed, or stale receipts still fail the final
+required runtime gate. Each runtime run also writes
+`build/runtime-evidence/<target>/result.json` and `process.log`.
 
 ## Root commands
 
@@ -85,6 +90,11 @@ Runtime GameTests cover ordinary attached tiers across Create transformations th
 - calibrated vanilla shaft -> steam powered shaft -> vanilla shaft;
 - calibrated vanilla shaft/cogwheel -> standard Create encasing -> the same vanilla decased identity.
 
-Belt pulleys also persist the exact source block ID in block-entity NBT, so an attached-tier vanilla shaft cannot later restore as an intrinsic Create Tiers shaft after save/reload.
+Belt pulleys persist the exact source block ID in block-entity NBT. The intrinsic-shaft
+belt regression explicitly serializes a pulley block entity, recreates it from that
+NBT, emulates legacy saved data that duplicated the intrinsic tier as an attached
+tier, clears that legacy attached copy, and then tears the belt down. The pulley must
+remain effectively tiered from source provenance and restore the original intrinsic
+tiered shaft identity.
 
 The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.
