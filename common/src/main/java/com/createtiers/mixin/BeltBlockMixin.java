@@ -1,17 +1,23 @@
 package com.createtiers.mixin;
 
-import com.createtiers.PlatformHelper;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredShaftBlock;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.foundation.utility.AttachedTierTransfer;
+import com.createtiers.foundation.utility.ReplacementSourcePolicy;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.belt.BeltBlock;
+import com.simibubi.create.content.kinetics.belt.BeltPart;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -22,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +44,66 @@ public abstract class BeltBlockMixin {
     @Unique
     private static final ThreadLocal<Map<BlockPos, PulleySource>> CREATETIERS$REMOVED_PULLEY_SOURCES =
             ThreadLocal.withInitial(HashMap::new);
+
+    @Inject(method = "onWrenched", at = @At("HEAD"), cancellable = true)
+    private void createtiers$removeTieredPulley(BlockState state, UseOnContext context,
+            CallbackInfoReturnable<InteractionResult> cir) {
+        if (state.getValue(BeltBlock.CASING) || state.getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+            return;
+        }
+
+        Level level = context.getLevel();
+        if (level.isClientSide) {
+            cir.setReturnValue(InteractionResult.SUCCESS);
+            return;
+        }
+
+        BlockPos pos = context.getClickedPos();
+        ItemStack returnedShaft = createtiers$pulleySourceStack(level, pos);
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof IAttachedTierBlockEntity attachable
+                && attachable.getAttachedTier() != null) {
+            attachable.clearAttachedTier();
+        }
+        if (blockEntity instanceof IReplacementSourceBlockEntity provenance
+                && provenance.getCreateTiersReplacementSourceBlockId() != null) {
+            provenance.clearCreateTiersReplacementSourceBlockId();
+        }
+
+        com.simibubi.create.content.kinetics.base.KineticBlockEntity.switchToBlockState(
+                level, pos, state.setValue(BeltBlock.PART, BeltPart.MIDDLE));
+
+        Player player = context.getPlayer();
+        if (player != null && !player.isCreative()) {
+            player.getInventory().placeItemBackInInventory(returnedShaft);
+        }
+        cir.setReturnValue(InteractionResult.SUCCESS);
+    }
+
+    @Unique
+    private static ItemStack createtiers$pulleySourceStack(Level level, BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof IReplacementSourceBlockEntity provenance)) {
+            return AllBlocks.SHAFT.asStack();
+        }
+
+        ResourceLocation sourceId = provenance.getCreateTiersReplacementSourceBlockId();
+        Block sourceBlock = ReplacementSourcePolicy.resolveLegalSource(
+                blockEntity.getBlockState(), sourceId);
+        if (sourceBlock instanceof TieredShaftBlock) {
+            return sourceBlock.asItem().getDefaultInstance();
+        }
+
+        if (sourceBlock == AllBlocks.SHAFT.get()
+                && blockEntity instanceof IAttachedTierBlockEntity attachable) {
+            Tier attached = attachable.getAttachedTier();
+            if (attached != null) {
+                return TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), attached);
+            }
+        }
+
+        return AllBlocks.SHAFT.asStack();
+    }
 
     @Redirect(
             method = "onRemove",

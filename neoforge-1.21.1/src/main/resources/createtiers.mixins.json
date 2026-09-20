@@ -22,7 +22,9 @@
     "BeltBlockMixin",
     "PoweredShaftBlockMixin",
     "SteamEngineBlockMixin",
-    "SteamEnginePlacementHelperMixin"
+    "SteamEnginePlacementHelperMixin",
+    "PlacementOffsetTierDataMixin",
+    "BeltTieredShaftInteractionMixin"
   ],
   "client": [
     "AbstractBlockEntityVisualAccessor",

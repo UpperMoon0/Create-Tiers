@@ -48,6 +48,10 @@
 - Restore Create's dedicated large-cog coupling and placement alignment for native tiered Rotation Speed Controllers, so the upper cog actually receives the configured output speed.
 - Isolate GameTest KubeJS startup fixtures in a dedicated run directory so the synthetic GameTest vanilla-shaft upgrade cannot leak into the normal Create Tiers creative tab.
 - Remove the implementation-detail Tier Source line from Jade; only the tier and authoritative RPM/SU limits are shown.
+- Preserve registered tier data when Create/Catnip `PlacementOffset` helpers place upgraded shafts through normal shaft extension or directly onto Steam Engines.
+- Validate persisted replacement-source provenance against the live Create replacement state, preventing unrelated kinetic block entities from borrowing registered or intrinsic shaft tiers through forged NBT.
+- Clear tier/source state when a tiered belt pulley is wrenched back to a middle belt and return the correct intrinsic or registered-upgrade shaft item.
+- Let native tiered shaft items use Create's normal middle-belt pulley interaction, with the same parity for registered upgraded vanilla shaft items.
 
 ### Changed
 
@@ -66,3 +70,4 @@
 - Make runtime receipts evidence-backed: every required scenario must be emitted by a successfully completed GameTest in the current run before an exact-head pass receipt can be written.
 - Add executable client/JVM coverage for signed high-RPM controller input and generic baked-item tint insertion/preservation, alongside resource contracts.
 - Add Forge and NeoForge regressions proving itemless belt/powered-shaft states cannot mint tiers and unregistered tier data cannot survive onto item drops.
+- Add Forge and NeoForge runtime coverage for `PlacementOffset` shaft/Steam-Engine placement, forged replacement-source NBT, and registered/intrinsic middle-belt pulley add/wrench round trips.

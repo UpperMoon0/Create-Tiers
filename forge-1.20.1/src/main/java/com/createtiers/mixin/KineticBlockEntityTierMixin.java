@@ -9,6 +9,7 @@ import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
 import com.createtiers.foundation.utility.AttachedTierAuthorization;
 import com.createtiers.foundation.utility.AttachedTierTransfer;
+import com.createtiers.foundation.utility.ReplacementSourcePolicy;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -43,16 +44,26 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Override
     public ResourceLocation getCreateTiersReplacementSourceBlockId() {
-        return createtiers$replacementSourceBlockId;
+        if (createtiers$replacementSourceBlockId == null) {
+            return null;
+        }
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        return ReplacementSourcePolicy.isLegal(self.getBlockState(), createtiers$replacementSourceBlockId)
+                ? createtiers$replacementSourceBlockId
+                : null;
     }
 
     @Override
     public void setCreateTiersReplacementSourceBlockId(ResourceLocation id) {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (!ReplacementSourcePolicy.isLegal(self.getBlockState(), id)) {
+            throw new IllegalArgumentException(
+                    "Illegal Create Tiers replacement source '" + id + "' for " + self.getBlockState());
+        }
         if (java.util.Objects.equals(createtiers$replacementSourceBlockId, id)) {
             return;
         }
         createtiers$replacementSourceBlockId = id;
-        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
         AdjustableKineticTierPolicy.refresh(self, getTier());
         createtiers$rebuildKinetics();
     }
@@ -80,14 +91,11 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Unique
     private Tier createtiers$getReplacementSourceTier() {
-        if (createtiers$replacementSourceBlockId == null) {
+        ResourceLocation sourceId = getCreateTiersReplacementSourceBlockId();
+        if (sourceId == null) {
             return null;
         }
-        net.minecraft.world.level.block.Block source =
-                BuiltInRegistries.BLOCK.get(createtiers$replacementSourceBlockId);
-        if (!createtiers$replacementSourceBlockId.equals(BuiltInRegistries.BLOCK.getKey(source))) {
-            return null;
-        }
+        net.minecraft.world.level.block.Block source = BuiltInRegistries.BLOCK.get(sourceId);
         return source instanceof TieredShaftBlock shaft ? shaft.getTier() : null;
     }
 
@@ -178,8 +186,9 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         if (createtiers$attachedTierId != null) {
             tag.putString(CREATETIERS$TIER_KEY, createtiers$attachedTierId.toString());
         }
-        if (createtiers$replacementSourceBlockId != null) {
-            tag.putString(CREATETIERS$SOURCE_BLOCK_KEY, createtiers$replacementSourceBlockId.toString());
+        ResourceLocation sourceId = getCreateTiersReplacementSourceBlockId();
+        if (sourceId != null) {
+            tag.putString(CREATETIERS$SOURCE_BLOCK_KEY, sourceId.toString());
         }
     }
 
@@ -198,7 +207,8 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         }
 
         ResourceLocation id = ResourceLocation.tryParse(tag.getString(CREATETIERS$SOURCE_BLOCK_KEY));
-        if (id != null) {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (id != null && ReplacementSourcePolicy.isLegal(self.getBlockState(), id)) {
             createtiers$replacementSourceBlockId = id;
         }
     }

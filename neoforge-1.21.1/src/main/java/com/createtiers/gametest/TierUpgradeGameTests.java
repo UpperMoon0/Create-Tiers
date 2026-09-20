@@ -2,8 +2,10 @@ package com.createtiers.gametest;
 
 import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.foundation.item.TierUpgradeItemData;
+import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.recipe.TierUpgradeRecipe;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
@@ -130,9 +132,33 @@ public final class TierUpgradeGameTests {
 
         CompoundTag forgedNbt = kinetic.saveWithFullMetadata(helper.getLevel().registryAccess());
         forgedNbt.putString(GameTestSupport.ATTACHED_TIER_NBT_KEY, GameTestSupport.ATTACHMENT_TIER_ID.toString());
+        forgedNbt.putString(GameTestSupport.REPLACEMENT_SOURCE_NBT_KEY,
+                BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get()).toString());
         kinetic.loadWithComponents(forgedNbt, helper.getLevel().registryAccess());
         if (attachable.getAttachedTier() != null || attachable.getTier() != null) {
             helper.fail("Unregistered attached tier was accepted from block-entity NBT");
+        }
+        if (kinetic instanceof IReplacementSourceBlockEntity source
+                && source.getCreateTiersReplacementSourceBlockId() != null) {
+            helper.fail("Unrelated kinetic accepted forged shaft replacement-source provenance");
+        }
+
+        net.minecraft.world.level.block.Block intrinsicSource =
+                BuiltInRegistries.BLOCK.get(CreateTiers.asResource("shaft_gametest_native"));
+        if (!(intrinsicSource instanceof TieredShaftBlock)) {
+            helper.fail("Missing intrinsic tiered-shaft GameTest fixture");
+        }
+        CompoundTag intrinsicOnly = kinetic.saveWithFullMetadata(helper.getLevel().registryAccess());
+        intrinsicOnly.remove(GameTestSupport.ATTACHED_TIER_NBT_KEY);
+        intrinsicOnly.putString(GameTestSupport.REPLACEMENT_SOURCE_NBT_KEY,
+                BuiltInRegistries.BLOCK.getKey(intrinsicSource).toString());
+        kinetic.loadWithComponents(intrinsicOnly, helper.getLevel().registryAccess());
+        if (attachable.getTier() != null) {
+            helper.fail("Unrelated kinetic derived an effective tier from forged intrinsic-shaft provenance");
+        }
+        if (kinetic instanceof IReplacementSourceBlockEntity source
+                && source.getCreateTiersReplacementSourceBlockId() != null) {
+            helper.fail("Forged intrinsic replacement-source provenance survived validation");
         }
 
         BlockPos absolute = helper.absolutePos(relative);
@@ -145,7 +171,7 @@ public final class TierUpgradeGameTests {
             helper.fail("Unregistered attached tier persisted onto an item drop");
         }
 
-        GameTestSupport.succeed(helper, "unregistered-tier-data-rejected");
+        GameTestSupport.succeed(helper, "unregistered-tier-data-rejected", "forged-replacement-source-rejected");
     }
 
 

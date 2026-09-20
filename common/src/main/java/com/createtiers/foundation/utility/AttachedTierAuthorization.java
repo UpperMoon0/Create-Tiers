@@ -28,9 +28,7 @@ public final class AttachedTierAuthorization {
         if (isRegisteredForBlock(kinetic.getBlockState().getBlock(), tier)) return true;
         if (!(kinetic instanceof IReplacementSourceBlockEntity source)) return false;
         ResourceLocation sourceId = source.getCreateTiersReplacementSourceBlockId();
-        if (sourceId == null) return false;
-        Block sourceBlock = BuiltInRegistries.BLOCK.get(sourceId);
-        if (!sourceId.equals(BuiltInRegistries.BLOCK.getKey(sourceBlock))) return false;
-        return isRegisteredForBlock(sourceBlock, tier);
+        Block sourceBlock = ReplacementSourcePolicy.resolveLegalSource(kinetic.getBlockState(), sourceId);
+        return sourceBlock != null && isRegisteredForBlock(sourceBlock, tier);
     }
 }

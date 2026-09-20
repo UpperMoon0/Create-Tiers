@@ -8,12 +8,15 @@ import com.createtiers.api.TierRegistry;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.EncasedBlock;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.belt.BeltBlock;
+import com.simibubi.create.content.kinetics.belt.BeltPart;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
@@ -23,9 +26,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -273,6 +278,157 @@ public final class ShaftCompatibilityGameTests {
         GameTestSupport.succeed(helper, "itemless-powered-shaft-cannot-mint-tier");
     }
 
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void placementHelperPreservesRegisteredShaftTier(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos base = helper.absolutePos(new BlockPos(4, 2, 4));
+        helper.getLevel().setBlock(base, shaftState, 3);
+
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack upgraded = TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier);
+        player.setItemInHand(InteractionHand.MAIN_HAND, upgraded);
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(base).add(.49, 0, 0), Direction.EAST, base, false);
+
+        shaftState.useItemOn(
+                player.getItemInHand(InteractionHand.MAIN_HAND), helper.getLevel(), player,
+                InteractionHand.MAIN_HAND, hit);
+
+        BlockPos placed = AllBlocks.SHAFT.has(helper.getLevel().getBlockState(base.east()))
+                ? base.east()
+                : base.west();
+        if (!AllBlocks.SHAFT.has(helper.getLevel().getBlockState(placed))) {
+            helper.fail("Create shaft placement helper did not extend the shaft");
+        }
+        assertAttachedTierAt(helper, placed, tier,
+                "PlacementOffset shaft extension consumed a registered upgraded item without applying its tier");
+        GameTestSupport.succeed(helper, "placement-helper-shaft-tier-preservation");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void placementHelperPreservesRegisteredSteamShaftTier(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockState engineState = AllBlocks.STEAM_ENGINE.getDefaultState();
+        BlockPos enginePos = helper.absolutePos(new BlockPos(4, 4, 4));
+        helper.getLevel().setBlock(enginePos, engineState, 3);
+        BlockPos shaftPos = SteamEngineBlock.getShaftPos(engineState, enginePos);
+
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack upgraded = TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier);
+        player.setItemInHand(InteractionHand.MAIN_HAND, upgraded);
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(enginePos), Direction.UP, enginePos, false);
+
+        engineState.useItemOn(
+                player.getItemInHand(InteractionHand.MAIN_HAND), helper.getLevel(), player,
+                InteractionHand.MAIN_HAND, hit);
+
+        BlockState poweredState = helper.getLevel().getBlockState(shaftPos);
+        if (!AllBlocks.POWERED_SHAFT.has(poweredState)) {
+            helper.fail("Steam Engine placement helper did not place Create's powered shaft");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Steam Engine PlacementOffset consumed a registered upgraded shaft without applying its tier");
+        BlockEntity poweredEntity = helper.getLevel().getBlockEntity(shaftPos);
+        ResourceLocation expectedSource = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
+        if (!(poweredEntity instanceof IReplacementSourceBlockEntity source)
+                || !expectedSource.equals(source.getCreateTiersReplacementSourceBlockId())) {
+            helper.fail("Steam helper placement did not retain the upgraded vanilla shaft as powered-shaft provenance");
+        }
+
+        helper.getLevel().setBlock(enginePos, Blocks.AIR.defaultBlockState(), 3);
+        ((PoweredShaftBlock) AllBlocks.POWERED_SHAFT.get())
+                .tick(poweredState, helper.getLevel(), shaftPos, helper.getLevel().random);
+        if (!AllBlocks.SHAFT.has(helper.getLevel().getBlockState(shaftPos))) {
+            helper.fail("Placed powered shaft did not recover to a vanilla shaft after engine removal");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Powered shaft recovery lost the tier from helper-placed upgraded shaft");
+        GameTestSupport.succeed(helper, "placement-helper-steam-tier-preservation");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredShaftItemPulleyWrenchRoundTrip(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockPos middle = createPlainMiddleBelt(helper);
+        BlockState middleState = helper.getLevel().getBlockState(middle);
+
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack upgraded = TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier);
+        player.setItemInHand(InteractionHand.MAIN_HAND, upgraded);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(middle), Direction.UP, middle, false);
+
+        middleState.useItemOn(
+                player.getItemInHand(InteractionHand.MAIN_HAND), helper.getLevel(), player,
+                InteractionHand.MAIN_HAND, hit);
+
+        BlockState pulleyState = helper.getLevel().getBlockState(middle);
+        if (pulleyState.getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+            helper.fail("Registered upgraded shaft item did not add a pulley to a middle belt");
+        }
+        assertAttachedTierAt(helper, middle, tier,
+                "Registered upgraded shaft item lost its tier when adding a belt pulley");
+        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
+        ResourceLocation vanillaShaftId = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
+        if (!(pulleyEntity instanceof IReplacementSourceBlockEntity source)
+                || !vanillaShaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+            helper.fail("Registered shaft pulley did not record vanilla shaft source provenance");
+        }
+
+        ((BeltBlock) AllBlocks.BELT.get()).onWrenched(
+                pulleyState, new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+        assertMiddleBeltHasNoTierSource(helper, middle,
+                "Wrenching registered shaft pulley left tier/source provenance on middle belt");
+        if (!inventoryContainsTieredShaft(player, tier)) {
+            helper.fail("Wrenching registered shaft pulley did not return the upgraded shaft item");
+        }
+        GameTestSupport.succeed(helper, "registered-pulley-item-roundtrip");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void intrinsicShaftItemPulleyWrenchRoundTrip(GameTestHelper helper) {
+        TieredShaftBlock shaft = requireTieredShaft(helper);
+        Tier tier = shaft.getTier();
+        BlockPos middle = createPlainMiddleBelt(helper);
+        BlockState middleState = helper.getLevel().getBlockState(middle);
+
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack nativeShaft = shaft.asItem().getDefaultInstance();
+        player.setItemInHand(InteractionHand.MAIN_HAND, nativeShaft);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(middle), Direction.UP, middle, false);
+
+        middleState.useItemOn(
+                player.getItemInHand(InteractionHand.MAIN_HAND), helper.getLevel(), player,
+                InteractionHand.MAIN_HAND, hit);
+
+        BlockState pulleyState = helper.getLevel().getBlockState(middle);
+        if (pulleyState.getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+            helper.fail("Native tiered shaft item did not perform Create's middle-belt pulley interaction");
+        }
+        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
+        if (!(pulleyEntity instanceof IAttachedTierBlockEntity attachable)
+                || !tier.equals(attachable.getTier())
+                || attachable.getAttachedTier() != null) {
+            helper.fail("Native tiered shaft pulley did not derive its intrinsic tier from source provenance");
+        }
+        ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
+        if (!(pulleyEntity instanceof IReplacementSourceBlockEntity source)
+                || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+            helper.fail("Native tiered shaft item did not record intrinsic source provenance");
+        }
+
+        ((BeltBlock) AllBlocks.BELT.get()).onWrenched(
+                pulleyState, new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+        assertMiddleBeltHasNoTierSource(helper, middle,
+                "Wrenching intrinsic tiered pulley left tier/source provenance on middle belt");
+        if (!inventoryContainsItem(player, shaft.asItem())) {
+            helper.fail("Wrenching intrinsic tiered pulley did not return the intrinsic shaft item");
+        }
+        GameTestSupport.succeed(helper, "intrinsic-pulley-item-roundtrip");
+    }
+
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void registeredShaftTierSurvivesBeltReplacement(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
@@ -395,6 +551,63 @@ public final class ShaftCompatibilityGameTests {
                 "Encased cogwheel -> vanilla cogwheel conversion silently lost the attached tier");
 
         GameTestSupport.succeed(helper, "registered-kinetic-encasing-tier-preservation");
+    }
+
+    private static BlockPos createPlainMiddleBelt(GameTestHelper helper) {
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos start = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos end = helper.absolutePos(new BlockPos(1, 1, 5));
+        BlockPos middle = helper.absolutePos(new BlockPos(1, 1, 3));
+        helper.getLevel().setBlock(start, shaftState, 3);
+        helper.getLevel().setBlock(end, shaftState, 3);
+        BeltConnectorItem.createBelts(helper.getLevel(), start, end);
+        BlockState middleState = helper.getLevel().getBlockState(middle);
+        if (!AllBlocks.BELT.has(middleState) || middleState.getValue(BeltBlock.PART) != BeltPart.MIDDLE) {
+            helper.fail("GameTest setup did not create a plain middle belt segment");
+        }
+        return middle;
+    }
+
+    private static void assertMiddleBeltHasNoTierSource(GameTestHelper helper, BlockPos absolute, String message) {
+        BlockState state = helper.getLevel().getBlockState(absolute);
+        if (!AllBlocks.BELT.has(state) || state.getValue(BeltBlock.PART) != BeltPart.MIDDLE) {
+            helper.fail(message + " (not a middle belt)");
+            return;
+        }
+        BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute);
+        if (!(blockEntity instanceof IAttachedTierBlockEntity attachable)
+                || !(blockEntity instanceof IReplacementSourceBlockEntity source)) {
+            helper.fail(message + " (missing Create Tiers interfaces)");
+            return;
+        }
+        if (attachable.getTier() != null || attachable.getAttachedTier() != null
+                || source.getCreateTiersReplacementSourceBlockId() != null) {
+            helper.fail(message);
+        }
+        CompoundTag saved = blockEntity.saveWithFullMetadata(helper.getLevel().registryAccess());
+        if (saved.contains(GameTestSupport.ATTACHED_TIER_NBT_KEY)
+                || saved.contains(GameTestSupport.REPLACEMENT_SOURCE_NBT_KEY)) {
+            helper.fail(message + " (stale tier/source remained in persisted NBT)");
+        }
+    }
+
+    private static boolean inventoryContainsTieredShaft(Player player, Tier tier) {
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(AllBlocks.SHAFT.get().asItem()) && tier.equals(TierUpgradeItemData.getTier(stack))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean inventoryContainsItem(Player player, net.minecraft.world.item.Item item) {
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            if (player.getInventory().getItem(slot).is(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void decase(GameTestHelper helper, BlockPos absolute) {

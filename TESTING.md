@@ -99,7 +99,9 @@ tiered shaft identity.
 
 The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.
 
-Progression-bypass GameTests start from **untiered** vanilla shafts and verify that neither a belt pulley nor a powered shaft can acquire a tier merely because the state has no item form. Teardown/recovery must return an untiered vanilla shaft. A separate forged-NBT/drop regression verifies that an item+tier pair absent from `TierUpgradeRegistry` is rejected on item data, block-entity load, and matching drops.
+Progression-bypass GameTests start from **untiered** vanilla shafts and verify that neither a belt pulley nor a powered shaft can acquire a tier merely because the state has no item form. Teardown/recovery must return an untiered vanilla shaft. Forged-NBT regressions also verify that unrelated kinetic block entities cannot borrow a registered or intrinsic shaft through `CreateTiersReplacementSourceBlock`, with or without an attached-tier key.
+
+Interaction-path GameTests execute Create's real helpers on both loaders. They verify that recipe-produced upgraded shafts retain their tier through normal shaft-extension `PlacementOffset` placement and direct shaft-on-Steam-Engine placement. They also exercise both registered upgraded and intrinsic tiered shaft items on an existing middle belt, then wrench the resulting pulley back to `MIDDLE` and assert that runtime state **and persisted NBT** contain no stale tier/source provenance while the correct shaft item is returned.
 
 Client-side JVM tests execute the numeric Rotation Speed Controller input validation directly at positive/negative tier limits and invalid values. Loader-specific model tests transform real `BakedQuad` instances through `TierUpgradeTintedItemModel`, asserting that generic full-item tinting inserts channel 0 while pre-existing selective tint channels are preserved.
 

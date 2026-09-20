@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 final class GameTestSupport {
     static final String TEMPLATE = "empty";
     static final String ATTACHED_TIER_NBT_KEY = "CreateTiersTier";
+    static final String REPLACEMENT_SOURCE_NBT_KEY = "CreateTiersReplacementSourceBlock";
     static final Tier LOW_TIER = new Tier("gametest_low", 128, 512);
     static final Tier HIGH_TIER = new Tier("gametest_high", 1024, 4096);
     static final ResourceLocation ATTACHMENT_TIER_ID =
