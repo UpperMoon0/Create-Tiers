@@ -81,8 +81,10 @@ an older commit is not acceptable evidence.
 
 Runtime GameTests cover ordinary attached tiers across Create transformations that replace block-entity types:
 
-- ordinary shaft -> belt pulley;
-- ordinary shaft -> steam powered shaft -> ordinary shaft;
-- ordinary shaft/cogwheel -> standard Create encased variants.
+- calibrated vanilla shaft -> belt pulley -> the same vanilla shaft identity;
+- calibrated vanilla shaft -> steam powered shaft -> vanilla shaft;
+- calibrated vanilla shaft/cogwheel -> standard Create encasing -> the same vanilla decased identity.
+
+Belt pulleys also persist the exact source block ID in block-entity NBT, so an attached-tier vanilla shaft cannot later restore as an intrinsic Create Tiers shaft after save/reload.
 
 The native relay family also verifies that generated clutch, gearshift, chain-drive, adjustable chain gearshift, and rotation-speed-controller variants are both axe- and pickaxe-mineable, matching Create's `axeOrPickaxe()` registrations.

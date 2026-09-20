@@ -53,5 +53,5 @@
 - Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, tier-upgraded item placement/drop round-tripping, adjustable kinetic components, native relay/control default registration, and native tiered-shaft belt/steam-engine interoperability.
 - Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.
 
-- Preserve attached tiers across Create-native block-entity replacement paths, including shaft-to-belt, steam powered-shaft round trips, and standard shaft/cog encasing.
+- Preserve attached tiers and source block identity across Create-native block-entity replacement paths, including vanilla shaft-to-belt round trips, steam powered-shaft round trips, and standard shaft/cog encasing/decasing. Belt pulleys persist their exact source block ID so calibrated vanilla shafts do not restore as intrinsic tiered shafts.
 - Mirror Create's `axeOrPickaxe()` mining tags for generated cogwheel, gearbox, encased, clutch, gearshift, chain-drive, and speed-controller variants.
