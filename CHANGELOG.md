@@ -22,7 +22,7 @@
 
 - Preserve Create's configured RPM limit for untiered kinetic components in mixed tiered networks.
 - Keep per-tier RPM limits scoped to tiered receiving components instead of globally raising vanilla Create limits.
-- Remove the redundant numeric tier level from the Java/KubeJS tier model; tier progression and deterministic ordering are now derived from Max RPM and Max SU.
+- Remove the redundant numeric tier level from the Java/KubeJS tier model; tier progression and deterministic ordering are now derived from Max RPM and Max SU. Styled direct registration uses `registerTierStyled` / `registerCustomTierStyled` so old level-based overloads cannot silently map their arguments onto the new API.
 - Reject duplicate tier IDs, generated names, invalid limits, invalid generated resource paths, and invalid RGB colors during startup.
 - Reject incomparable crossed capability definitions where higher Max RPM comes with lower Max SU; equal-capability tiers remain valid and batch registration stays atomic.
 - Validate tier-upgrade targets in the registry-stable common-setup phase so unknown items, non-block items, non-kinetic blocks, gauges, and native Create Tiers components fail startup without forcing Minecraft registry bootstrap from KubeJS startup scripts.

@@ -53,22 +53,18 @@ public class CreateTiersBinding {
     }
 
     public static void registerTier(String name, int maxRPM, int maxSU) {
-        registerTier(name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, name);
+        registerTierStyled(name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, name);
     }
 
-    public static void registerTier(String name, int maxRPM, int maxSU, int color) {
-        registerTier(name, maxRPM, maxSU, color, color, name);
+    /**
+     * Styled direct registration uses a distinct method name so removed level-based
+     * overloads cannot be silently reinterpreted as color arguments.
+     */
+    public static void registerTierStyled(String name, int maxRPM, int maxSU, int color, String displayName) {
+        registerTierStyled(name, maxRPM, maxSU, color, color, displayName);
     }
 
-    public static void registerTier(String name, int maxRPM, int maxSU, int color, String displayName) {
-        registerTier(name, maxRPM, maxSU, color, color, displayName);
-    }
-
-    public static void registerTier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor) {
-        registerTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, name);
-    }
-
-    public static void registerTier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
+    public static void registerTierStyled(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
             String displayName) {
         requireDirectName(name, "name");
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("createtiers", name);
@@ -82,20 +78,25 @@ public class CreateTiersBinding {
      * Registers a custom lookup id. Generated component registry names still use {@code name},
      * so names must remain globally unique across all tier namespaces.
      */
-    public static void registerCustomTier(String namespace, String name, int maxRPM, int maxSU,
-            int shaftColor, int cogwheelColor) {
+    public static void registerCustomTier(String namespace, String name, int maxRPM, int maxSU) {
+        registerCustomTierStyled(namespace, name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, name);
+    }
+
+    public static void registerCustomTierStyled(String namespace, String name, int maxRPM, int maxSU, int color,
+            String displayName) {
+        registerCustomTierStyled(namespace, name, maxRPM, maxSU, color, color, displayName);
+    }
+
+    public static void registerCustomTierStyled(String namespace, String name, int maxRPM, int maxSU,
+            int shaftColor, int cogwheelColor, String displayName) {
         requireDirectName(namespace, "namespace");
         requireDirectName(name, "name");
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace, name);
-        Tier tier = createTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, name);
+        Tier tier = createTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
 
         TierRegistry.register(id, tier);
         LOGGER.info("Registered custom tier '{}:{}' via KubeJS: maxRPM={}, maxSU={}",
                 namespace, name, maxRPM, maxSU);
-    }
-
-    public static void registerCustomTier(String namespace, String name, int maxRPM, int maxSU, int color) {
-        registerCustomTier(namespace, name, maxRPM, maxSU, color, color);
     }
 
     public static void registerTierUpgrade(String item, String tier) {

@@ -112,7 +112,7 @@ class CreateTiersBindingTest {
     @Test
     void directRegistrationOverloadsApplyDocumentedDefaults() {
         CreateTiersBinding.registerTier("basic", 256, 1024);
-        CreateTiersBinding.registerTier("advanced", 512, 4096, 0x334455);
+        CreateTiersBinding.registerTierStyled("advanced", 512, 4096, 0x334455, "advanced");
 
         Tier basic = CreateTiersBinding.getTier("basic");
         Tier advanced = CreateTiersBinding.getTier("advanced");
@@ -120,6 +120,15 @@ class CreateTiersBindingTest {
         assertEquals(0xFFFFFF, basic.getCogwheelColor());
         assertEquals(0x334455, advanced.getShaftColor());
         assertEquals(0x334455, advanced.getCogwheelColor());
+    }
+
+    @Test
+    void removedLevelSignaturesCannotBeSilentlyReinterpreted() {
+        assertThrows(NoSuchMethodException.class, () -> CreateTiersBinding.class.getMethod(
+                "registerTier", String.class, int.class, int.class, int.class));
+        assertThrows(NoSuchMethodException.class, () -> CreateTiersBinding.class.getMethod(
+                "registerCustomTier", String.class, String.class,
+                int.class, int.class, int.class, int.class));
     }
 
     @Test

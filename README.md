@@ -154,8 +154,8 @@ Standard Create encasings are discovered from Create's own encasing registry rat
 ```javascript
 // kubejs/startup_scripts/create_tiers.js
 CreateTiers.registerTier('basic', 256, 1024)
-CreateTiers.registerTier('advanced', 512, 4096, 0xC88A45)
-CreateTiers.registerTier('elite', 1024, 16384, 0x00FFBB, 0x55FF55, 'Elite')
+CreateTiers.registerTierStyled('advanced', 512, 4096, 0xC88A45, 'Advanced')
+CreateTiers.registerTierStyled('elite', 1024, 16384, 0x00FFBB, 0x55FF55, 'Elite')
 ```
 
 Batch form:
@@ -182,7 +182,7 @@ CreateTiers.registerTiers([
 
 Batch registration is atomic: if any definition in the batch is invalid or conflicts with another tier, none of that batch is registered. Numeric fields must be whole 32-bit integers; fractional or overflowing values are rejected instead of truncated.
 
-Tier progression is derived directly from kinetic capability; there is no separate numeric level. Tiers are ordered by `maxRPM`, then `maxSU`. A configuration where one tier has higher RPM but lower Max SU than another is rejected as incomparable, because neither tier is objectively more capable overall. Equal-capability tiers are allowed and use their IDs only as a deterministic tie-breaker.
+Tier progression is derived directly from kinetic capability; there is no separate numeric level. The simple direct API is `registerTier(name, maxRPM, maxSU)`. Styled direct registrations use `registerTierStyled(...)`, deliberately avoiding the old level-based method signatures so stale startup scripts fail instead of silently shifting their arguments. Tiers are ordered by `maxRPM`, then `maxSU`. A configuration where one tier has higher RPM but lower Max SU than another is rejected as incomparable, because neither tier is objectively more capable overall. Equal-capability tiers are allowed and use their IDs only as a deterministic tie-breaker.
 
 Tier IDs and generated tier names must be unique. Generated names must also be valid Minecraft resource paths. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
 
