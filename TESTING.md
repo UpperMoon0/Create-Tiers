@@ -86,9 +86,9 @@ an older commit is not acceptable evidence.
 
 Runtime GameTests cover ordinary attached tiers across Create transformations that replace block-entity types:
 
-- calibrated vanilla shaft -> belt pulley -> the same vanilla shaft identity;
-- calibrated vanilla shaft -> steam powered shaft -> vanilla shaft;
-- calibrated vanilla shaft/cogwheel -> standard Create encasing -> the same vanilla decased identity.
+- tier-upgraded vanilla shaft -> belt pulley -> the same vanilla shaft identity;
+- tier-upgraded vanilla shaft -> steam powered shaft -> vanilla shaft;
+- tier-upgraded vanilla shaft/cogwheel -> standard Create encasing -> the same vanilla decased identity.
 
 Belt pulleys persist the exact source block ID in block-entity NBT. The intrinsic-shaft
 belt regression explicitly serializes a pulley block entity, recreates it from that
@@ -102,6 +102,6 @@ The native relay family also verifies that generated clutch, gearshift, chain-dr
 
 ### Creative-tab upgrade entries
 
-The Create Tiers creative tab exposes every registered `registerTierUpgrade(item, tier)` pair as a real calibrated item stack using the same item data path as recipe outputs. Runtime GameTests verify the startup fixture's registered `create:shaft` upgrade appears with the expected tier.
+The Create Tiers creative tab exposes every registered `registerTierUpgrade(item, tier)` pair as a real tier-upgraded item stack using the same item data path as recipe outputs. Runtime GameTests verify the startup fixture's registered `create:shaft` upgrade appears with the expected tier.
 
 Generated encased shaft, encased cogwheel, and encased large-cogwheel items are intentionally omitted from the mod creative tab. Resource-contract coverage prevents those generated encased item lists from being reintroduced there.

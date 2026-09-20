@@ -1,7 +1,7 @@
 package com.createtiers.registry;
 
 import com.createtiers.CreateTiers;
-import com.createtiers.recipe.CalibrationRecipe;
+import com.createtiers.recipe.TierUpgradeRecipe;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.neoforged.bus.api.IEventBus;
@@ -12,8 +12,8 @@ public final class ModRecipes {
     private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, CreateTiers.MOD_ID);
 
-    public static final DeferredHolder<RecipeSerializer<?>, CalibrationRecipe.Serializer> TIER_UPGRADE =
-            SERIALIZERS.register("tier_upgrade", CalibrationRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeSerializer<?>, TierUpgradeRecipe.Serializer> TIER_UPGRADE =
+            SERIALIZERS.register("tier_upgrade", TierUpgradeRecipe.Serializer::new);
 
     private ModRecipes() {
     }

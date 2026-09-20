@@ -10,15 +10,12 @@
   "createtiers.speed_controller.input.range": "Speed must be non-zero and at most \u00b1%s RPM",
   "createtiers.speed_controller.input.controls": "Enter: Apply   Esc: Cancel",
   "createtiers.jade.tier": "Tier: %s",
-  "createtiers.jade.source": "Tier Source: %s",
-  "createtiers.jade.source.intrinsic": "Built-in",
-  "createtiers.jade.source.calibrated": "Upgraded",
   "createtiers.jade.max_rpm": "Max RPM: %s RPM",
   "createtiers.jade.max_su": "Max SU: %s SU",
   "config.jade.plugin_createtiers": "Create Tiers",
   "config.jade.plugin_createtiers.tier_info": "Tier Information",
-  "createtiers.tooltip.calibrated_tier": "Tier: %s",
-  "createtiers.tooltip.tier_calibration_fallback": "Sneak-use to tier Create kinetics with no normal item form",
-  "createtiers.message.tier_attached_fallback": "In-world kinetic tier set to %s",
+  "createtiers.tooltip.upgraded_tier": "Tier: %s",
+  "createtiers.tooltip.in_world_tier_upgrade": "Sneak-use to tier Create kinetics with no normal item form",
+  "createtiers.message.in_world_tier_applied": "In-world kinetic tier set to %s",
   "createtiers.message.tier_cleared": "Kinetic tier cleared; vanilla Create limits restored"
 }

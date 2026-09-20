@@ -38,6 +38,6 @@ public class GearboxModelTest {
     @Test
     void attachedTierAccentPartialIsRegistered() {
         assertNotNull(AllTieredPartialModels.ATTACHED_TIER_ACCENT,
-                "Calibrated ordinary Create kinetics need the generic tier accent partial");
+                "Tier-upgraded ordinary Create kinetics need the generic tier accent partial");
     }
 }

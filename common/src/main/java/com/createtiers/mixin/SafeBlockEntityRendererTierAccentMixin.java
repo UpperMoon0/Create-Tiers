@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Adds a small colored top-edge accent to calibrated ordinary Create kinetic machines.
+ * Adds a small colored top-edge accent to tier-upgraded ordinary Create kinetic machines.
  * This remains visible even when a specialized renderer does not expose a tintable rotating part.
  */
 @Mixin(value = SafeBlockEntityRenderer.class, remap = false)

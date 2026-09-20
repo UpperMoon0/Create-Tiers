@@ -93,7 +93,7 @@ ServerEvents.recipes(event => {
 
 The resulting stack keeps the original Create item identity and stores the selected tier in vanilla block-entity item data. Placing it transfers the tier into the normal Create `KineticBlockEntity`; breaking that upgraded machine preserves the tier on the matching dropped block item. A later recipe may upgrade that same base item to another registered tier while preserving its other item data.
 
-Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback interaction. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply or change the tier of a water wheel, press, mixer, motor, or other ordinary block item. Using the matching tiered shaft may still clear an existing attached tier.
+Create kinetics that genuinely have **no normal item form** cannot be recipe outputs. For those in-world-only components, such as belt segments, a tiered shaft remains a fallback interaction. This fallback is deliberately blocked for normal item-backed machines: a shaft cannot apply, change, or clear the tier of a water wheel, press, mixer, motor, or other ordinary block item. Item-backed tier state is controlled exclusively through registered tier-upgrade recipes and preserved item data.
 
 This automatically covers Create kinetic families such as:
 

@@ -1,7 +1,6 @@
 package com.createtiers.integration.jade;
 
 import com.createtiers.CreateTiers;
-import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.ITieredBlockEntity;
 import com.createtiers.api.Tier;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -19,7 +18,7 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 import snownee.jade.api.config.IPluginConfig;
 
-/** Optional Jade integration for intrinsic and calibrated Create Tiers kinetics. */
+/** Optional Jade integration for Create Tiers kinetic limits. */
 @WailaPlugin
 public final class CreateTiersJadePlugin implements IWailaPlugin {
 
@@ -44,7 +43,6 @@ public final class CreateTiersJadePlugin implements IWailaPlugin {
         private static final String TIER_NAME = "CreateTiersTierName";
         private static final String MAX_RPM = "CreateTiersMaxRPM";
         private static final String MAX_SU = "CreateTiersMaxSU";
-        private static final String CALIBRATED = "CreateTiersCalibrated";
 
         @Override
         public void appendServerData(CompoundTag data, BlockAccessor accessor) {
@@ -61,13 +59,6 @@ public final class CreateTiersJadePlugin implements IWailaPlugin {
             data.putInt(MAX_RPM, tier.getMaxRPM());
             data.putInt(MAX_SU, tier.getMaxSU());
 
-            // Native Create Tiers block entities expose an intrinsic getTier() while the
-            // generic attachment remains null. Ordinary calibrated Create machines expose
-            // the attached tier as their effective tier.
-            boolean calibrated = accessor.getBlockEntity() instanceof IAttachedTierBlockEntity attached
-                    && attached.getAttachedTier() != null
-                    && tier.equals(attached.getAttachedTier());
-            data.putBoolean(CALIBRATED, calibrated);
         }
 
         @Override
@@ -78,11 +69,6 @@ public final class CreateTiersJadePlugin implements IWailaPlugin {
             }
 
             tooltip.add(Component.translatable("createtiers.jade.tier", data.getString(TIER_NAME)));
-            tooltip.add(Component.translatable(
-                    "createtiers.jade.source",
-                    Component.translatable(data.getBoolean(CALIBRATED)
-                            ? "createtiers.jade.source.calibrated"
-                            : "createtiers.jade.source.intrinsic")));
             tooltip.add(Component.translatable("createtiers.jade.max_rpm", data.getInt(MAX_RPM)));
             tooltip.add(Component.translatable("createtiers.jade.max_su", data.getInt(MAX_SU)));
         }

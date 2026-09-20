@@ -32,7 +32,7 @@ public final class AdjustableComponentGameTests {
         controllerTier.setAttachedTier(tier);
         controller.targetSpeed.setValue(tier.getMaxRPM());
         if (controller.targetSpeed.getValue() != tier.getMaxRPM()) {
-            helper.fail("Calibrated Rotation Speed Controller remained capped below tier Max RPM");
+            helper.fail("Tier-upgraded Rotation Speed Controller remained capped below tier Max RPM");
         }
 
         controllerTier.clearAttachedTier();
@@ -54,7 +54,7 @@ public final class AdjustableComponentGameTests {
         motorTier.setAttachedTier(tier);
         motor.generatedSpeed.setValue(tier.getMaxRPM());
         if (motor.generatedSpeed.getValue() != tier.getMaxRPM()) {
-            helper.fail("Calibrated Creative Motor remained capped at Create's vanilla range");
+            helper.fail("Tier-upgraded Creative Motor remained capped at Create's vanilla range");
         }
 
         motorTier.clearAttachedTier();

@@ -39,8 +39,8 @@
 - Preserve Create's vanilla belt pulley body on tiered belts, remove the generic square accent from belt endpoints, and render the surviving source shaft separately in its tier color.
 - Preserve a tiered shaft through metal-girder encasing, wrench recovery, schematic requirements, and block loot instead of downgrading it to a vanilla shaft.
 - Mirror Create's `safe_nbt` block tag for generated tiered Rotation Speed Controllers so schematic/configurable block-entity data keeps upstream behavior.
-- Preserve attached tiers and source block identity across Create-native block-entity replacement paths, including vanilla shaft-to-belt round trips, steam powered-shaft round trips, and standard shaft/cog encasing/decasing. Belt pulleys persist their exact source block ID so calibrated vanilla shafts do not restore as intrinsic tiered shafts.
-- Treat intrinsic tiered-shaft belt provenance as authoritative tier state instead of mutable calibration, so clearing legacy attached-tier data cannot temporarily untier the pulley or make teardown restore a vanilla shaft.
+- Preserve attached tiers and source block identity across Create-native block-entity replacement paths, including vanilla shaft-to-belt round trips, steam powered-shaft round trips, and standard shaft/cog encasing/decasing. Belt pulleys persist their exact source block ID so tier-upgraded vanilla shafts do not restore as intrinsic tiered shafts.
+- Treat intrinsic tiered-shaft belt provenance as authoritative tier state instead of mutable attached tier data, so clearing legacy attached-tier data cannot temporarily untier the pulley or make teardown restore a vanilla shaft.
 - Mirror Create's `axeOrPickaxe()` mining tags for generated cogwheel, gearbox, encased, clutch, gearshift, chain-drive, and speed-controller variants.
 - Keep the generic attached-tier renderer accent off intrinsic native tier blocks, removing the floating square/ring above tiered Rotation Speed Controllers.
 - Tint the shaft in tiered clutch, gearshift, encased/adjustable chain-drive, and Rotation Speed Controller item models while preserving Create's original casing textures.
@@ -66,5 +66,5 @@
 - Add native controller UI-range and client resource-contract coverage for intrinsic accent suppression and relay/control item shaft tinting.
 
 
-- Add every registered tier-upgrade output to the Create Tiers creative tab as a calibrated item stack.
+- Add every registered tier-upgrade output to the Create Tiers creative tab as a tier-upgraded item stack.
 - Remove generated encased shaft, cogwheel, and large-cogwheel variants from the Create Tiers creative tab.

@@ -8,7 +8,7 @@ import com.createtiers.api.TierRegistry;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
-import com.createtiers.foundation.utility.TierCalibration;
+import com.createtiers.foundation.utility.InWorldTierUpgrade;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
@@ -84,21 +84,21 @@ public final class ShaftCompatibilityGameTests {
                 helper.fail("Belt pulley at " + pos + " lost its effective intrinsic source tier");
             }
             if (attached.getAttachedTier() != null) {
-                helper.fail("Intrinsic shaft belt pulley incorrectly stored its tier as mutable attached calibration");
+                helper.fail("Intrinsic shaft belt pulley incorrectly stored its tier as mutable attached tier data");
             }
             if (!(blockEntity instanceof IReplacementSourceBlockEntity source)
                     || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
                 helper.fail("Belt pulley at " + pos + " did not persist its exact intrinsic source shaft id");
             }
             if (!(blockEntity instanceof KineticBlockEntity kinetic)
-                    || TierCalibration.canMutateWithShaft(kinetic, attached.getAttachedTier(), tier)) {
-                helper.fail("Intrinsic shaft belt pulley can still be changed by the calibration fallback");
+                    || InWorldTierUpgrade.canApplyWithShaft(kinetic, attached.getAttachedTier(), tier)) {
+                helper.fail("Intrinsic shaft belt pulley can still be changed by the in-world tier-upgrade fallback");
             }
         }
 
         // Serialize and recreate one pulley BE before teardown. Add the old attached-tier
         // field to emulate belts saved by an earlier PR head where intrinsic provenance
-        // was also duplicated as mutable calibration.
+        // was also duplicated as mutable attached tier data.
         BlockPos reloadedPos = helper.absolutePos(end);
         BlockEntity original = helper.getLevel().getBlockEntity(reloadedPos);
         if (original == null) {
@@ -127,9 +127,9 @@ public final class ShaftCompatibilityGameTests {
                 helper.fail("Reloaded belt no longer derives its effective tier from intrinsic source provenance");
             }
             if (!(reloaded instanceof KineticBlockEntity kineticReloaded)
-                    || TierCalibration.canMutateWithShaft(
+                    || InWorldTierUpgrade.canApplyWithShaft(
                             kineticReloaded, attachedReloaded.getAttachedTier(), tier)) {
-                helper.fail("Legacy reloaded intrinsic belt can still clear its tier through the calibration fallback");
+                helper.fail("Legacy reloaded intrinsic belt can still clear its tier through the in-world tier-upgrade fallback");
             }
 
             // Even a direct legacy-state clear must not make provenance-derived tier state disappear.
@@ -221,7 +221,7 @@ public final class ShaftCompatibilityGameTests {
         BlockPos restoredPos = helper.absolutePos(end);
         BlockState restored = helper.getLevel().getBlockState(restoredPos);
         if (!AllBlocks.SHAFT.has(restored) || restored.getBlock() instanceof TieredShaftBlock) {
-            helper.fail("Calibrated belt pulley did not restore the original vanilla Create shaft identity");
+            helper.fail("Tier-upgraded belt pulley did not restore the original vanilla Create shaft identity");
         }
         assertAttachedTierAt(helper, restoredPos, tier,
                 "Belt pulley -> vanilla shaft restoration silently lost the attached tier");

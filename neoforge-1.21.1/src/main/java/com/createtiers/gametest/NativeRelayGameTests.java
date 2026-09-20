@@ -6,7 +6,7 @@ import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.api.TierUpgradeRegistry;
-import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.registry.CommonCreativeTab;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.RotationPropagator;
@@ -129,7 +129,7 @@ public final class NativeRelayGameTests {
     private static void assertTierUpgradeCreativeEntry(GameTestHelper helper, Tier tier) {
         boolean found = CommonCreativeTab.tierUpgradeEntries().stream()
                 .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
-                        && tier.equals(CalibratedItemData.getTier(stack)));
+                        && tier.equals(TierUpgradeItemData.getTier(stack)));
         if (!found) {
             helper.fail("Registered tier-upgrade output is missing from the Create Tiers creative tab");
         }

@@ -20,13 +20,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 /** Version-specific item storage for registered tier-upgrade variants. */
-public final class CalibratedItemData {
+public final class TierUpgradeItemData {
     public static final String TIER_KEY = "CreateTiersTier";
 
-    private CalibratedItemData() {
+    private TierUpgradeItemData() {
     }
 
-    public static ItemStack calibratedCopy(ItemStack stack, Tier tier) {
+    public static ItemStack upgradedCopy(ItemStack stack, Tier tier) {
         ResourceLocation tierId = TierRegistry.getId(tier);
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (tierId == null) {

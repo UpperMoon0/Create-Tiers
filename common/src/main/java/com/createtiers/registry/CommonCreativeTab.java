@@ -3,7 +3,7 @@ package com.createtiers.registry;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TierUpgradeRegistry;
-import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.simibubi.create.AllBlocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -40,7 +40,7 @@ public class CommonCreativeTab {
     }
 
     /**
-     * Materialize every registered tier-upgrade pair as the same calibrated item
+     * Materialize every registered tier-upgrade pair as the same tier-upgraded item
      * stack used by recipe outputs. Registry insertion order is retained so the tab
      * is deterministic and pack authors can control grouping through registration.
      */
@@ -59,7 +59,7 @@ public class CommonCreativeTab {
                         "Creative tab tier upgrade references unknown tier '" + registration.tierId() + "'");
             }
 
-            entries.add(CalibratedItemData.calibratedCopy(new ItemStack(item), tier));
+            entries.add(TierUpgradeItemData.upgradedCopy(new ItemStack(item), tier));
         }
         return List.copyOf(entries);
     }

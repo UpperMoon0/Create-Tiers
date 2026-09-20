@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
-/** Lets calibrated Mechanical Arms benefit from RPM tiers above Create's vanilla 256 RPM movement ceiling. */
+/** Lets tier-upgraded Mechanical Arms benefit from RPM tiers above Create's vanilla 256 RPM movement ceiling. */
 @Mixin(value = ArmBlockEntity.class, remap = false)
 public abstract class ArmBlockEntityMixin {
 

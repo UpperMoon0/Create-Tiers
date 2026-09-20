@@ -1,6 +1,6 @@
 package com.createtiers.mixin;
 
-import com.createtiers.foundation.utility.TierCalibration;
+import com.createtiers.foundation.utility.InWorldTierUpgrade;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.UseOnContext;
@@ -9,14 +9,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Adds the tier-calibration fallback for Create kinetics without a normal item form. */
+/** Adds the in-world tier-upgrade path for Create kinetics without a normal item form. */
 @Mixin(BlockItem.class)
-public abstract class TieredShaftCalibrationMixin {
+public abstract class TieredShaftUpgradeMixin {
 
     @Inject(method = "useOn", at = @At("HEAD"), cancellable = true)
-    private void createtiers$calibrateKineticComponent(UseOnContext context,
+    private void createtiers$upgradeKineticComponent(UseOnContext context,
             CallbackInfoReturnable<InteractionResult> cir) {
-        if (TierCalibration.tryCalibrate(context)) {
+        if (InWorldTierUpgrade.tryApply(context)) {
             cir.setReturnValue(InteractionResult.sidedSuccess(context.getLevel().isClientSide));
         }
     }

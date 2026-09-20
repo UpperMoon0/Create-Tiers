@@ -33,6 +33,27 @@ class ResourceContractTests(unittest.TestCase):
         data = json.loads(COMMON_LANG.read_text(encoding="utf-8"))
         self.assertEqual("Create Tiers", data["config.jade.plugin_createtiers"])
         self.assertEqual("Tier Information", data[JADE_CONFIG_KEY])
+        self.assertNotIn("CreateTiersCalibrated", plugin_source)
+        self.assertNotIn("createtiers.jade.source", data)
+
+    def test_legacy_upgrade_vocabulary_is_removed_from_current_sources(self):
+        roots = (
+            ROOT / "common/src",
+            ROOT / "forge-1.20.1/src",
+            ROOT / "neoforge-1.21.1/src",
+            ROOT / "tools",
+        )
+        offenders = []
+        for base in roots:
+            for path in base.rglob("*"):
+                if not path.is_file() or path.suffix not in {".java", ".json", ".py", ".md"}:
+                    continue
+                if path.resolve() == Path(__file__).resolve():
+                    continue
+                text = path.read_text(encoding="utf-8")
+                if ("calib" + "rat") in text.lower():
+                    offenders.append(str(path.relative_to(ROOT)))
+        self.assertEqual([], offenders, "Legacy upgrade vocabulary leaked into current sources")
 
     def test_shared_language_resource_is_packaged_by_neoforge(self):
         self.assertFalse(
@@ -102,7 +123,7 @@ class ResourceContractTests(unittest.TestCase):
         source = CREATIVE_TAB.read_text(encoding="utf-8")
         self.assertIn("tierUpgradeEntries().forEach(output::accept)", source)
         self.assertIn("TierUpgradeRegistry.getAll()", source)
-        self.assertIn("CalibratedItemData.calibratedCopy", source)
+        self.assertIn("TierUpgradeItemData.upgradedCopy", source)
 
         self.assertNotIn("ModBlocks.ENCASED_SHAFT_ITEMS", source)
         self.assertNotIn("ModBlocks.ENCASED_COGWHEEL_ITEMS", source)

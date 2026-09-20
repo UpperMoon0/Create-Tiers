@@ -17,41 +17,26 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Fallback interaction for Create kinetics that have no item form.
+ * In-world tier-upgrade interaction for Create kinetics that have no item form.
  *
- * <p>Normal item-backed machines must be calibrated through recipes so packs can
- * assign a meaningful per-machine upgrade cost. A tiered shaft remains useful for
- * in-world-only kinetic components such as belt segments, which cannot be the
- * output of an item recipe.</p>
+ * <p>Normal item-backed machines are upgraded exclusively through tier-upgrade
+ * recipes. A tiered shaft is only an interaction token for components such as
+ * belt segments that cannot be crafted as standalone items.</p>
  */
-public final class TierCalibration {
+public final class InWorldTierUpgrade {
 
-    private TierCalibration() {
+    private InWorldTierUpgrade() {
     }
 
     /**
-     * Handle sneak-use of a tiered shaft on a non-itemized Create kinetic component.
-     *
-     * <p>For an item-backed component the shaft may only clear the exact currently
-     * attached tier. It can never apply or change a tier, preventing the reusable
-     * shaft from bypassing the configured calibration recipe.</p>
-     *
-     * @return {@code true} when the interaction belongs to Create Tiers and normal
-     *         BlockItem placement should be suppressed
+     * Item-backed Create blocks must always use their configured recipe. Only
+     * genuinely non-itemized kinetics may be changed with a tiered shaft.
      */
-
-    /**
-     * Policy seam used by runtime tests: item-backed kinetics may only be cleared
-     * with the exact attached tier, while components with no normal item form may
-     * still use the shaft fallback for applying/changing a tier.
-     */
-    public static boolean canMutateWithShaft(KineticBlockEntity kinetic, Tier attached, Tier selected) {
+    public static boolean canApplyWithShaft(KineticBlockEntity kinetic, Tier attached, Tier selected) {
         if (hasIntrinsicReplacementSource(kinetic)) {
             return false;
         }
-        boolean clearing = selected.equals(attached);
-        boolean hasNormalItemForm = kinetic.getBlockState().getBlock().asItem() != Items.AIR;
-        return !hasNormalItemForm || clearing;
+        return kinetic.getBlockState().getBlock().asItem() == Items.AIR;
     }
 
     private static boolean hasIntrinsicReplacementSource(KineticBlockEntity kinetic) {
@@ -67,7 +52,7 @@ public final class TierCalibration {
                 && block instanceof TieredShaftBlock;
     }
 
-    public static boolean tryCalibrate(UseOnContext context) {
+    public static boolean tryApply(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null || !player.isShiftKeyDown()) {
             return false;
@@ -93,21 +78,18 @@ public final class TierCalibration {
         Tier attached = attachable.getAttachedTier();
         Tier effective = attachable.getTier();
 
-        // Native Create Tiers blocks already provide an intrinsic tier.
+        // Native Create Tiers blocks already own their tier; their transformed forms
+        // preserve source provenance instead of accepting an attached tier.
         if (effective != null && attached == null) {
             return false;
         }
 
         Tier selected = shaft.getTier();
-        boolean clearing = selected.equals(attached);
-
-        // Item-backed machines must pay their recipe-defined calibration cost.
-        // Keeping exact-tier clearing here also provides a clean escape hatch for
-        // worlds/items created by earlier PR builds without reopening the free upgrade.
-        if (!canMutateWithShaft(kinetic, attached, selected)) {
+        if (!canApplyWithShaft(kinetic, attached, selected)) {
             return false;
         }
 
+        boolean clearing = selected.equals(attached);
         if (!level.isClientSide) {
             if (clearing) {
                 attachable.clearAttachedTier();
@@ -115,7 +97,8 @@ public final class TierCalibration {
             } else {
                 attachable.setAttachedTier(selected);
                 player.displayClientMessage(
-                        Component.translatable("createtiers.message.tier_attached_fallback", selected.getDisplayName()), true);
+                        Component.translatable("createtiers.message.in_world_tier_applied", selected.getDisplayName()),
+                        true);
             }
         }
 

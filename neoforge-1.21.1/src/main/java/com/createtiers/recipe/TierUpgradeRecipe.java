@@ -3,21 +3,21 @@ package com.createtiers.recipe;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TierUpgradeRegistry;
-import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.registry.ModRecipes;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
@@ -27,25 +27,23 @@ import java.util.List;
 
 /**
  * Shapeless built-in tier-upgrade recipe. The output keeps the same Create block item and stores
- * the selected tier in vanilla BlockEntityTag data so normal BlockItem placement restores it.
+ * the selected tier in vanilla block-entity item data so normal BlockItem placement restores it.
  */
-public final class CalibrationRecipe extends ShapelessRecipe {
+public final class TierUpgradeRecipe extends ShapelessRecipe {
     private final ResourceLocation tierId;
     private final ResourceLocation inputId;
     private final Item inputItem;
     private final Tier tier;
     private final List<Ingredient> extraIngredients;
 
-    public CalibrationRecipe(ResourceLocation recipeId, ResourceLocation tierId, ResourceLocation inputId,
-            List<Ingredient> extraIngredients) {
-        this(recipeId, tierId, inputId, resolveInput(inputId), resolveTier(inputId, tierId),
-                validateIngredients(extraIngredients));
+    public TierUpgradeRecipe(ResourceLocation tierId, ResourceLocation inputId, List<Ingredient> extraIngredients) {
+        this(tierId, inputId, resolveInput(inputId), resolveTier(inputId, tierId), requireIngredients(extraIngredients));
     }
 
-    private CalibrationRecipe(ResourceLocation recipeId, ResourceLocation tierId, ResourceLocation inputId,
-            Item inputItem, Tier tier, List<Ingredient> extraIngredients) {
-        super(recipeId, "", CraftingBookCategory.MISC,
-                CalibratedItemData.calibratedCopy(new ItemStack(inputItem), tier),
+    private TierUpgradeRecipe(ResourceLocation tierId, ResourceLocation inputId, Item inputItem, Tier tier,
+            List<Ingredient> extraIngredients) {
+        super("", CraftingBookCategory.MISC,
+                TierUpgradeItemData.upgradedCopy(new ItemStack(inputItem), tier),
                 allIngredients(inputItem, extraIngredients));
         this.tierId = tierId;
         this.inputId = inputId;
@@ -55,14 +53,13 @@ public final class CalibrationRecipe extends ShapelessRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stack = container.getItem(slot);
+    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+        for (ItemStack stack : input.items()) {
             if (stack.is(inputItem)) {
-                return CalibratedItemData.calibratedCopy(stack, tier);
+                return TierUpgradeItemData.upgradedCopy(stack, tier);
             }
         }
-        return CalibratedItemData.calibratedCopy(new ItemStack(inputItem), tier);
+        return TierUpgradeItemData.upgradedCopy(new ItemStack(inputItem), tier);
     }
 
     @Override
@@ -102,7 +99,7 @@ public final class CalibrationRecipe extends ShapelessRecipe {
         return tier;
     }
 
-    private static List<Ingredient> validateIngredients(List<Ingredient> ingredients) {
+    private static List<Ingredient> requireIngredients(List<Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
             throw new IllegalArgumentException("Tier upgrade recipe requires at least one upgrade ingredient");
         }
@@ -112,6 +109,16 @@ public final class CalibrationRecipe extends ShapelessRecipe {
         return List.copyOf(ingredients);
     }
 
+    private static DataResult<List<Ingredient>> validateIngredients(List<Ingredient> ingredients) {
+        if (ingredients.isEmpty()) {
+            return DataResult.error(() -> "Tier upgrade recipe requires at least one upgrade ingredient");
+        }
+        if (ingredients.size() > 8) {
+            return DataResult.error(() -> "Tier upgrade recipe supports at most eight upgrade ingredients");
+        }
+        return DataResult.success(List.copyOf(ingredients));
+    }
+
     private static NonNullList<Ingredient> allIngredients(Item inputItem, List<Ingredient> extras) {
         NonNullList<Ingredient> ingredients = NonNullList.create();
         ingredients.add(Ingredient.of(inputItem));
@@ -119,43 +126,44 @@ public final class CalibrationRecipe extends ShapelessRecipe {
         return ingredients;
     }
 
-    public static final class Serializer implements RecipeSerializer<CalibrationRecipe> {
-        @Override
-        public CalibrationRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
-            ResourceLocation tierId = new ResourceLocation(GsonHelper.getAsString(json, "tier"));
-            ResourceLocation inputId = new ResourceLocation(GsonHelper.getAsString(json, "input"));
-            JsonArray array = GsonHelper.getAsJsonArray(json, "ingredients");
-            if (array.size() < 1 || array.size() > 8) {
-                throw new JsonParseException("Create Tiers tier upgrade recipes require 1-8 upgrade ingredients");
-            }
+    public static final class Serializer implements RecipeSerializer<TierUpgradeRecipe> {
+        private static final MapCodec<TierUpgradeRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("tier").forGetter(recipe -> recipe.tierId),
+                ResourceLocation.CODEC.fieldOf("input").forGetter(recipe -> recipe.inputId),
+                Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients")
+                        .flatXmap(TierUpgradeRecipe::validateIngredients, DataResult::success)
+                        .forGetter(recipe -> recipe.extraIngredients)
+        ).apply(instance, TierUpgradeRecipe::new));
 
-            List<Ingredient> ingredients = new ArrayList<>(array.size());
-            array.forEach(element -> ingredients.add(Ingredient.fromJson(element, false)));
-            try {
-                return new CalibrationRecipe(recipeId, tierId, inputId, ingredients);
-            } catch (IllegalArgumentException ex) {
-                throw new JsonParseException("Invalid calibration recipe " + recipeId + ": " + ex.getMessage(), ex);
-            }
+        private static final StreamCodec<RegistryFriendlyByteBuf, TierUpgradeRecipe> STREAM_CODEC = StreamCodec.of(
+                Serializer::toNetwork, Serializer::fromNetwork);
+
+        @Override
+        public MapCodec<TierUpgradeRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public CalibrationRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
+        public StreamCodec<RegistryFriendlyByteBuf, TierUpgradeRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+
+        private static TierUpgradeRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
             ResourceLocation tierId = buffer.readResourceLocation();
             ResourceLocation inputId = buffer.readResourceLocation();
             int count = buffer.readVarInt();
             List<Ingredient> ingredients = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                ingredients.add(Ingredient.fromNetwork(buffer));
+                ingredients.add(Ingredient.CONTENTS_STREAM_CODEC.decode(buffer));
             }
-            return new CalibrationRecipe(recipeId, tierId, inputId, ingredients);
+            return new TierUpgradeRecipe(tierId, inputId, ingredients);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf buffer, CalibrationRecipe recipe) {
+        private static void toNetwork(RegistryFriendlyByteBuf buffer, TierUpgradeRecipe recipe) {
             buffer.writeResourceLocation(recipe.tierId);
             buffer.writeResourceLocation(recipe.inputId);
             buffer.writeVarInt(recipe.extraIngredients.size());
-            recipe.extraIngredients.forEach(ingredient -> ingredient.toNetwork(buffer));
+            recipe.extraIngredients.forEach(ingredient -> Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, ingredient));
         }
     }
 }

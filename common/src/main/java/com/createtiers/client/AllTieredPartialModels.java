@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class AllTieredPartialModels {
 
-    /** Subtle machine accent used when an ordinary Create kinetic block is tier-calibrated. */
+    /** Subtle machine accent used when an ordinary Create kinetic block is tier-upgraded. */
     public static final PartialModel ATTACHED_TIER_ACCENT =
             PartialModel.of(CreateTiers.asResource("block/tier_accent"));
 

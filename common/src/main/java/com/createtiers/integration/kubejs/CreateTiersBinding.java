@@ -4,7 +4,7 @@ import com.createtiers.Compat;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TierUpgradeRegistry;
-import com.createtiers.foundation.item.CalibratedItemData;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -152,7 +152,7 @@ public class CreateTiersBinding {
         if (resolvedTier == null) {
             throw new IllegalArgumentException("Unknown Create Tiers tier: " + tierId);
         }
-        return CalibratedItemData.calibratedCopy(new ItemStack(input), resolvedTier);
+        return TierUpgradeItemData.upgradedCopy(new ItemStack(input), resolvedTier);
     }
 
     public static Tier getTier(String name) {

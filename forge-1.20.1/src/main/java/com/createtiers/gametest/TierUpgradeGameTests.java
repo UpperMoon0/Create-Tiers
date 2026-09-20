@@ -3,9 +3,9 @@ package com.createtiers.gametest;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
-import com.createtiers.foundation.item.CalibratedItemData;
-import com.createtiers.foundation.utility.TierCalibration;
-import com.createtiers.recipe.CalibrationRecipe;
+import com.createtiers.foundation.item.TierUpgradeItemData;
+import com.createtiers.foundation.utility.InWorldTierUpgrade;
+import com.createtiers.recipe.TierUpgradeRecipe;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.KineticNetwork;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -24,12 +24,12 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder(CreateTiers.MOD_ID)
 @PrefixGameTestTemplate(false)
-public final class CalibrationGameTests {
-    private CalibrationGameTests() {
+public final class TierUpgradeGameTests {
+    private TierUpgradeGameTests() {
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
-    public static void calibrationApplyClearAndNbtPersistence(GameTestHelper helper) {
+    public static void attachedTierPersistsAndCanClear(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, new BlockPos(1, 1, 1));
         IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
@@ -53,80 +53,80 @@ public final class CalibrationGameTests {
         GameTestSupport.assertAttachedTier(helper, attachable, tier,
                 "Attached tier was not restored from Create block-entity NBT");
         attachable.clearAttachedTier();
-        GameTestSupport.succeed(helper, "calibration-apply-clear", "calibration-nbt-persistence");
+        GameTestSupport.succeed(helper, "attached-tier-apply-clear", "attached-tier-nbt-persistence");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
-    public static void calibrationChangesNetworkLimitAcrossRebuild(GameTestHelper helper) {
+    public static void attachedTierChangesNetworkLimitAcrossRebuild(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, new BlockPos(1, 1, 1));
         IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
 
         attachable.setAttachedTier(tier);
-        KineticNetwork calibrated = GameTestSupport.network(10_000f, kinetic);
-        GameTestSupport.assertFloat(helper, tier.getMaxSU(), calibrated.calculateCapacity(),
-                "Calibrated kinetic was not included in rebuilt network tier limits");
+        KineticNetwork tieredNetwork = GameTestSupport.network(10_000f, kinetic);
+        GameTestSupport.assertFloat(helper, tier.getMaxSU(), tieredNetwork.calculateCapacity(),
+                "Attached tier was not included in rebuilt network limits");
 
         attachable.clearAttachedTier();
         KineticNetwork cleared = GameTestSupport.network(10_000f, kinetic);
         GameTestSupport.assertFloat(helper, 10_000f, cleared.calculateCapacity(),
-                "Cleared calibration leaked into a rebuilt network");
-        GameTestSupport.succeed(helper, "calibration-network-rebuild");
+                "Cleared attached tier leaked into a rebuilt network");
+        GameTestSupport.succeed(helper, "attached-tier-network-rebuild");
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
-    public static void calibrationRecipeItemRoundTrip(GameTestHelper helper) {
+    public static void tierUpgradeRecipeItemRoundTrip(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
-        CalibrationRecipe recipe = new CalibrationRecipe(
-                new net.minecraft.resources.ResourceLocation(CreateTiers.MOD_ID, "gametest_calibration_recipe"),
+        TierUpgradeRecipe recipe = new TierUpgradeRecipe(
+                new net.minecraft.resources.ResourceLocation(CreateTiers.MOD_ID, "gametest_tier_upgrade_recipe"),
                 GameTestSupport.ATTACHMENT_TIER_ID,
                 BuiltInRegistries.ITEM.getKey(AllBlocks.SHAFT.get().asItem()),
                 java.util.List.of(Ingredient.of(Items.IRON_INGOT)));
 
-        ItemStack calibrated = recipe.getResultItem(helper.getLevel().registryAccess()).copy();
-        if (!tier.equals(CalibratedItemData.getTier(calibrated))) {
-            helper.fail("Calibration recipe preview did not output the base Create item carrying its tier");
+        ItemStack upgraded = recipe.getResultItem(helper.getLevel().registryAccess()).copy();
+        if (!tier.equals(TierUpgradeItemData.getTier(upgraded))) {
+            helper.fail("Tier-upgrade recipe preview did not output the base Create item carrying its tier");
         }
 
         BlockPos relative = new BlockPos(1, 1, 1);
         KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, relative);
         BlockPos absolute = helper.absolutePos(relative);
-        if (!BlockItem.updateCustomBlockEntityTag(helper.getLevel(), null, absolute, calibrated)) {
-            helper.fail("Vanilla BlockItem placement data did not apply calibration to the placed kinetic block entity");
+        if (!BlockItem.updateCustomBlockEntityTag(helper.getLevel(), null, absolute, upgraded)) {
+            helper.fail("Vanilla BlockItem placement data did not apply tier data to the placed kinetic block entity");
         }
 
         IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
         GameTestSupport.assertAttachedTier(helper, attachable, tier,
-                "Recipe-produced calibrated item did not restore its tier on placement");
+                "Recipe-produced tier-upgraded item did not restore its tier on placement");
 
         ItemStack preservedDrop = Block.getDrops(kinetic.getBlockState(), helper.getLevel(), absolute, kinetic)
                 .stream()
                 .filter(stack -> stack.is(AllBlocks.SHAFT.get().asItem()))
                 .findFirst()
                 .orElse(ItemStack.EMPTY);
-        if (preservedDrop.isEmpty() || !tier.equals(CalibratedItemData.getTier(preservedDrop))) {
-            helper.fail("Breaking a calibrated Create kinetic block did not preserve calibration on its item drop");
+        if (preservedDrop.isEmpty() || !tier.equals(TierUpgradeItemData.getTier(preservedDrop))) {
+            helper.fail("Breaking a tier-upgraded Create kinetic block did not preserve tier data on its item drop");
         }
 
-        GameTestSupport.succeed(helper, "calibration-recipe-item-roundtrip");
+        GameTestSupport.succeed(helper, "tier-upgrade-item-roundtrip");
     }
 
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 20)
-    public static void itemBackedCalibrationCannotBypassRecipe(GameTestHelper helper) {
+    public static void itemBackedTierCannotBypassRecipe(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         KineticBlockEntity kinetic = GameTestSupport.placeKinetic(helper, new BlockPos(1, 1, 1));
         IAttachedTierBlockEntity attachable = GameTestSupport.requireAttachable(helper, kinetic);
 
-        if (TierCalibration.canMutateWithShaft(kinetic, null, tier)) {
+        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, null, tier)) {
             helper.fail("Item-backed Create kinetic accepted free tier application through the shaft fallback");
         }
 
         attachable.setAttachedTier(tier);
-        if (!TierCalibration.canMutateWithShaft(kinetic, tier, tier)) {
-            helper.fail("Matching tiered shaft could not clear an existing item-backed calibration");
+        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, tier, tier)) {
+            helper.fail("Item-backed Create kinetic allowed a tiered shaft to clear its recipe-produced tier");
         }
-        if (TierCalibration.canMutateWithShaft(kinetic, tier, GameTestSupport.HIGH_TIER)) {
+        if (InWorldTierUpgrade.canApplyWithShaft(kinetic, tier, GameTestSupport.HIGH_TIER)) {
             helper.fail("Item-backed Create kinetic could change tiers through the shaft fallback");
         }
 
