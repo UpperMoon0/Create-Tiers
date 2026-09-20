@@ -2,14 +2,19 @@ package com.createtiers.gametest;
 
 import com.createtiers.CreateTiers;
 import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
+import com.createtiers.api.TierRegistry;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
+import com.createtiers.foundation.utility.TierCalibration;
 import com.createtiers.registry.ModBlocks;
+import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.EncasedBlock;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
@@ -18,6 +23,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
@@ -40,10 +47,15 @@ public final class ShaftCompatibilityGameTests {
     public static void tieredShaftsWorkAsBeltsAndPreserveTier(GameTestHelper helper) {
         TieredShaftBlock shaft = requireTieredShaft(helper);
         Tier tier = shaft.getTier();
+        var tierId = TierRegistry.getId(tier);
+        var shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
         BlockState shaftState = shaft.defaultBlockState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
 
         if (!ShaftBlock.isShaft(shaftState)) {
             helper.fail("Create ShaftBlock.isShaft still rejects a native tiered shaft");
+        }
+        if (tierId == null) {
+            helper.fail("Native GameTest tier has no registered tier id");
         }
 
         BlockPos start = new BlockPos(1, 1, 1);
@@ -65,20 +77,74 @@ public final class ShaftCompatibilityGameTests {
                 helper.fail("Tiered shaft at " + pos + " was not replaced by a Create belt pulley");
             }
             BlockEntity blockEntity = helper.getLevel().getBlockEntity(absolute);
-            if (!(blockEntity instanceof IAttachedTierBlockEntity)) {
-                helper.fail("Belt pulley at " + pos + " cannot retain its source shaft tier");
+            if (!(blockEntity instanceof IAttachedTierBlockEntity attached)) {
+                helper.fail("Belt pulley at " + pos + " cannot expose its source shaft tier");
+                continue;
             }
-            IAttachedTierBlockEntity attached = (IAttachedTierBlockEntity) blockEntity;
-            if (!tier.equals(attached.getAttachedTier())) {
-                helper.fail("Belt pulley at " + pos + " lost its source shaft tier");
+            if (!tier.equals(attached.getTier())) {
+                helper.fail("Belt pulley at " + pos + " lost its effective intrinsic source tier");
+            }
+            if (attached.getAttachedTier() != null) {
+                helper.fail("Intrinsic shaft belt pulley incorrectly stored its tier as mutable attached calibration");
+            }
+            if (!(blockEntity instanceof IReplacementSourceBlockEntity source)
+                    || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+                helper.fail("Belt pulley at " + pos + " did not persist its exact intrinsic source shaft id");
+            }
+            if (!(blockEntity instanceof KineticBlockEntity kinetic)
+                    || TierCalibration.canMutateWithShaft(kinetic, attached.getAttachedTier(), tier)) {
+                helper.fail("Intrinsic shaft belt pulley can still be changed by the calibration fallback");
+            }
+        }
+
+        // Serialize and recreate one pulley BE before teardown. Add the old attached-tier
+        // field to emulate belts saved by an earlier PR head where intrinsic provenance
+        // was also duplicated as mutable calibration.
+        BlockPos reloadedPos = helper.absolutePos(end);
+        BlockEntity original = helper.getLevel().getBlockEntity(reloadedPos);
+        if (original == null) {
+            helper.fail("Missing belt block entity before reload");
+        }
+        CompoundTag saved = original.saveWithFullMetadata(helper.getLevel().registryAccess());
+        saved.putString(GameTestSupport.ATTACHED_TIER_NBT_KEY, tierId.toString());
+
+        BlockState beltState = helper.getLevel().getBlockState(reloadedPos);
+        helper.getLevel().removeBlockEntity(reloadedPos);
+        BlockEntity reloaded = AllBlockEntityTypes.BELT.get().create(reloadedPos, beltState);
+        if (reloaded == null) {
+            helper.fail("Could not recreate belt block entity from saved state");
+        }
+        reloaded.loadWithComponents(saved, helper.getLevel().registryAccess());
+        helper.getLevel().setBlockEntity(reloaded);
+
+        if (!(reloaded instanceof IAttachedTierBlockEntity attachedReloaded)
+                || !(reloaded instanceof IReplacementSourceBlockEntity sourceReloaded)) {
+            helper.fail("Reloaded belt block entity lost Create Tiers runtime interfaces");
+        } else {
+            if (!shaftId.equals(sourceReloaded.getCreateTiersReplacementSourceBlockId())) {
+                helper.fail("Belt source shaft identity did not survive NBT serialize/reload");
+            }
+            if (!tier.equals(attachedReloaded.getTier())) {
+                helper.fail("Reloaded belt no longer derives its effective tier from intrinsic source provenance");
+            }
+            if (!(reloaded instanceof KineticBlockEntity kineticReloaded)
+                    || TierCalibration.canMutateWithShaft(
+                            kineticReloaded, attachedReloaded.getAttachedTier(), tier)) {
+                helper.fail("Legacy reloaded intrinsic belt can still clear its tier through the calibration fallback");
+            }
+
+            // Even a direct legacy-state clear must not make provenance-derived tier state disappear.
+            attachedReloaded.clearAttachedTier();
+            if (!tier.equals(attachedReloaded.getTier())) {
+                helper.fail("Clearing legacy attached data made an intrinsic-source belt temporarily untiered");
             }
         }
 
         helper.getLevel().destroyBlock(helper.absolutePos(start), false);
-        BlockState restored = helper.getLevel().getBlockState(helper.absolutePos(end));
+        BlockState restored = helper.getLevel().getBlockState(reloadedPos);
         if (!(restored.getBlock() instanceof TieredShaftBlock restoredShaft)
                 || !tier.equals(restoredShaft.getTier())) {
-            helper.fail("Breaking the belt restored an untiered pulley instead of the original tiered shaft");
+            helper.fail("Reloaded intrinsic belt restored a vanilla/untiered shaft instead of its source tiered shaft");
         }
 
         helper.succeed();
