@@ -58,7 +58,7 @@ public abstract class RotatingInstanceTierColorMixin {
             return;
         }
 
-        Color color = AttachedTierVisuals.getRenderedColor(blockEntity);
+        Color color = AttachedTierVisuals.getWholeRotatingModelColor(blockEntity);
         if (color != null) {
             createtiers$setColorAndReturn(color, cir);
         }
@@ -73,7 +73,7 @@ public abstract class RotatingInstanceTierColorMixin {
             return;
         }
 
-        Color color = AttachedTierVisuals.getRenderedColor(createtiers$blockEntity);
+        Color color = AttachedTierVisuals.getWholeRotatingModelColor(createtiers$blockEntity);
         if (color != null) {
             createtiers$setColorAndReturn(color, cir);
         }
@@ -93,7 +93,7 @@ public abstract class RotatingInstanceTierColorMixin {
             return;
         }
 
-        Color color = AttachedTierVisuals.getRenderedColor(createtiers$blockEntity);
+        Color color = AttachedTierVisuals.getWholeRotatingModelColor(createtiers$blockEntity);
         if (color == null) {
             return;
         }

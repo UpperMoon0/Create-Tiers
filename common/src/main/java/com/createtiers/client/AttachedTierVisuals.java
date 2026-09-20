@@ -6,6 +6,7 @@ import com.createtiers.mixin.KineticBlockEntityAccessor;
 import com.createtiers.mixin.KineticEffectHandlerAccessor;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticEffectHandler;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
 import net.createmod.catnip.theme.Color;
 
@@ -36,6 +37,22 @@ public final class AttachedTierVisuals {
 
         boolean cogwheel = blockEntity.getBlockState().getBlock() instanceof ICogWheel;
         return new Color(cogwheel ? tier.getCogwheelColor() : tier.getShaftColor());
+    }
+
+    /**
+     * Color for rotating models that are safe to tint as one material.
+     *
+     * Create's belt pulley is a mixed-material model: the shaft uses Create axis textures while
+     * the pulley body uses dark-oak textures. Tinting its single RotatingInstance recolors the
+     * wooden pulley into a solid tier-colored block, so belts deliberately keep the vanilla
+     * rotating pulley materials. The scrolling belt itself still uses getRenderedColor() through
+     * RotatingInstance.colorFromBE().
+     */
+    public static Color getWholeRotatingModelColor(KineticBlockEntity blockEntity) {
+        if (blockEntity instanceof BeltBlockEntity) {
+            return null;
+        }
+        return getRenderedColor(blockEntity);
     }
 
     /** Apply Create's red/green kinetic stress feedback on top of the tier color. */

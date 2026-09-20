@@ -23,7 +23,7 @@ public abstract class KineticBlockEntityRendererTierColorMixin {
             return;
         }
 
-        Color color = AttachedTierVisuals.getRenderedColor(blockEntity);
+        Color color = AttachedTierVisuals.getWholeRotatingModelColor(blockEntity);
         if (color != null) {
             cir.getReturnValue().color(color);
         }
