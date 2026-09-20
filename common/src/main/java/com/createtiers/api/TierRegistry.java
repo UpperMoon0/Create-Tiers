@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,12 +26,17 @@ public class TierRegistry {
     private static final Logger LOGGER = LoggerFactory.getLogger("CreateTiers");
 
     private static final Map<ResourceLocation, Tier> TIERS = new ConcurrentHashMap<>();
-    private static final Map<Integer, Tier> TIERS_BY_LEVEL = new ConcurrentHashMap<>();
     private static volatile boolean frozen = false;
+
+    private static final Comparator<Map.Entry<ResourceLocation, Tier>> CAPABILITY_ORDER =
+            Comparator.<Map.Entry<ResourceLocation, Tier>>comparingInt(entry -> entry.getValue().getMaxRPM())
+                    .thenComparingInt(entry -> entry.getValue().getMaxSU())
+                    .thenComparing(entry -> entry.getKey().toString());
 
     /**
      * Register a new tier. Must be called before the registry is frozen.
-     * IDs, numeric levels, and generated tier names are all unique.
+     * IDs and generated tier names are unique. Progression is derived from Max RPM
+     * and Max SU rather than a separate numeric level.
      *
      * @param id The unique identifier for this tier
      * @param tier The tier to register
@@ -40,8 +46,8 @@ public class TierRegistry {
      */
     public static synchronized Tier register(ResourceLocation id, Tier tier) {
         validateMutable();
-        validateRegistration(id, tier, TIERS.keySet(), TIERS_BY_LEVEL.keySet(), registeredNames());
-        validateMonotonicLimits(List.of(tier));
+        validateRegistration(id, tier, TIERS.keySet(), registeredNames());
+        validateCapabilityOrder(Map.of(id, tier));
         put(id, tier);
         return tier;
     }
@@ -58,17 +64,15 @@ public class TierRegistry {
         validateMutable();
 
         Set<ResourceLocation> ids = new HashSet<>(TIERS.keySet());
-        Set<Integer> levels = new HashSet<>(TIERS_BY_LEVEL.keySet());
         Set<String> names = registeredNames();
 
         for (Map.Entry<ResourceLocation, Tier> entry : registrations.entrySet()) {
-            validateRegistration(entry.getKey(), entry.getValue(), ids, levels, names);
+            validateRegistration(entry.getKey(), entry.getValue(), ids, names);
             ids.add(entry.getKey());
-            levels.add(entry.getValue().getTier());
             names.add(entry.getValue().getName());
         }
 
-        validateMonotonicLimits(registrations.values());
+        validateCapabilityOrder(registrations);
 
         List<Tier> registered = new ArrayList<>(registrations.size());
         for (Map.Entry<ResourceLocation, Tier> entry : registrations.entrySet()) {
@@ -80,12 +84,13 @@ public class TierRegistry {
 
     private static void validateMutable() {
         if (frozen) {
-            throw new IllegalStateException("Tier registry is frozen. Tiers must be registered during mod initialization/startup scripts.");
+            throw new IllegalStateException(
+                    "Tier registry is frozen. Tiers must be registered during mod initialization/startup scripts.");
         }
     }
 
     private static void validateRegistration(ResourceLocation id, Tier tier, Set<ResourceLocation> ids,
-            Set<Integer> levels, Set<String> names) {
+            Set<String> names) {
         Objects.requireNonNull(id, "Tier id cannot be null");
         Objects.requireNonNull(tier, "Tier cannot be null");
         validateTier(tier);
@@ -93,34 +98,41 @@ public class TierRegistry {
         if (ids.contains(id)) {
             throw new IllegalArgumentException("Tier id '" + id + "' is already registered");
         }
-        if (levels.contains(tier.getTier())) {
-            throw new IllegalArgumentException("Tier level " + tier.getTier() + " is already registered");
-        }
         if (names.contains(tier.getName())) {
             throw new IllegalArgumentException(
-                    "Tier generated name '" + tier.getName() + "' is already registered. Generated component names must be unique across namespaces.");
+                    "Tier generated name '" + tier.getName()
+                            + "' is already registered. Generated component names must be unique across namespaces.");
         }
     }
 
-    private static void validateMonotonicLimits(Collection<Tier> pending) {
-        List<Tier> ordered = new ArrayList<>(TIERS.values());
-        ordered.addAll(pending);
-        ordered.sort(Comparator.comparingInt(Tier::getTier));
+    /**
+     * Tier order must be derivable from capability alone. If one tier has more RPM
+     * but less SU than another, neither is objectively the higher tier, so reject the
+     * configuration instead of inventing an unrelated ordinal.
+     */
+    private static void validateCapabilityOrder(Map<ResourceLocation, Tier> pending) {
+        Map<ResourceLocation, Tier> combined = new LinkedHashMap<>(TIERS);
+        combined.putAll(pending);
 
-        for (int i = 1; i < ordered.size(); i++) {
-            Tier lower = ordered.get(i - 1);
-            Tier higher = ordered.get(i);
-            if (higher.getMaxRPM() < lower.getMaxRPM()) {
+        List<Map.Entry<ResourceLocation, Tier>> ordered = new ArrayList<>(combined.entrySet());
+        ordered.sort(CAPABILITY_ORDER);
+
+        int highestSU = -1;
+        Map.Entry<ResourceLocation, Tier> highestSUEntry = null;
+        for (Map.Entry<ResourceLocation, Tier> entry : ordered) {
+            Tier tier = entry.getValue();
+            if (tier.getMaxSU() < highestSU) {
+                Tier conflicting = highestSUEntry.getValue();
                 throw new IllegalArgumentException(
-                        "Tier level " + higher.getTier() + " ('" + higher.getName() + "') maxRPM "
-                                + higher.getMaxRPM() + " cannot be lower than tier level "
-                                + lower.getTier() + " ('" + lower.getName() + "') maxRPM " + lower.getMaxRPM());
+                        "Tier capabilities are incomparable: '" + highestSUEntry.getKey() + "' has "
+                                + conflicting.getMaxRPM() + " RPM / " + conflicting.getMaxSU()
+                                + " SU, while '" + entry.getKey() + "' has " + tier.getMaxRPM()
+                                + " RPM / " + tier.getMaxSU()
+                                + " SU. Higher RPM cannot come with lower Max SU.");
             }
-            if (higher.getMaxSU() < lower.getMaxSU()) {
-                throw new IllegalArgumentException(
-                        "Tier level " + higher.getTier() + " ('" + higher.getName() + "') maxSU "
-                                + higher.getMaxSU() + " cannot be lower than tier level "
-                                + lower.getTier() + " ('" + lower.getName() + "') maxSU " + lower.getMaxSU());
+            if (tier.getMaxSU() > highestSU) {
+                highestSU = tier.getMaxSU();
+                highestSUEntry = entry;
             }
         }
     }
@@ -135,21 +147,18 @@ public class TierRegistry {
 
     private static void put(ResourceLocation id, Tier tier) {
         TIERS.put(id, tier);
-        TIERS_BY_LEVEL.put(tier.getTier(), tier);
-        LOGGER.info("Registered tier: {} (level {}, maxRPM: {}, maxSU: {})",
-                id, tier.getTier(), tier.getMaxRPM(), tier.getMaxSU());
+        LOGGER.info("Registered tier: {} (maxRPM: {}, maxSU: {})",
+                id, tier.getMaxRPM(), tier.getMaxSU());
     }
 
     private static void validateTier(Tier tier) {
-        if (tier.getTier() <= 0) {
-            throw new IllegalArgumentException("Tier level must be greater than 0: " + tier.getTier());
-        }
         if (tier.getName() == null || tier.getName().isBlank()) {
             throw new IllegalArgumentException("Tier name cannot be blank");
         }
         if (!isValidGeneratedPath(tier.getName())) {
             throw new IllegalArgumentException(
-                    "Tier generated name '" + tier.getName() + "' contains characters that are invalid in Minecraft resource paths");
+                    "Tier generated name '" + tier.getName()
+                            + "' contains characters that are invalid in Minecraft resource paths");
         }
         if (tier.getMaxRPM() <= 0) {
             throw new IllegalArgumentException("Tier maxRPM must be greater than 0 for '" + tier.getName() + "'");
@@ -174,7 +183,8 @@ public class TierRegistry {
 
     private static void validateColor(String field, int color, String tierName) {
         if (color < 0 || color > 0xFFFFFF) {
-            throw new IllegalArgumentException(field + " for tier '" + tierName + "' must be a 24-bit RGB value (0x000000-0xFFFFFF)");
+            throw new IllegalArgumentException(
+                    field + " for tier '" + tierName + "' must be a 24-bit RGB value (0x000000-0xFFFFFF)");
         }
     }
 
@@ -199,10 +209,6 @@ public class TierRegistry {
         return null;
     }
 
-    public static Tier getByLevel(int level) {
-        return TIERS_BY_LEVEL.get(level);
-    }
-
     public static int getMaxPossibleRPM() {
         return TIERS.values().stream()
                 .mapToInt(Tier::getMaxRPM)
@@ -210,10 +216,13 @@ public class TierRegistry {
                 .orElse(0);
     }
 
+    /**
+     * Registered tiers in derived capability order: Max RPM, then Max SU, then id.
+     */
     public static Collection<Tier> getAllTiers() {
-        List<Tier> tiers = new ArrayList<>(TIERS.values());
-        tiers.sort(Comparator.comparingInt(Tier::getTier));
-        return tiers;
+        List<Map.Entry<ResourceLocation, Tier>> entries = new ArrayList<>(TIERS.entrySet());
+        entries.sort(CAPABILITY_ORDER);
+        return entries.stream().map(Map.Entry::getValue).toList();
     }
 
     public static Set<ResourceLocation> getAllTierIds() {
@@ -222,10 +231,6 @@ public class TierRegistry {
 
     public static boolean exists(ResourceLocation id) {
         return TIERS.containsKey(id);
-    }
-
-    public static boolean existsByLevel(int level) {
-        return TIERS_BY_LEVEL.containsKey(level);
     }
 
     public static int size() {
@@ -252,7 +257,6 @@ public class TierRegistry {
     /** Testing only. */
     public static synchronized void clear() {
         TIERS.clear();
-        TIERS_BY_LEVEL.clear();
         frozen = false;
         LOGGER.warn("Tier registry cleared - this should only be used for testing!");
     }

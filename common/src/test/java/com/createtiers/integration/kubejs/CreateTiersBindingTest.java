@@ -1,8 +1,8 @@
 package com.createtiers.integration.kubejs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -34,8 +34,8 @@ class CreateTiersBindingTest {
     @Test
     void malformedLaterBatchEntryDoesNotPartiallyRegisterEarlierEntries() {
         List<Map<String, Object>> tiers = List.of(
-                Map.of("name", "basic", "level", 1, "maxRPM", 256, "maxSU", 1024),
-                Map.of("name", "advanced", "level", 1, "maxRPM", 512, "maxSU", 2048));
+                Map.of("name", "basic", "maxRPM", 256, "maxSU", 1024),
+                Map.of("name", "advanced", "maxRPM", 512, "maxSU", "bad"));
 
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(tiers));
         assertEquals(0, TierRegistry.size());
@@ -44,8 +44,18 @@ class CreateTiersBindingTest {
     @Test
     void duplicateNamesInsideBatchAreRejectedAtomically() {
         List<Map<String, Object>> tiers = List.of(
-                Map.of("name", "basic", "level", 1, "maxRPM", 256, "maxSU", 1024),
-                Map.of("name", "basic", "level", 2, "maxRPM", 512, "maxSU", 2048));
+                Map.of("name", "basic", "maxRPM", 256, "maxSU", 1024),
+                Map.of("name", "basic", "maxRPM", 512, "maxSU", 2048));
+
+        assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(tiers));
+        assertEquals(0, TierRegistry.size());
+    }
+
+    @Test
+    void crossedCapabilitiesInsideBatchAreRejectedAtomically() {
+        List<Map<String, Object>> tiers = List.of(
+                Map.of("name", "torque", "maxRPM", 256, "maxSU", 8192),
+                Map.of("name", "speed", "maxRPM", 512, "maxSU", 4096));
 
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(tiers));
         assertEquals(0, TierRegistry.size());
@@ -54,7 +64,7 @@ class CreateTiersBindingTest {
     @Test
     void fractionalNumericFieldsAreRejectedInsteadOfTruncated() {
         List<Map<String, Object>> tiers = List.of(
-                Map.of("name", "basic", "level", 1.5d, "maxRPM", 256, "maxSU", 1024));
+                Map.of("name", "basic", "maxRPM", 256.5d, "maxSU", 1024));
 
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(tiers));
         assertEquals(0, TierRegistry.size());
@@ -63,7 +73,7 @@ class CreateTiersBindingTest {
     @Test
     void overflowingNumericFieldsAreRejectedInsteadOfWrapped() {
         List<Map<String, Object>> tiers = List.of(
-                Map.of("name", "basic", "level", 1, "maxRPM", 2147483648L, "maxSU", 1024));
+                Map.of("name", "basic", "maxRPM", 2147483648L, "maxSU", 1024));
 
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(tiers));
         assertEquals(0, TierRegistry.size());
@@ -75,8 +85,7 @@ class CreateTiersBindingTest {
 
         Map<String, Object> wrongType = new HashMap<>();
         wrongType.put("name", "basic");
-        wrongType.put("level", "1");
-        wrongType.put("maxRPM", 256);
+        wrongType.put("maxRPM", "256");
         wrongType.put("maxSU", 1024);
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTiers(List.of(wrongType)));
         assertEquals(0, TierRegistry.size());
@@ -85,8 +94,8 @@ class CreateTiersBindingTest {
     @Test
     void batchDefaultsColorsAndDisplayNameWithoutChangingExplicitValues() {
         CreateTiersBinding.registerTiers(List.of(
-                Map.of("name", "basic", "level", 1, "maxRPM", 256, "maxSU", 1024, "shaftColor", 0x123456),
-                Map.of("name", "advanced", "level", 2, "maxRPM", 512, "maxSU", 4096,
+                Map.of("name", "basic", "maxRPM", 256, "maxSU", 1024, "shaftColor", 0x123456),
+                Map.of("name", "advanced", "maxRPM", 512, "maxSU", 4096,
                         "shaftColor", 0xABCDEF, "cogwheelColor", 0x654321, "displayName", "Advanced Tier")));
 
         Tier basic = CreateTiersBinding.getTier("basic");
@@ -102,8 +111,8 @@ class CreateTiersBindingTest {
 
     @Test
     void directRegistrationOverloadsApplyDocumentedDefaults() {
-        CreateTiersBinding.registerTier("basic", 1, 256, 1024);
-        CreateTiersBinding.registerTier("advanced", 2, 512, 4096, 0x334455);
+        CreateTiersBinding.registerTier("basic", 256, 1024);
+        CreateTiersBinding.registerTier("advanced", 512, 4096, 0x334455);
 
         Tier basic = CreateTiersBinding.getTier("basic");
         Tier advanced = CreateTiersBinding.getTier("advanced");
@@ -112,9 +121,10 @@ class CreateTiersBindingTest {
         assertEquals(0x334455, advanced.getShaftColor());
         assertEquals(0x334455, advanced.getCogwheelColor());
     }
+
     @Test
     void tierUpgradeRegistrationIsIndependentFromRecipeChoice() {
-        CreateTiersBinding.registerTier("advanced", 2, 512, 4096);
+        CreateTiersBinding.registerTier("advanced", 512, 4096);
         CreateTiersBinding.registerTierUpgrade("create:large_water_wheel", "advanced", false);
 
         ResourceLocation item = ResourceLocation.tryParse("create:large_water_wheel");
@@ -125,8 +135,8 @@ class CreateTiersBindingTest {
 
     @Test
     void tierUpgradeBatchDefaultsRecipeAndIsAtomic() {
-        CreateTiersBinding.registerTier("basic", 1, 256, 1024);
-        CreateTiersBinding.registerTier("advanced", 2, 512, 4096);
+        CreateTiersBinding.registerTier("basic", 256, 1024);
+        CreateTiersBinding.registerTier("advanced", 512, 4096);
 
         assertThrows(IllegalArgumentException.class, () -> CreateTiersBinding.registerTierUpgrades(List.of(
                 Map.of("item", "create:shaft", "tier", "basic"),

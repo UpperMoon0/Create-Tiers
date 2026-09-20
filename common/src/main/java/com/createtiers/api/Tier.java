@@ -5,10 +5,12 @@ import java.util.Objects;
 /**
  * Represents a tier for Create kinetic blocks.
  * Tiers are registered during startup via KubeJS or another mod integration.
+ *
+ * <p>Tier progression is derived from kinetic capability. There is no separate
+ * numeric level: higher-capability tiers have non-decreasing Max RPM and Max SU.</p>
  */
 public class Tier implements Comparable<Tier> {
 
-    private final int tier;
     private final String name;
     private final int maxRPM;
     private final int maxSU;
@@ -19,7 +21,6 @@ public class Tier implements Comparable<Tier> {
     /**
      * Creates a new Tier.
      *
-     * @param tier The tier number (must be unique)
      * @param name The internal/generated component name of the tier
      * @param maxRPM Maximum RPM this tiered component may receive
      * @param maxSU Hard stress-cap for a connected kinetic network containing this tier
@@ -27,8 +28,7 @@ public class Tier implements Comparable<Tier> {
      * @param cogwheelColor The color of the cogwheel (24-bit RGB)
      * @param displayName Optional display name for the tier
      */
-    public Tier(int tier, String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor, String displayName) {
-        this.tier = tier;
+    public Tier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor, String displayName) {
         this.name = name;
         this.maxRPM = maxRPM;
         this.maxSU = maxSU;
@@ -37,11 +37,10 @@ public class Tier implements Comparable<Tier> {
         this.displayName = displayName != null ? displayName : name;
     }
 
-    public Tier(int tier, String name, int maxRPM, int maxSU) {
-        this(tier, name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, null);
+    public Tier(String name, int maxRPM, int maxSU) {
+        this(name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, null);
     }
 
-    public int getTier() { return tier; }
     public String getName() { return name; }
     public int getMaxRPM() { return maxRPM; }
     public int getMaxSU() { return maxSU; }
@@ -72,9 +71,18 @@ public class Tier implements Comparable<Tier> {
         return new Builder();
     }
 
+    /**
+     * Natural order is capability-derived. Registered tiers are guaranteed not to
+     * cross (higher RPM with lower SU), so RPM then SU is a valid progression order.
+     * Name is only a deterministic tie-breaker for equal-capability tiers.
+     */
     @Override
     public int compareTo(Tier other) {
-        return Integer.compare(this.tier, other.tier);
+        int rpm = Integer.compare(this.maxRPM, other.maxRPM);
+        if (rpm != 0) return rpm;
+        int su = Integer.compare(this.maxSU, other.maxSU);
+        if (su != 0) return su;
+        return this.name.compareTo(other.name);
     }
 
     @Override
@@ -82,19 +90,18 @@ public class Tier implements Comparable<Tier> {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Tier other = (Tier) obj;
-        return tier == other.tier && name.equals(other.name);
+        return maxRPM == other.maxRPM && maxSU == other.maxSU && name.equals(other.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tier, name);
+        return Objects.hash(name, maxRPM, maxSU);
     }
 
     @Override
     public String toString() {
         return "Tier{" +
-                "tier=" + tier +
-                ", name='" + name + '\'' +
+                "name='" + name + '\'' +
                 ", maxRPM=" + maxRPM +
                 ", maxSU=" + maxSU +
                 ", shaftColor=" + String.format("#%06X", shaftColor) +
@@ -104,18 +111,12 @@ public class Tier implements Comparable<Tier> {
 
     /** Builder for startup integrations such as KubeJS and other mods. */
     public static class Builder {
-        private int tier = 1;
-        private String name = "tier_1";
+        private String name = "tier";
         private int maxRPM = 256;
         private int maxSU = 1024;
         private int shaftColor = 0xFFFFFF;
         private int cogwheelColor = 0xFFFFFF;
         private String displayName = null;
-
-        public Builder tier(int tier) {
-            this.tier = tier;
-            return this;
-        }
 
         public Builder name(String name) {
             this.name = name;
@@ -154,7 +155,7 @@ public class Tier implements Comparable<Tier> {
         }
 
         public Tier build() {
-            return new Tier(tier, name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+            return new Tier(name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
         }
     }
 }

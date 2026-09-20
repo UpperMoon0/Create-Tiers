@@ -153,9 +153,9 @@ Standard Create encasings are discovered from Create's own encasing registry rat
 
 ```javascript
 // kubejs/startup_scripts/create_tiers.js
-CreateTiers.registerTier('basic', 1, 256, 1024)
-CreateTiers.registerTier('advanced', 2, 512, 4096, 0xC88A45)
-CreateTiers.registerTier('elite', 3, 1024, 16384, 0x00FFBB, 0x55FF55, 'Elite')
+CreateTiers.registerTier('basic', 256, 1024)
+CreateTiers.registerTier('advanced', 512, 4096, 0xC88A45)
+CreateTiers.registerTier('elite', 1024, 16384, 0x00FFBB, 0x55FF55, 'Elite')
 ```
 
 Batch form:
@@ -164,7 +164,6 @@ Batch form:
 CreateTiers.registerTiers([
   {
     name: 'basic',
-    level: 1,
     maxRPM: 256,
     maxSU: 1024,
     shaftColor: 0xAAAAAA,
@@ -173,7 +172,6 @@ CreateTiers.registerTiers([
   },
   {
     name: 'advanced',
-    level: 2,
     maxRPM: 512,
     maxSU: 4096,
     shaftColor: 0xB87333,
@@ -184,9 +182,9 @@ CreateTiers.registerTiers([
 
 Batch registration is atomic: if any definition in the batch is invalid or conflicts with another tier, none of that batch is registered. Numeric fields must be whole 32-bit integers; fractional or overflowing values are rejected instead of truncated.
 
-Tier levels also define non-decreasing capability. A higher numeric tier may keep the same `maxRPM` or `maxSU`, but it cannot reduce either limit below the nearest lower registered tier. This invariant is checked across the complete registry even when tiers are registered out of level order or as an unordered batch.
+Tier progression is derived directly from kinetic capability; there is no separate numeric level. Tiers are ordered by `maxRPM`, then `maxSU`. A configuration where one tier has higher RPM but lower Max SU than another is rejected as incomparable, because neither tier is objectively more capable overall. Equal-capability tiers are allowed and use their IDs only as a deterministic tie-breaker.
 
-Tier IDs, numeric levels, and generated tier names must be unique. Generated names must also be valid Minecraft resource paths. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
+Tier IDs and generated tier names must be unique. Generated names must also be valid Minecraft resource paths. Invalid definitions fail during startup with a descriptive error instead of silently overwriting another tier.
 
 `registerCustomTier(namespace, name, ...)` may be used when another integration needs a namespaced lookup ID. Generated Create Tiers component IDs still use `name`, so generated names remain globally unique across namespaces.
 

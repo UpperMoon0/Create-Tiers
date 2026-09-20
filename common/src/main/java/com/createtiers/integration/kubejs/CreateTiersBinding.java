@@ -36,7 +36,6 @@ public class CreateTiersBinding {
             }
 
             String name = requireString(tierData, "name", index);
-            int level = requireNumber(tierData, "level", index);
             int maxRPM = requireNumber(tierData, "maxRPM", index);
             int maxSU = requireNumber(tierData, "maxSU", index);
             int shaftColor = optionalNumber(tierData, "shaftColor", 0xFFFFFF, index);
@@ -44,7 +43,7 @@ public class CreateTiersBinding {
             String displayName = optionalString(tierData, "displayName", name, index);
 
             ResourceLocation id = rl("createtiers", name);
-            Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+            Tier tier = createTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
             if (registrations.putIfAbsent(id, tier) != null) {
                 throw fieldError(index, "name", "duplicates another tier in this batch");
             }
@@ -54,50 +53,50 @@ public class CreateTiersBinding {
         LOGGER.info("Registered {} tiers via registerTiers batch call", tiers.size());
     }
 
-    public static void registerTier(String name, int level, int maxRPM, int maxSU) {
-        registerTier(name, level, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, name);
+    public static void registerTier(String name, int maxRPM, int maxSU) {
+        registerTier(name, maxRPM, maxSU, 0xFFFFFF, 0xFFFFFF, name);
     }
 
-    public static void registerTier(String name, int level, int maxRPM, int maxSU, int color) {
-        registerTier(name, level, maxRPM, maxSU, color, color, name);
+    public static void registerTier(String name, int maxRPM, int maxSU, int color) {
+        registerTier(name, maxRPM, maxSU, color, color, name);
     }
 
-    public static void registerTier(String name, int level, int maxRPM, int maxSU, int color, String displayName) {
-        registerTier(name, level, maxRPM, maxSU, color, color, displayName);
+    public static void registerTier(String name, int maxRPM, int maxSU, int color, String displayName) {
+        registerTier(name, maxRPM, maxSU, color, color, displayName);
     }
 
-    public static void registerTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor) {
-        registerTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, name);
+    public static void registerTier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor) {
+        registerTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, name);
     }
 
-    public static void registerTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
+    public static void registerTier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
             String displayName) {
         requireDirectName(name, "name");
         ResourceLocation id = rl("createtiers", name);
-        Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
+        Tier tier = createTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, displayName);
 
         TierRegistry.register(id, tier);
-        LOGGER.info("Registered tier '{}' via KubeJS: level={}, maxRPM={}, maxSU={}", name, level, maxRPM, maxSU);
+        LOGGER.info("Registered tier '{}' via KubeJS: maxRPM={}, maxSU={}", name, maxRPM, maxSU);
     }
 
     /**
      * Registers a custom lookup id. Generated component registry names still use {@code name},
      * so names must remain globally unique across all tier namespaces.
      */
-    public static void registerCustomTier(String namespace, String name, int level, int maxRPM, int maxSU,
+    public static void registerCustomTier(String namespace, String name, int maxRPM, int maxSU,
             int shaftColor, int cogwheelColor) {
         requireDirectName(namespace, "namespace");
         requireDirectName(name, "name");
         ResourceLocation id = rl(namespace, name);
-        Tier tier = createTier(name, level, maxRPM, maxSU, shaftColor, cogwheelColor, name);
+        Tier tier = createTier(name, maxRPM, maxSU, shaftColor, cogwheelColor, name);
 
         TierRegistry.register(id, tier);
-        LOGGER.info("Registered custom tier '{}:{}' via KubeJS: level={}, maxRPM={}, maxSU={}",
-                namespace, name, level, maxRPM, maxSU);
+        LOGGER.info("Registered custom tier '{}:{}' via KubeJS: maxRPM={}, maxSU={}",
+                namespace, name, maxRPM, maxSU);
     }
 
-    public static void registerCustomTier(String namespace, String name, int level, int maxRPM, int maxSU, int color) {
-        registerCustomTier(namespace, name, level, maxRPM, maxSU, color, color);
+    public static void registerCustomTier(String namespace, String name, int maxRPM, int maxSU, int color) {
+        registerCustomTier(namespace, name, maxRPM, maxSU, color, color);
     }
 
     public static void registerTierUpgrade(String item, String tier) {
@@ -159,10 +158,6 @@ public class CreateTiersBinding {
         return TierRegistry.get(rl("createtiers", name));
     }
 
-    public static Tier getTierByLevel(int level) {
-        return TierRegistry.getByLevel(level);
-    }
-
     public static Collection<Tier> getAllTiers() {
         return TierRegistry.getAllTiers();
     }
@@ -171,10 +166,9 @@ public class CreateTiersBinding {
         return TierRegistry.exists(rl("createtiers", name));
     }
 
-    private static Tier createTier(String name, int level, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
+    private static Tier createTier(String name, int maxRPM, int maxSU, int shaftColor, int cogwheelColor,
             String displayName) {
         return Tier.builder()
-                .tier(level)
                 .name(name)
                 .maxRPM(maxRPM)
                 .maxSU(maxSU)
