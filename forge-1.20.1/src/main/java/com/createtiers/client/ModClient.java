@@ -2,6 +2,7 @@ package com.createtiers.client;
 
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
@@ -35,8 +36,11 @@ import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -48,7 +52,9 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -88,6 +94,22 @@ public class ModClient {
                     modelRegistry.put(mrl, new BracketedKineticBlockModel(original));
                 }
             });
+        }
+        wrapTierUpgradeItemModels(modelRegistry);
+    }
+
+    private static void wrapTierUpgradeItemModels(Map<ResourceLocation, BakedModel> modelRegistry) {
+        Set<ResourceLocation> wrappedIds = new LinkedHashSet<>();
+        for (TierUpgradeRegistry.Registration registration : TierUpgradeRegistry.getAll()) {
+            ResourceLocation itemId = registration.itemId();
+            if (!wrappedIds.add(itemId)) continue;
+            Item item = BuiltInRegistries.ITEM.get(itemId);
+            if (!(item instanceof BlockItem blockItem)) continue;
+            ModelResourceLocation modelId = new ModelResourceLocation(itemId, "inventory");
+            BakedModel original = modelRegistry.get(modelId);
+            if (original == null || original instanceof TierUpgradeTintedItemModel) continue;
+            TierUpgradeItemTintPolicy.Mode mode = TierUpgradeItemTintPolicy.forBlock(blockItem.getBlock());
+            modelRegistry.put(modelId, new TierUpgradeTintedItemModel(original, mode));
         }
     }
 

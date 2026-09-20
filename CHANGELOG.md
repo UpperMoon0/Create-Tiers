@@ -12,7 +12,7 @@
 - Persist attached tiers in block-entity NBT and rebuild the kinetic connection when the applied tier changes.
 - Apply attached-tier custom colors to ordinary Create kinetics: dedicated cogwheels use `cogwheelColor`, other rotating/mechanical parts use `shaftColor`, and specialized machines receive a subtle tier-colored accent when their renderer has no suitable tintable part.
 - Keep attached-tier visuals consistent across Flywheel and fallback block-entity rendering while preserving Create's overstress and kinetic-debugger feedback.
-- Add optional Jade integration for intrinsic and upgraded tiers, showing the tier name, tier source, Max RPM, and Max SU from authoritative server data.
+- Add optional Jade integration for intrinsic and upgraded tiers, showing the tier name, Max RPM, and Max SU from authoritative server data.
 - Keep speedometers and stressometers intentionally exempt from tier upgrades.
 - Expand each registered tier's native default family with clutch, gearshift, encased chain drive, adjustable chain gearshift, rotation speed controller, and metal-girder encased shaft.
 - Discover standard Create shaft/cogwheel encasing variants from the installed Create version instead of maintaining an andesite/brass-only registration list.
@@ -44,10 +44,11 @@
 - Mirror Create's `axeOrPickaxe()` mining tags for generated cogwheel, gearbox, encased, clutch, gearshift, chain-drive, and speed-controller variants.
 - Keep the generic attached-tier renderer accent off intrinsic native tier blocks, removing the floating square/ring above tiered Rotation Speed Controllers.
 - Tint the shaft in tiered clutch, gearshift, encased/adjustable chain-drive, and Rotation Speed Controller item models while preserving Create's original casing textures.
+- Tint registered tier-upgrade item models generically when they have no specialized tint contract, while preserving selective shaft/cogwheel tint channels for mixed-material kinetic models.
 - Replace the tiered Rotation Speed Controller's width-scaling value board with a compact signed numeric input, so high-RPM tiers remain usable at any GUI size.
 - Restore Create's dedicated large-cog coupling and placement alignment for native tiered Rotation Speed Controllers, so the upper cog actually receives the configured output speed.
 - Isolate GameTest KubeJS startup fixtures in a dedicated run directory so the synthetic GameTest vanilla-shaft upgrade cannot leak into the normal Create Tiers creative tab.
-- Rename the player-facing Jade tier source from Intrinsic to Built-in for native Create Tiers blocks.
+- Remove the implementation-detail Tier Source line from Jade; only the tier and authoritative RPM/SU limits are shown.
 
 ### Changed
 

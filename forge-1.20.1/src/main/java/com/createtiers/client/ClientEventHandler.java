@@ -1,19 +1,24 @@
 package com.createtiers.client;
 
 import com.createtiers.CreateTiers;
+import com.createtiers.api.Tier;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.registry.ModBlocks;
+import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
@@ -177,5 +182,23 @@ public class ClientEventHandler {
             }
             return -1;
         }, nativeRelayItems.toArray(new net.minecraft.world.item.Item[0]));
+
+        java.util.Set<Item> upgradeItems = new java.util.LinkedHashSet<>();
+        for (TierUpgradeRegistry.Registration registration : TierUpgradeRegistry.getAll()) {
+            Item item = BuiltInRegistries.ITEM.get(registration.itemId());
+            if (registration.itemId().equals(BuiltInRegistries.ITEM.getKey(item))) {
+                upgradeItems.add(item);
+            }
+        }
+
+        if (!upgradeItems.isEmpty()) {
+            event.register((stack, tintIndex) -> {
+                Tier tier = TierUpgradeItemData.getTier(stack);
+                if (tier == null) return -1;
+                if (tintIndex == 0) return tier.getShaftColor();
+                if (tintIndex == 1) return tier.getCogwheelColor();
+                return -1;
+            }, upgradeItems.toArray(new Item[0]));
+        }
     }
 }

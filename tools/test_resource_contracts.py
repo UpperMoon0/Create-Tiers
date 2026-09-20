@@ -23,6 +23,9 @@ SPEED_INPUT_SCREEN = ROOT / "common/src/main/java/com/createtiers/client/TieredS
 FORGE_VALUE_CLIENT_MIXIN = ROOT / "forge-1.20.1/src/main/java/com/createtiers/mixin/ValueSettingsClientTierInputMixin.java"
 NEO_VALUE_CLIENT_MIXIN = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/mixin/ValueSettingsClientTierInputMixin.java"
 COG_PLACEMENT_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/CogWheelBlockSpeedControllerMixin.java"
+TIER_UPGRADE_TINT_POLICY = ROOT / "common/src/main/java/com/createtiers/client/TierUpgradeItemTintPolicy.java"
+FORGE_TIER_UPGRADE_MODEL = ROOT / "forge-1.20.1/src/main/java/com/createtiers/client/TierUpgradeTintedItemModel.java"
+NEO_TIER_UPGRADE_MODEL = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/client/TierUpgradeTintedItemModel.java"
 
 
 class ResourceContractTests(unittest.TestCase):
@@ -111,6 +114,28 @@ class ResourceContractTests(unittest.TestCase):
         self.assertIn("getAxisForPlacement", source)
         self.assertIn("TieredSpeedControllerBlock", source)
         self.assertIn("SpeedControllerBlock.HORIZONTAL_AXIS", source)
+
+    def test_registered_upgrade_items_have_general_and_selective_tint_paths(self):
+        policy = TIER_UPGRADE_TINT_POLICY.read_text(encoding="utf-8")
+        self.assertIn("return Mode.FULL", policy)
+        self.assertIn("block instanceof ICogWheel", policy)
+        self.assertIn("block instanceof ChainDriveBlock", policy)
+        self.assertIn('"block/axis"', policy)
+        self.assertIn('"block/cogwheel"', policy)
+
+        for path in (FORGE_TIER_UPGRADE_MODEL, NEO_TIER_UPGRADE_MODEL):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("TierUpgradeItemTintPolicy.tintIndex", source)
+            self.assertIn("quad.isTinted()", source)
+            self.assertIn("new BakedQuad(", source)
+            self.assertIn("getRenderPasses", source)
+
+        for path in (FORGE_CLIENT_COLORS, NEO_CLIENT_COLORS):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("TierUpgradeRegistry.getAll()", source)
+            self.assertIn("TierUpgradeItemData.getTier(stack)", source)
+            self.assertIn("tier.getShaftColor()", source)
+            self.assertIn("tier.getCogwheelColor()", source)
 
     def test_gametest_kubejs_fixture_isolated_from_normal_dev_run(self):
         for path in (FORGE_BUILD, NEO_BUILD_SCRIPT):
