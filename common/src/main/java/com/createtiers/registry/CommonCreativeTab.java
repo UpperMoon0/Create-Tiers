@@ -24,6 +24,11 @@ public class CommonCreativeTab {
                     ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(output::accept);
                     ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(output::accept);
                     ModBlocks.GEARBOX_ITEMS.forEach(output::accept);
+                    ModBlocks.CLUTCH_ITEMS.forEach(output::accept);
+                    ModBlocks.GEARSHIFT_ITEMS.forEach(output::accept);
+                    ModBlocks.CHAIN_DRIVE_ITEMS.forEach(output::accept);
+                    ModBlocks.CHAIN_GEARSHIFT_ITEMS.forEach(output::accept);
+                    ModBlocks.SPEED_CONTROLLER_ITEMS.forEach(output::accept);
                 });
     }
 }

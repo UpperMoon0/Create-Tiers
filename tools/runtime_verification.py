@@ -26,6 +26,7 @@ REQUIRED_SCENARIOS = (
     "shaft-cannot-bypass-item-recipe",
     "rotation-speed-controller",
     "creative-motor",
+    "native-relay-default-family",
     "tiered-shaft-belt",
     "tiered-shaft-steam-engine",
 )

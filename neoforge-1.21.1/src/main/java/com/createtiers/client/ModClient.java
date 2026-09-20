@@ -121,6 +121,11 @@ public class ModClient {
         ModBlocks.ENCASED_SHAFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CLUTCH_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.GEARSHIFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CHAIN_DRIVE_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CHAIN_GEARSHIFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.SPEED_CONTROLLER_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
     }
 
     @org.jetbrains.annotations.Nullable

@@ -275,13 +275,16 @@ public class ModBlocks implements PlatformHelper {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     private static void registerEncasingFamily(Block base, int tierIndex,
             List<CreateEncasingVariants.Variant> variants, List<Block> blocks) {
         for (int variantIndex = 0; variantIndex < variants.size(); variantIndex++) {
             Block encased = blocks.get(tierIndex * variants.size() + variantIndex);
-            EncasingRegistry.addVariant((com.simibubi.create.content.decoration.encasing.EncasableBlock) base,
-                    (com.simibubi.create.content.decoration.encasing.EncasedBlock) encased);
+            if (base instanceof TieredShaftBlock shaft && encased instanceof TieredEncasedShaftBlock tieredEncased) {
+                EncasingRegistry.addVariant(shaft, tieredEncased);
+            } else if (base instanceof TieredCogwheelBlock cog
+                    && encased instanceof TieredEncasedCogwheelBlock tieredEncasedCog) {
+                EncasingRegistry.addVariant(cog, tieredEncasedCog);
+            }
         }
     }
 
