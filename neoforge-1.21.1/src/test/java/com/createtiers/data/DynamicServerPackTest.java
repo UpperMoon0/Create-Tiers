@@ -62,18 +62,35 @@ class DynamicServerPackTest {
                 "createtiers", "loot_table/blocks/gearbox_basic.json");
         ResourceLocation defaultUpgrade = ResourceLocation.fromNamespaceAndPath(
                 "createtiers", "recipe/tier_upgrade/createtiers/basic/create/large_water_wheel.json");
+        ResourceLocation clutchLoot = ResourceLocation.fromNamespaceAndPath(
+                "createtiers", "loot_table/blocks/clutch_basic.json");
+        ResourceLocation girderLoot = ResourceLocation.fromNamespaceAndPath(
+                "createtiers", "loot_table/blocks/metal_girder_encased_shaft_basic.json");
 
         var tagSupplier = pack.getResource(PackType.SERVER_DATA, pickaxeTag);
         var lootSupplier = pack.getResource(PackType.SERVER_DATA, gearboxLoot);
         var recipeSupplier = pack.getResource(PackType.SERVER_DATA, defaultUpgrade);
+        var clutchLootSupplier = pack.getResource(PackType.SERVER_DATA, clutchLoot);
+        var girderLootSupplier = pack.getResource(PackType.SERVER_DATA, girderLoot);
 
         assertNotNull(tagSupplier);
         assertNotNull(lootSupplier);
         assertNotNull(recipeSupplier);
-        assertTrue(new String(tagSupplier.get().readAllBytes(), StandardCharsets.UTF_8)
-                .contains("createtiers:gearbox_basic"));
+        assertNotNull(clutchLootSupplier);
+        assertNotNull(girderLootSupplier);
+        String tagJson = new String(tagSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(tagJson.contains("createtiers:gearbox_basic"));
+        assertTrue(tagJson.contains("createtiers:clutch_basic"));
+        assertTrue(tagJson.contains("createtiers:rotation_speed_controller_basic"));
+        assertTrue(tagJson.contains("createtiers:metal_girder_encased_shaft_basic"));
         assertTrue(new String(lootSupplier.get().readAllBytes(), StandardCharsets.UTF_8)
                 .contains("createtiers:gearbox_basic"));
+        String clutchJson = new String(clutchLootSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(clutchJson.contains("createtiers:clutch_basic"));
+        String girderJson = new String(girderLootSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(girderJson.contains("create:metal_girder"));
+        assertTrue(girderJson.contains("createtiers:shaft_basic"));
+
         String recipeJson = new String(recipeSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
         assertTrue(recipeJson.contains("createtiers:tier_upgrade"));
         assertTrue(recipeJson.contains("createtiers:shaft_basic"));

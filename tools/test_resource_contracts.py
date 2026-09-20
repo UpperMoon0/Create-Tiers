@@ -8,6 +8,11 @@ COMMON_LANG = ROOT / "common/src/main/resources/assets/createtiers/lang/en_us.js
 NEO_LOCAL_LANG = ROOT / "neoforge-1.21.1/src/main/resources/assets/createtiers/lang/en_us.json"
 NEO_BUILD = ROOT / "neoforge-1.21.1/build.gradle"
 JADE_CONFIG_KEY = "config.jade.plugin_createtiers.tier_info"
+FORGE_MODEL_GENERATOR = ROOT / "forge-1.20.1/src/main/java/com/createtiers/client/TieredModelGenerator.java"
+NEO_MODEL_GENERATOR = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/client/TieredModelGenerator.java"
+ENCASING_DISCOVERY = ROOT / "common/src/main/java/com/createtiers/registry/CreateEncasingVariants.java"
+FORGE_SERVER_PACK = ROOT / "common/src/main/java/com/createtiers/data/DynamicServerPack.java"
+NEO_SERVER_PACK = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/data/DynamicServerPack.java"
 
 
 class ResourceContractTests(unittest.TestCase):
@@ -34,6 +39,24 @@ class ResourceContractTests(unittest.TestCase):
     def test_shared_language_contains_creative_tab_title(self):
         data = json.loads(COMMON_LANG.read_text(encoding="utf-8"))
         self.assertEqual("Create Tiers", data["itemGroup.createtiers"])
+
+    def test_native_relay_assets_inherit_create_models_on_both_targets(self):
+        for path in (FORGE_MODEL_GENERATOR, NEO_MODEL_GENERATOR):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("generateNativeRelayAssets", source)
+            self.assertIn("TieredNativeKineticBlock", source)
+            self.assertIn('"blockstates/" + baseId.getPath() + ".json"', source)
+            self.assertIn('"models/item/" + baseId.getPath() + ".json"', source)
+
+    def test_standard_create_encasings_are_discovered_not_hardcoded_in_registration(self):
+        discovery = ENCASING_DISCOVERY.read_text(encoding="utf-8")
+        self.assertIn("EncasingRegistry.getVariants(base)", discovery)
+        self.assertIn('"create".equals(id.getNamespace())', discovery)
+        for path in (FORGE_MODEL_GENERATOR, NEO_MODEL_GENERATOR, FORGE_SERVER_PACK, NEO_SERVER_PACK):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("CreateEncasingVariants.shaftVariants()", source)
+            self.assertIn("CreateEncasingVariants.cogwheelVariants()", source)
+            self.assertIn("CreateEncasingVariants.largeCogwheelVariants()", source)
 
 
 if __name__ == "__main__":

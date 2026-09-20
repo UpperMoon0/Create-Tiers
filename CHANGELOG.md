@@ -14,6 +14,9 @@
 - Keep attached-tier visuals consistent across Flywheel and fallback block-entity rendering while preserving Create's overstress and kinetic-debugger feedback.
 - Add optional Jade integration for intrinsic and upgraded tiers, showing the tier name, tier source, Max RPM, and Max SU from authoritative server data.
 - Keep speedometers and stressometers intentionally exempt from tier upgrades.
+- Expand each registered tier's native default family with clutch, gearshift, encased chain drive, adjustable chain gearshift, rotation speed controller, and metal-girder encased shaft.
+- Discover standard Create shaft/cogwheel encasing variants from the installed Create version instead of maintaining an andesite/brass-only registration list.
+- Reuse Create's upstream block-entity implementations and client models for native relay/control variants while applying intrinsic tier RPM/SU and colors.
 
 ### Fixed
 
@@ -31,6 +34,7 @@
 - Make native tiered shafts work as Create belt pulleys and steam-engine shafts while preserving the tier through belt/powered-shaft replacement and restoring the same tiered shaft on teardown (fixes #2).
 - Fix Jade provider configuration localization so the Forge 1.20.1 development client no longer crashes at the title screen, and ensure the shared language resource is packaged on NeoForge.
 - Preserve Create's vanilla belt pulley body on tiered belts, remove the generic square accent from belt endpoints, and render the surviving source shaft separately in its tier color.
+- Preserve a tiered shaft through metal-girder encasing, wrench recovery, schematic requirements, and block loot instead of downgrading it to a vanilla shaft.
 
 ### Changed
 
@@ -42,5 +46,5 @@
 ### Tests
 
 - Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
-- Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, tier-upgraded item placement/drop round-tripping, adjustable kinetic components, and native tiered-shaft belt/steam-engine interoperability.
+- Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, tier-upgraded item placement/drop round-tripping, adjustable kinetic components, native relay/control default registration, and native tiered-shaft belt/steam-engine interoperability.
 - Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.
