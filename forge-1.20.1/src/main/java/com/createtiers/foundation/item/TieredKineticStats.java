@@ -3,6 +3,7 @@ package com.createtiers.foundation.item;
 import java.util.List;
 
 import com.createtiers.api.Tier;
+import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
@@ -37,6 +38,8 @@ public class TieredKineticStats implements TooltipModifier {
             tier = encasedCog.getTier();
         } else if (block instanceof TieredGearboxBlock gearbox) {
             tier = gearbox.getTier();
+        } else if (block instanceof TieredNativeKineticBlock nativeBlock) {
+            tier = nativeBlock.getTier();
         }
 
         if (tier == null)

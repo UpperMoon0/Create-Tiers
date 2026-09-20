@@ -3,6 +3,7 @@ package com.createtiers.mixin;
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.HolderLookup;
@@ -29,7 +30,14 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Override
     public Tier getTier() {
-        return createtiers$attachedTier;
+        if (createtiers$attachedTier != null) {
+            return createtiers$attachedTier;
+        }
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
+            return nativeBlock.getTier();
+        }
+        return null;
     }
 
     @Override
@@ -44,6 +52,11 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
 
     @Override
     public void setAttachedTier(Tier tier) {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock) {
+            throw new IllegalStateException("Native Create Tiers relay blocks already have an intrinsic tier");
+        }
+
         ResourceLocation id = TierRegistry.getId(tier);
         if (id == null) {
             throw new IllegalArgumentException("Cannot attach an unregistered Create Tiers tier");
@@ -85,6 +98,11 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         self.sendData();
     }
 
+    @Inject(method = "initialize", at = @At("TAIL"))
+    private void createtiers$refreshIntrinsicTierOnInitialize(CallbackInfo ci) {
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
+    }
+
     @Inject(method = "write", at = @At("TAIL"))
     private void createtiers$writeAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
             boolean clientPacket, CallbackInfo ci) {
@@ -97,7 +115,7 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
     private void createtiers$readAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
             boolean clientPacket, CallbackInfo ci) {
         createtiers$loadTier(tag);
-        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, createtiers$attachedTier);
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
     }
 
     @Unique

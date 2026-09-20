@@ -2,6 +2,7 @@ package com.createtiers.client;
 
 import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.Tier;
+import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.mixin.KineticBlockEntityAccessor;
 import com.createtiers.mixin.KineticEffectHandlerAccessor;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -24,13 +25,25 @@ public final class AttachedTierVisuals {
         return null;
     }
 
+    /** Returns an attached tier or the intrinsic tier of a native relay/control block. */
+    public static Tier getVisualTier(KineticBlockEntity blockEntity) {
+        Tier attached = getAttachedTier(blockEntity);
+        if (attached != null) {
+            return attached;
+        }
+        if (blockEntity.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
+            return nativeBlock.getTier();
+        }
+        return null;
+    }
+
     /**
      * Create cogwheel blocks, including encased cogs, use the tier's cogwheel color. All other
-     * ordinary Create kinetic components use the shaft/mechanical color so casing and machine
+     * tier-aware Create kinetic components use the shaft/mechanical color so casing and machine
      * identity remain readable.
      */
     public static Color getBaseColor(KineticBlockEntity blockEntity) {
-        Tier tier = getAttachedTier(blockEntity);
+        Tier tier = getVisualTier(blockEntity);
         if (tier == null) {
             return null;
         }
