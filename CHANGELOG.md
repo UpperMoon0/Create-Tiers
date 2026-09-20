@@ -43,8 +43,11 @@
 - Treat intrinsic tiered-shaft belt provenance as authoritative tier state instead of mutable calibration, so clearing legacy attached-tier data cannot temporarily untier the pulley or make teardown restore a vanilla shaft.
 - Mirror Create's `axeOrPickaxe()` mining tags for generated cogwheel, gearbox, encased, clutch, gearshift, chain-drive, and speed-controller variants.
 - Keep the generic attached-tier renderer accent off intrinsic native tier blocks, removing the floating square/ring above tiered Rotation Speed Controllers.
-- Make tiered Rotation Speed Controller value boards expose the effective tier Max RPM instead of Create''s hard-coded 256 UI range.
-- Tint the shaft in tiered clutch, gearshift, encased/adjustable chain-drive, and Rotation Speed Controller item models while preserving Create''s original casing textures.
+- Tint the shaft in tiered clutch, gearshift, encased/adjustable chain-drive, and Rotation Speed Controller item models while preserving Create's original casing textures.
+- Replace the tiered Rotation Speed Controller's width-scaling value board with a compact signed numeric input, so high-RPM tiers remain usable at any GUI size.
+- Restore Create's dedicated large-cog coupling and placement alignment for native tiered Rotation Speed Controllers, so the upper cog actually receives the configured output speed.
+- Isolate GameTest KubeJS startup fixtures in a dedicated run directory so the synthetic GameTest vanilla-shaft upgrade cannot leak into the normal Create Tiers creative tab.
+- Rename the player-facing Jade tier source from Intrinsic to Built-in for native Create Tiers blocks.
 
 ### Changed
 

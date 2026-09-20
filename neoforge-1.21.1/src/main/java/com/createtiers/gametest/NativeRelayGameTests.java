@@ -9,15 +9,19 @@ import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.foundation.item.CalibratedItemData;
 import com.createtiers.registry.CommonCreativeTab;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlock;
 import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -63,9 +67,6 @@ public final class NativeRelayGameTests {
         if (controller.targetSpeed.getValue() != tier.getMaxRPM()) {
             helper.fail("Native Rotation Speed Controller did not initialize its tier RPM range");
         }
-        if (controller.targetSpeed.createBoard(null, null).maxValue() != tier.getMaxRPM()) {
-            helper.fail("Native Rotation Speed Controller UI did not expose its tier Max RPM");
-        }
 
         assertUpgradeTargetValidation(helper);
         assertTierUpgradeCreativeEntry(helper, tier);
@@ -74,6 +75,47 @@ public final class NativeRelayGameTests {
                 "native-relay-default-family",
                 "native-axe-or-pickaxe-parity",
                 "tier-upgrade-creative-tab-entry");
+    }
+
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void nativeSpeedControllerCouplesTieredLargeCog(GameTestHelper helper) {
+        Block shaftBlock = BuiltInRegistries.BLOCK.get(
+                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "shaft_gametest_native"));
+        Block controllerBlock = BuiltInRegistries.BLOCK.get(
+                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "rotation_speed_controller_gametest_native"));
+        Block largeCogBlock = BuiltInRegistries.BLOCK.get(
+                ResourceLocation.fromNamespaceAndPath(CreateTiers.MOD_ID, "large_cogwheel_gametest_native"));
+
+        KineticBlockEntity source = GameTestSupport.placeBlockEntity(
+                helper,
+                new BlockPos(2, 1, 2),
+                shaftBlock.defaultBlockState().setValue(BlockStateProperties.AXIS, Direction.Axis.X),
+                KineticBlockEntity.class);
+        SpeedControllerBlockEntity controller = GameTestSupport.placeBlockEntity(
+                helper,
+                new BlockPos(3, 1, 2),
+                controllerBlock.defaultBlockState().setValue(SpeedControllerBlock.HORIZONTAL_AXIS, Direction.Axis.X),
+                SpeedControllerBlockEntity.class);
+        KineticBlockEntity largeCog = GameTestSupport.placeBlockEntity(
+                helper,
+                new BlockPos(3, 2, 2),
+                largeCogBlock.defaultBlockState().setValue(BlockStateProperties.AXIS, Direction.Axis.Z),
+                KineticBlockEntity.class);
+
+        controller.targetSpeed.setValue(160);
+        source.setSpeed(64);
+        source.setNetwork(source.getBlockPos().asLong());
+        RotationPropagator.handleAdded(helper.getLevel(), source.getBlockPos(), source);
+
+        GameTestSupport.assertFloat(
+                helper, 64, controller.getTheoreticalSpeed(),
+                "Tiered Rotation Speed Controller did not accept shaft input");
+        GameTestSupport.assertFloat(
+                helper, 160, largeCog.getTheoreticalSpeed(),
+                "Tiered Rotation Speed Controller did not drive the tiered large cog above it");
+
+        GameTestSupport.succeed(helper, "native-speed-controller-large-cog");
     }
 
     private static void assertAxeOrPickaxe(GameTestHelper helper, String path) {

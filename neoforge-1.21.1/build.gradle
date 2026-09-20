@@ -154,6 +154,7 @@ neoForge {
 
         gameTestServer {
             type = "gameTestServer"
+            gameDirectory = project.file('run-gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -244,7 +245,7 @@ idea {
 
 def prepareGameTestKubeJs = tasks.register('prepareGameTestKubeJs', Copy) {
     from rootProject.file('tools/gametest/kubejs/startup_scripts')
-    into layout.projectDirectory.dir('run/kubejs/startup_scripts')
+    into layout.projectDirectory.dir('run-gametest/kubejs/startup_scripts')
 }
 
 tasks.matching { it.name == 'runGameTestServer' }.configureEach {

@@ -35,6 +35,7 @@ minecraft {
             arg '--nogui'
         }
         gameTestServer {
+            workingDirectory project.file('run-gametest')
             property 'forge.enabledGameTestNamespaces', 'createtiers'
         }
         data {
@@ -190,7 +191,7 @@ tasks.withType(Test).configureEach {
 
 def prepareGameTestKubeJs = tasks.register('prepareGameTestKubeJs', Copy) {
     from rootProject.file('tools/gametest/kubejs/startup_scripts')
-    into layout.projectDirectory.dir('run/kubejs/startup_scripts')
+    into layout.projectDirectory.dir('run-gametest/kubejs/startup_scripts')
 }
 
 tasks.matching { it.name == 'runGameTestServer' }.configureEach {

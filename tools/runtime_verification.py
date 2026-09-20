@@ -26,6 +26,7 @@ REQUIRED_SCENARIOS = (
     "calibration-recipe-item-roundtrip",
     "shaft-cannot-bypass-item-recipe",
     "rotation-speed-controller",
+    "native-speed-controller-large-cog",
     "creative-motor",
     "native-relay-default-family",
     "tiered-shaft-belt",

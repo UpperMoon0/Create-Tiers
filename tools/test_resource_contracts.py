@@ -15,9 +15,14 @@ FORGE_SERVER_PACK = ROOT / "common/src/main/java/com/createtiers/data/DynamicSer
 NEO_SERVER_PACK = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/data/DynamicServerPack.java"
 CREATIVE_TAB = ROOT / "common/src/main/java/com/createtiers/registry/CommonCreativeTab.java"
 TIER_ACCENT_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/SafeBlockEntityRendererTierAccentMixin.java"
-KINETIC_BOARD_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/KineticScrollValueBehaviourTierRangeMixin.java"
 FORGE_CLIENT_COLORS = ROOT / "forge-1.20.1/src/main/java/com/createtiers/client/ClientEventHandler.java"
 NEO_CLIENT_COLORS = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/client/ClientEventHandler.java"
+FORGE_BUILD = ROOT / "forge-1.20.1/build.gradle"
+NEO_BUILD_SCRIPT = ROOT / "neoforge-1.21.1/build.gradle"
+SPEED_INPUT_SCREEN = ROOT / "common/src/main/java/com/createtiers/client/TieredSpeedControllerInputScreen.java"
+FORGE_VALUE_CLIENT_MIXIN = ROOT / "forge-1.20.1/src/main/java/com/createtiers/mixin/ValueSettingsClientTierInputMixin.java"
+NEO_VALUE_CLIENT_MIXIN = ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/mixin/ValueSettingsClientTierInputMixin.java"
+COG_PLACEMENT_MIXIN = ROOT / "common/src/main/java/com/createtiers/mixin/CogWheelBlockSpeedControllerMixin.java"
 
 
 class ResourceContractTests(unittest.TestCase):
@@ -60,11 +65,6 @@ class ResourceContractTests(unittest.TestCase):
         source = TIER_ACCENT_MIXIN.read_text(encoding="utf-8")
         self.assertIn("AttachedTierVisuals.getAttachedTier(kinetic) == null", source)
 
-    def test_kinetic_value_board_uses_effective_tier_rpm(self):
-        source = KINETIC_BOARD_MIXIN.read_text(encoding="utf-8")
-        self.assertIn("tier.getMaxRPM()", source)
-        self.assertIn("new ValueSettingsBoard(", source)
-
     def test_native_relay_items_register_shaft_tint_handlers_on_both_targets(self):
         for path in (FORGE_CLIENT_COLORS, NEO_CLIENT_COLORS):
             source = path.read_text(encoding="utf-8")
@@ -77,6 +77,26 @@ class ResourceContractTests(unittest.TestCase):
                 "SPEED_CONTROLLER_ITEMS",
             ):
                 self.assertIn(collection, source)
+
+    def test_tiered_speed_controller_uses_compact_numeric_editor(self):
+        screen = SPEED_INPUT_SCREEN.read_text(encoding="utf-8")
+        self.assertIn("class TieredSpeedControllerInputScreen", screen)
+        self.assertIn("EditBox", screen)
+        self.assertIn("signedValue < 0 ? 0 : 1", FORGE_VALUE_CLIENT_MIXIN.read_text(encoding="utf-8"))
+        self.assertIn("signedValue < 0 ? 0 : 1", NEO_VALUE_CLIENT_MIXIN.read_text(encoding="utf-8"))
+
+    def test_tiered_speed_controller_preserves_large_cog_auto_alignment(self):
+        source = COG_PLACEMENT_MIXIN.read_text(encoding="utf-8")
+        self.assertIn("getAxisForPlacement", source)
+        self.assertIn("TieredSpeedControllerBlock", source)
+        self.assertIn("SpeedControllerBlock.HORIZONTAL_AXIS", source)
+
+    def test_gametest_kubejs_fixture_isolated_from_normal_dev_run(self):
+        for path in (FORGE_BUILD, NEO_BUILD_SCRIPT):
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("run-gametest", source)
+            self.assertIn("run-gametest/kubejs/startup_scripts", source)
+            self.assertNotIn("into layout.projectDirectory.dir('run/kubejs/startup_scripts')", source)
 
     def test_creative_tab_exposes_registered_upgrades_without_encased_variant_clutter(self):
         source = CREATIVE_TAB.read_text(encoding="utf-8")
