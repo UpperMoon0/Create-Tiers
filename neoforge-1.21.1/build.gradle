@@ -47,7 +47,6 @@ sourceSets {
             srcDir 'src/main/resources'
             srcDir 'src/generated/resources'
             exclude 'pack.mcmeta'
-            exclude 'assets/createtiers/lang/**'
             exclude 'createtiers.png'
         }
     }

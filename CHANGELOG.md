@@ -26,6 +26,7 @@
 - Add the documented KubeJS registration overloads and descriptive validation for malformed batch tier definitions.
 - Correct GitHub issue tracker metadata.
 - Make native tiered shafts work as Create belt pulleys and steam-engine shafts while preserving the tier through belt/powered-shaft replacement and restoring the same tiered shaft on teardown (fixes #2).
+- Fix Jade provider configuration localization so the Forge 1.20.1 development client no longer crashes at the title screen, and ensure the shared language resource is packaged on NeoForge.
 
 ### Changed
 

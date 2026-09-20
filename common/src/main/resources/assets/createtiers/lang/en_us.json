@@ -1,4 +1,5 @@
 {
+  "itemGroup.createtiers": "Create Tiers",
   "createtiers.tooltip.tiered_max_rpm": "Maximum Speed",
   "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity",
   "createtiers.tooltip.tiered_network_su": "Connected Network Stress Limit",
@@ -10,5 +11,7 @@
   "createtiers.jade.source.intrinsic": "Intrinsic",
   "createtiers.jade.source.calibrated": "Calibrated",
   "createtiers.jade.max_rpm": "Max RPM: %s RPM",
-  "createtiers.jade.max_su": "Max SU: %s SU"
+  "createtiers.jade.max_su": "Max SU: %s SU",
+  "config.jade.plugin_createtiers": "Create Tiers",
+  "config.jade.plugin_createtiers.tier_info": "Tier Information"
 }

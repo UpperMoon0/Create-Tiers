@@ -1,0 +1,40 @@
+import json
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PLUGIN_SOURCE = ROOT / "common/src/main/java/com/createtiers/integration/jade/CreateTiersJadePlugin.java"
+COMMON_LANG = ROOT / "common/src/main/resources/assets/createtiers/lang/en_us.json"
+NEO_LOCAL_LANG = ROOT / "neoforge-1.21.1/src/main/resources/assets/createtiers/lang/en_us.json"
+NEO_BUILD = ROOT / "neoforge-1.21.1/build.gradle"
+JADE_CONFIG_KEY = "config.jade.plugin_createtiers.tier_info"
+
+
+class ResourceContractTests(unittest.TestCase):
+    def test_jade_provider_has_config_translation(self):
+        plugin_source = PLUGIN_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('CreateTiers.asResource("tier_info")', plugin_source)
+
+        data = json.loads(COMMON_LANG.read_text(encoding="utf-8"))
+        self.assertEqual("Create Tiers", data["config.jade.plugin_createtiers"])
+        self.assertEqual("Tier Information", data[JADE_CONFIG_KEY])
+
+    def test_shared_language_resource_is_packaged_by_neoforge(self):
+        self.assertFalse(
+            NEO_LOCAL_LANG.exists(),
+            "NeoForge must not shadow the shared language file with a duplicate copy",
+        )
+        build_script = NEO_BUILD.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "exclude 'assets/createtiers/lang/**'",
+            build_script,
+            "NeoForge must package the shared language resources",
+        )
+
+    def test_shared_language_contains_creative_tab_title(self):
+        data = json.loads(COMMON_LANG.read_text(encoding="utf-8"))
+        self.assertEqual("Create Tiers", data["itemGroup.createtiers"])
+
+
+if __name__ == "__main__":
+    unittest.main()
