@@ -5,9 +5,13 @@ import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
+import com.createtiers.foundation.utility.AttachedTierTransfer;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -92,6 +96,18 @@ public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockE
         self.updateSpeed = true;
         self.networkDirty = true;
         self.sendData();
+    }
+
+    @Inject(method = "switchToBlockState", at = @At("HEAD"))
+    private static void createtiers$captureAttachedTierBeforeStateReplacement(
+            Level level, BlockPos pos, BlockState state, CallbackInfo ci) {
+        AttachedTierTransfer.begin(level, pos);
+    }
+
+    @Inject(method = "switchToBlockState", at = @At("RETURN"))
+    private static void createtiers$restoreAttachedTierAfterStateReplacement(
+            Level level, BlockPos pos, BlockState state, CallbackInfo ci) {
+        AttachedTierTransfer.end(level, pos);
     }
 
     @Inject(method = "initialize", at = @At("TAIL"))

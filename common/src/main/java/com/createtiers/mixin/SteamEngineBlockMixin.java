@@ -2,6 +2,7 @@ package com.createtiers.mixin;
 
 import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
+import com.createtiers.foundation.utility.AttachedTierTransfer;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.SteamEngineBlock;
 import net.minecraft.core.BlockPos;
@@ -27,6 +28,18 @@ public abstract class SteamEngineBlockMixin {
         }
 
         cir.setReturnValue(shaftState.getValue(ShaftBlock.AXIS) != SteamEngineBlock.getFacing(engineState).getAxis());
+    }
+
+    @Inject(method = "onPlace", at = @At("HEAD"))
+    private void createtiers$captureAttachedTierBeforePoweredShaftReplacement(
+            BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston, CallbackInfo ci) {
+        AttachedTierTransfer.begin(level, SteamEngineBlock.getShaftPos(state, pos));
+    }
+
+    @Inject(method = "onPlace", at = @At("RETURN"))
+    private void createtiers$restoreAttachedTierAfterPoweredShaftReplacement(
+            BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston, CallbackInfo ci) {
+        AttachedTierTransfer.end(level, SteamEngineBlock.getShaftPos(state, pos));
     }
 
     @Inject(method = "onRemove", at = @At("RETURN"))

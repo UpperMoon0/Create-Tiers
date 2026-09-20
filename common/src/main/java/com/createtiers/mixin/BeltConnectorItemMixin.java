@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Preserves intrinsic shaft tiers when Create destroys pulley shafts and replaces them with belt blocks.
+ * Preserves intrinsic and attached shaft tiers when Create destroys pulley shafts and replaces them with belt blocks.
  */
 @Mixin(value = BeltConnectorItem.class, remap = false)
 public abstract class BeltConnectorItemMixin {
@@ -38,8 +38,17 @@ public abstract class BeltConnectorItemMixin {
                     ordinal = 0))
     private static boolean createtiers$captureTierBeforePulleyDestroy(Level level, BlockPos pos, boolean drop) {
         BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof TieredShaftBlock shaft) {
-            CREATETIERS$PULLEY_TIERS.get().put(pos.immutable(), shaft.getTier());
+        Tier tier = null;
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof IAttachedTierBlockEntity attachable) {
+            tier = attachable.getAttachedTier();
+        }
+        if (tier == null && state.getBlock() instanceof TieredShaftBlock shaft) {
+            tier = shaft.getTier();
+        }
+        if (tier != null) {
+            CREATETIERS$PULLEY_TIERS.get().put(pos.immutable(), tier);
         }
         return level.destroyBlock(pos, drop);
     }
