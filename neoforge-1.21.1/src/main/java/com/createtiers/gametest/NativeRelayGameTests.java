@@ -59,6 +59,9 @@ public final class NativeRelayGameTests {
             return;
         }
         TieredNativeKineticBlock nativeBlock = (TieredNativeKineticBlock) block;
+        if (!nativeBlock.getExpectedBlockEntityType().isValid(block.defaultBlockState())) {
+            helper.fail("Declared Create block-entity type rejects native tier block state: " + path);
+        }
 
         KineticBlockEntity blockEntity = GameTestSupport.placeBlockEntity(
                 helper, pos, block.defaultBlockState(), KineticBlockEntity.class);

@@ -58,6 +58,8 @@ class DynamicServerPackTest {
 
         ResourceLocation pickaxeTag = ResourceLocation.fromNamespaceAndPath(
                 "minecraft", "tags/block/mineable/pickaxe.json");
+        ResourceLocation safeNbtTag = ResourceLocation.fromNamespaceAndPath(
+                "create", "tags/block/safe_nbt.json");
         ResourceLocation gearboxLoot = ResourceLocation.fromNamespaceAndPath(
                 "createtiers", "loot_table/blocks/gearbox_basic.json");
         ResourceLocation defaultUpgrade = ResourceLocation.fromNamespaceAndPath(
@@ -68,12 +70,14 @@ class DynamicServerPackTest {
                 "createtiers", "loot_table/blocks/metal_girder_encased_shaft_basic.json");
 
         var tagSupplier = pack.getResource(PackType.SERVER_DATA, pickaxeTag);
+        var safeNbtSupplier = pack.getResource(PackType.SERVER_DATA, safeNbtTag);
         var lootSupplier = pack.getResource(PackType.SERVER_DATA, gearboxLoot);
         var recipeSupplier = pack.getResource(PackType.SERVER_DATA, defaultUpgrade);
         var clutchLootSupplier = pack.getResource(PackType.SERVER_DATA, clutchLoot);
         var girderLootSupplier = pack.getResource(PackType.SERVER_DATA, girderLoot);
 
         assertNotNull(tagSupplier);
+        assertNotNull(safeNbtSupplier);
         assertNotNull(lootSupplier);
         assertNotNull(recipeSupplier);
         assertNotNull(clutchLootSupplier);
@@ -83,6 +87,8 @@ class DynamicServerPackTest {
         assertTrue(tagJson.contains("createtiers:clutch_basic"));
         assertTrue(tagJson.contains("createtiers:rotation_speed_controller_basic"));
         assertTrue(tagJson.contains("createtiers:metal_girder_encased_shaft_basic"));
+        String safeNbtJson = new String(safeNbtSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(safeNbtJson.contains("createtiers:rotation_speed_controller_basic"));
         assertTrue(new String(lootSupplier.get().readAllBytes(), StandardCharsets.UTF_8)
                 .contains("createtiers:gearbox_basic"));
         String clutchJson = new String(clutchLootSupplier.get().readAllBytes(), StandardCharsets.UTF_8);
@@ -104,6 +110,9 @@ class DynamicServerPackTest {
         pack.listResources(PackType.SERVER_DATA, "createtiers", "recipe", (location, supplier) -> listedRecipes.add(location));
 
         assertTrue(listedTags.contains(pickaxeTag));
+        Set<ResourceLocation> listedCreateTags = new HashSet<>();
+        pack.listResources(PackType.SERVER_DATA, "create", "tags", (location, supplier) -> listedCreateTags.add(location));
+        assertTrue(listedCreateTags.contains(safeNbtTag));
         assertTrue(listedLoot.contains(gearboxLoot));
         assertTrue(listedRecipes.contains(defaultUpgrade));
         assertNull(pack.getResource(PackType.CLIENT_RESOURCES, pickaxeTag));

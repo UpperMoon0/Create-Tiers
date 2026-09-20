@@ -35,6 +35,7 @@
 - Fix Jade provider configuration localization so the Forge 1.20.1 development client no longer crashes at the title screen, and ensure the shared language resource is packaged on NeoForge.
 - Preserve Create's vanilla belt pulley body on tiered belts, remove the generic square accent from belt endpoints, and render the surviving source shaft separately in its tier color.
 - Preserve a tiered shaft through metal-girder encasing, wrench recovery, schematic requirements, and block loot instead of downgrading it to a vanilla shaft.
+- Mirror Create's `safe_nbt` block tag for generated tiered Rotation Speed Controllers so schematic/configurable block-entity data keeps upstream behavior.
 
 ### Changed
 

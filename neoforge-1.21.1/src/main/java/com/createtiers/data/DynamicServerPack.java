@@ -62,7 +62,7 @@ public class DynamicServerPack implements PackResources {
             LOOT_TABLES.clear();
             RECIPES.clear();
             if (TierRegistry.size() > 0) {
-                generateMiningTags();
+                generateBlockTags();
                 generateLootTables();
                 generateDefaultTierUpgradeRecipes();
             }
@@ -79,7 +79,7 @@ public class DynamicServerPack implements PackResources {
         }
     }
 
-    private static void generateMiningTags() {
+    private static void generateBlockTags() {
         JsonObject mineablePickaxe = new JsonObject();
         mineablePickaxe.addProperty("replace", false);
         var blocks = new com.google.gson.JsonArray();
@@ -88,6 +88,15 @@ public class DynamicServerPack implements PackResources {
         }
         mineablePickaxe.add("values", blocks);
         TAGS.put(Compat.rl("minecraft", BLOCK_TAG_ROOT + "/mineable/pickaxe"), mineablePickaxe);
+
+        JsonObject safeNbt = new JsonObject();
+        safeNbt.addProperty("replace", false);
+        var safeNbtBlocks = new com.google.gson.JsonArray();
+        for (Tier tier : TierRegistry.getAllTiers()) {
+            safeNbtBlocks.add("createtiers:rotation_speed_controller_" + tier.getName());
+        }
+        safeNbt.add("values", safeNbtBlocks);
+        TAGS.put(Compat.rl("create", BLOCK_TAG_ROOT + "/safe_nbt"), safeNbt);
 
         for (Tier tier : TierRegistry.getAllTiers()) {
             JsonObject shaftTag = new JsonObject();
