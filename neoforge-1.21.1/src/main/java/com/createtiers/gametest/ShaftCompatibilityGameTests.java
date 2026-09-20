@@ -9,6 +9,7 @@ import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.EncasedBlock;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
@@ -18,11 +19,16 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.UseOnContext;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 @GameTestHolder(CreateTiers.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -146,6 +152,15 @@ public final class ShaftCompatibilityGameTests {
                     "Create belt replacement silently lost the shaft's attached tier at " + relative);
         }
 
+        helper.getLevel().destroyBlock(helper.absolutePos(start), false);
+        BlockPos restoredPos = helper.absolutePos(end);
+        BlockState restored = helper.getLevel().getBlockState(restoredPos);
+        if (!AllBlocks.SHAFT.has(restored) || restored.getBlock() instanceof TieredShaftBlock) {
+            helper.fail("Calibrated belt pulley did not restore the original vanilla Create shaft identity");
+        }
+        assertAttachedTierAt(helper, restoredPos, tier,
+                "Belt pulley -> vanilla shaft restoration silently lost the attached tier");
+
         helper.succeed();
     }
 
@@ -203,6 +218,14 @@ public final class ShaftCompatibilityGameTests {
         assertAttachedTierAt(helper, shaftPos, tier,
                 "Shaft -> encased shaft conversion silently lost the attached tier");
 
+        decase(helper, shaftPos);
+        BlockState restoredShaft = helper.getLevel().getBlockState(shaftPos);
+        if (!AllBlocks.SHAFT.has(restoredShaft) || restoredShaft.getBlock() instanceof TieredShaftBlock) {
+            helper.fail("Standard Create encased shaft did not decase back to the vanilla shaft identity");
+        }
+        assertAttachedTierAt(helper, shaftPos, tier,
+                "Encased shaft -> vanilla shaft conversion silently lost the attached tier");
+
         BlockPos cogPos = helper.absolutePos(new BlockPos(3, 1, 7));
         BlockState cogState = AllBlocks.COGWHEEL.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
         helper.getLevel().setBlock(cogPos, cogState, 3);
@@ -217,7 +240,29 @@ public final class ShaftCompatibilityGameTests {
         assertAttachedTierAt(helper, cogPos, tier,
                 "Cogwheel -> encased cogwheel conversion silently lost the attached tier");
 
+        decase(helper, cogPos);
+        BlockState restoredCog = helper.getLevel().getBlockState(cogPos);
+        if (!AllBlocks.COGWHEEL.has(restoredCog)) {
+            helper.fail("Standard Create encased cogwheel did not decase back to the vanilla cogwheel identity");
+        }
+        assertAttachedTierAt(helper, cogPos, tier,
+                "Encased cogwheel -> vanilla cogwheel conversion silently lost the attached tier");
+
         helper.succeed();
+    }
+
+    private static void decase(GameTestHelper helper, BlockPos absolute) {
+        BlockState state = helper.getLevel().getBlockState(absolute);
+        if (!(state.getBlock() instanceof IWrenchable wrenchable)) {
+            helper.fail("Expected a Create wrenchable encased kinetic block at " + absolute);
+            return;
+        }
+
+        Player player = helper.makeMockPlayer(GameType.CREATIVE);
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+        UseOnContext context = new UseOnContext(player, InteractionHand.MAIN_HAND, hit);
+        wrenchable.onSneakWrenched(state, context);
     }
 
     private static void attachTier(GameTestHelper helper, BlockPos absolute, Tier tier, String message) {
