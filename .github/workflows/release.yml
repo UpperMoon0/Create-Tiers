@@ -60,6 +60,8 @@ jobs:
               echo "Tag $tag already exists at $tagged_commit; use a new mod_version." >&2
               exit 1
             fi
+            grep -Fqx "## $current" CHANGELOG.md \
+              || { echo "Missing CHANGELOG.md section: ## $current" >&2; exit 1; }
             echo "Version bump detected."
           else
             echo "mod_version is unchanged; nothing will be published."
@@ -239,7 +241,7 @@ jobs:
             --request POST \
             --header "X-Api-Token: $CURSEFORGE_API_TOKEN" \
             --form-string "metadata=$metadata" \
-            --form "file=$@{JAR_PATH}" \
+            --form "file=@${JAR_PATH}" \
             "https://minecraft.curseforge.com/api/projects/${CURSEFORGE_PROJECT_ID}/upload-file")"
           response="$(<"$response_file")"
 
