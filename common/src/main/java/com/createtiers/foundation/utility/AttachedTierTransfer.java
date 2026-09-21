@@ -25,34 +25,38 @@ public final class AttachedTierTransfer {
         if (!(blockEntity instanceof IAttachedTierBlockEntity attachable)) {
             return new Capture(pos.immutable(), null, null);
         }
-        Tier tier = attachable.getAttachedTier();
-        if (tier == null) return new Capture(pos.immutable(), null, null);
 
+        Tier tier = attachable.getAttachedTier();
         ResourceLocation sourceId = blockEntity instanceof IReplacementSourceBlockEntity source
                 ? source.getCreateTiersReplacementSourceBlockId() : null;
-        if (sourceId == null) {
+
+        // Ordinary attached tiers use their current block as implicit source when
+        // entering a replacement state. Intrinsic replacement provenance must be
+        // retained even though getAttachedTier() is intentionally null.
+        if (tier != null && sourceId == null) {
             sourceId = BuiltInRegistries.BLOCK.getKey(blockEntity.getBlockState().getBlock());
         }
         return new Capture(pos.immutable(), tier, sourceId);
     }
 
     public static void restore(Level level, BlockPos pos, Tier tier, ResourceLocation sourceBlockId) {
-        if (tier == null || level.isClientSide) return;
+        if (level.isClientSide) return;
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof IAttachedTierBlockEntity attachable)
                 || !(blockEntity instanceof KineticBlockEntity kinetic)) return;
 
-        if (attachable.getAttachedTier() == null && attachable.getTier() != null) return;
-
         if (blockEntity instanceof IReplacementSourceBlockEntity source) {
             ResourceLocation currentId = BuiltInRegistries.BLOCK.getKey(blockEntity.getBlockState().getBlock());
-            if (sourceBlockId != null && !sourceBlockId.equals(currentId)) {
+            if (sourceBlockId != null && !sourceBlockId.equals(currentId)
+                    && ReplacementSourcePolicy.isLegal(blockEntity.getBlockState(), sourceBlockId)) {
                 source.setCreateTiersReplacementSourceBlockId(sourceBlockId);
             } else {
                 source.clearCreateTiersReplacementSourceBlockId();
             }
         }
 
+        if (tier == null) return;
+        if (attachable.getAttachedTier() == null && attachable.getTier() != null) return;
         if (!AttachedTierAuthorization.canCarry(kinetic, tier)) return;
         if (!tier.equals(attachable.getAttachedTier())) attachable.setAttachedTier(tier);
     }

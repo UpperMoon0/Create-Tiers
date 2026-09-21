@@ -4,9 +4,8 @@ import com.createtiers.api.IAttachedTierBlockEntity;
 import com.createtiers.api.IReplacementSourceBlockEntity;
 import com.createtiers.api.Tier;
 import com.createtiers.content.kinetics.TieredShaftBlock;
-import com.createtiers.foundation.item.TierUpgradeItemData;
 import com.createtiers.foundation.utility.AttachedTierTransfer;
-import com.createtiers.foundation.utility.ReplacementSourcePolicy;
+import com.createtiers.foundation.utility.BeltPulleySourcePolicy;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.belt.BeltBlock;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
@@ -22,6 +21,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,7 +31,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Restores the original tiered pulley shaft when a Create belt chain is removed. */
@@ -59,7 +62,7 @@ public abstract class BeltBlockMixin {
         }
 
         BlockPos pos = context.getClickedPos();
-        ItemStack returnedShaft = createtiers$pulleySourceStack(level, pos);
+        ItemStack returnedShaft = BeltPulleySourcePolicy.sourceStack(level.getBlockEntity(pos));
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof IAttachedTierBlockEntity attachable
                 && attachable.getAttachedTier() != null) {
@@ -80,29 +83,29 @@ public abstract class BeltBlockMixin {
         cir.setReturnValue(InteractionResult.SUCCESS);
     }
 
-    @Unique
-    private static ItemStack createtiers$pulleySourceStack(Level level, BlockPos pos) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof IReplacementSourceBlockEntity provenance)) {
-            return AllBlocks.SHAFT.asStack();
+    @Inject(method = "getDrops", at = @At("RETURN"), cancellable = true)
+    private void createtiers$replacePulleyShaftDrop(
+            BlockState state, LootParams.Builder builder, CallbackInfoReturnable<List<ItemStack>> cir) {
+        if (!state.hasProperty(BeltBlock.PART)
+                || state.getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+            return;
         }
 
-        ResourceLocation sourceId = provenance.getCreateTiersReplacementSourceBlockId();
-        Block sourceBlock = ReplacementSourcePolicy.resolveLegalSource(
-                blockEntity.getBlockState(), sourceId);
-        if (sourceBlock instanceof TieredShaftBlock) {
-            return sourceBlock.asItem().getDefaultInstance();
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (!(blockEntity instanceof IReplacementSourceBlockEntity provenance)
+                || provenance.getCreateTiersReplacementSourceBlockId() == null) {
+            return;
         }
 
-        if (sourceBlock == AllBlocks.SHAFT.get()
-                && blockEntity instanceof IAttachedTierBlockEntity attachable) {
-            Tier attached = attachable.getAttachedTier();
-            if (attached != null) {
-                return TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), attached);
+        ItemStack sourceStack = BeltPulleySourcePolicy.sourceStack(blockEntity);
+        List<ItemStack> drops = new ArrayList<>(cir.getReturnValue());
+        for (int i = drops.size() - 1; i >= 0; i--) {
+            if (drops.get(i).is(AllBlocks.SHAFT.get().asItem())) {
+                drops.set(i, sourceStack);
+                cir.setReturnValue(drops);
+                return;
             }
         }
-
-        return AllBlocks.SHAFT.asStack();
     }
 
     @Redirect(
