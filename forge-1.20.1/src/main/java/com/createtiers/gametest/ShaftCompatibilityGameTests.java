@@ -484,26 +484,35 @@ public final class ShaftCompatibilityGameTests {
         addPulley(helper, setup.inner(), player,
                 TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier));
 
-        shortenBelt(helper, setup, player);
+        // Create initializes belt controller/length metadata on BeltBlockEntity#tick.
+        // BeltSlicer depends on that metadata, so exercise the real interaction only
+        // after the newly-created belt chain has received server ticks.
+        helper.runAfterDelay(2, () -> {
+            if (BeltHelper.getControllerBE(helper.getLevel(), setup.end()) == null) {
+                helper.fail("Create belt controller metadata was not initialized before shortening");
+            }
 
-        BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
-        if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
-            helper.fail("BeltSlicer did not turn the adjacent pulley into the shortened belt endpoint");
-        }
-        assertAttachedTierAt(helper, setup.inner(), tier,
-                "BeltSlicer shortening lost the registered pulley tier");
+            shortenBelt(helper, setup, player);
 
-        BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
-        ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
-        if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
-                || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
-            helper.fail("BeltSlicer shortening lost registered shaft source provenance");
-        }
-        if (!inventoryContainsTieredShaft(player, tier)) {
-            helper.fail("BeltSlicer shortening refunded a plain shaft instead of the registered upgraded shaft");
-        }
+            BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
+            if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
+                helper.fail("BeltSlicer did not turn the adjacent pulley into the shortened belt endpoint");
+            }
+            assertAttachedTierAt(helper, setup.inner(), tier,
+                    "BeltSlicer shortening lost the registered pulley tier");
 
-        GameTestSupport.succeed(helper, "registered-pulley-slicer-shortening");
+            BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
+            ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
+            if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
+                    || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+                helper.fail("BeltSlicer shortening lost registered shaft source provenance");
+            }
+            if (!inventoryContainsTieredShaft(player, tier)) {
+                helper.fail("BeltSlicer shortening refunded a plain shaft instead of the registered upgraded shaft");
+            }
+
+            GameTestSupport.succeed(helper, "registered-pulley-slicer-shortening");
+        });
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
@@ -514,29 +523,35 @@ public final class ShaftCompatibilityGameTests {
         Player player = makeSurvivalPlayer(helper);
         addPulley(helper, setup.inner(), player, shaft.asItem().getDefaultInstance());
 
-        shortenBelt(helper, setup, player);
+        helper.runAfterDelay(2, () -> {
+            if (BeltHelper.getControllerBE(helper.getLevel(), setup.end()) == null) {
+                helper.fail("Create belt controller metadata was not initialized before shortening");
+            }
 
-        BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
-        if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
-            helper.fail("BeltSlicer did not turn the intrinsic pulley into the shortened belt endpoint");
-        }
+            shortenBelt(helper, setup, player);
 
-        BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
-        ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
-        if (!(endpointEntity instanceof IAttachedTierBlockEntity attachable)
-                || !tier.equals(attachable.getTier())
-                || attachable.getAttachedTier() != null) {
-            helper.fail("BeltSlicer shortening lost the intrinsic pulley tier");
-        }
-        if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
-                || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
-            helper.fail("BeltSlicer shortening lost intrinsic shaft source provenance");
-        }
-        if (!inventoryContainsItem(player, shaft.asItem())) {
-            helper.fail("BeltSlicer shortening refunded the wrong shaft for an intrinsic pulley");
-        }
+            BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
+            if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
+                helper.fail("BeltSlicer did not turn the intrinsic pulley into the shortened belt endpoint");
+            }
 
-        GameTestSupport.succeed(helper, "intrinsic-pulley-slicer-shortening");
+            BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
+            ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
+            if (!(endpointEntity instanceof IAttachedTierBlockEntity attachable)
+                    || !tier.equals(attachable.getTier())
+                    || attachable.getAttachedTier() != null) {
+                helper.fail("BeltSlicer shortening lost the intrinsic pulley tier");
+            }
+            if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
+                    || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+                helper.fail("BeltSlicer shortening lost intrinsic shaft source provenance");
+            }
+            if (!inventoryContainsItem(player, shaft.asItem())) {
+                helper.fail("BeltSlicer shortening refunded the wrong shaft for an intrinsic pulley");
+            }
+
+            GameTestSupport.succeed(helper, "intrinsic-pulley-slicer-shortening");
+        });
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
