@@ -111,3 +111,13 @@ Client-side JVM tests execute the numeric Rotation Speed Controller input valida
 The Create Tiers creative tab exposes every registered `registerTierUpgrade(item, tier)` pair as a real tier-upgraded item stack using the same item data path as recipe outputs. Runtime GameTests verify the startup fixture's registered `create:shaft` upgrade appears with the expected tier.
 
 Generated encased shaft, encased cogwheel, and encased large-cogwheel items are intentionally omitted from the mod creative tab. Resource-contract coverage prevents those generated encased item lists from being reintroduced there.
+
+
+### Belt pulley lifecycle refunds
+
+Runtime GameTests cover both registered-upgraded vanilla shafts and intrinsic tiered shafts through the remaining Create belt lifecycle paths:
+
+- direct mining of a pulley must drop the exact source shaft item, not a plain `create:shaft`;
+- BeltSlicer shortening must preserve endpoint tier/source provenance and refund the exact source shaft.
+
+These scenarios run on Forge 1.20.1 and NeoForge 1.21.1 and are part of the required exact-head runtime evidence.

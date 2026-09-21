@@ -73,3 +73,5 @@
 - Add Forge and NeoForge regressions proving itemless belt/powered-shaft states cannot mint tiers and unregistered tier data cannot survive onto item drops.
 - Add Forge and NeoForge runtime coverage for `PlacementOffset` shaft/Steam-Engine placement, forged replacement-source NBT, and registered/intrinsic middle-belt pulley add/wrench round trips.
 - Add documentation-contract tests that pin supported-version guidance, startup ordering/deployment rules, target-vs-compatibility distinctions, progression/data semantics, checked-in KubeJS examples, and the public KubeJS binding signatures.
+
+- Preserve exact shaft provenance for direct belt-pulley mining and BeltSlicer shortening, including registered-upgraded vanilla shafts and intrinsic tiered shafts.

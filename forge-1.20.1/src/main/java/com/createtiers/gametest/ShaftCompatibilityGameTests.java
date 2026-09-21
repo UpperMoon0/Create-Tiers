@@ -9,6 +9,7 @@ import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.foundation.item.TierUpgradeItemData;
+import com.createtiers.foundation.utility.TieredBeltPulleyInteraction;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
@@ -16,7 +17,9 @@ import com.simibubi.create.content.decoration.encasing.EncasedBlock;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltBlock;
+import com.simibubi.create.content.kinetics.belt.BeltHelper;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
+import com.simibubi.create.content.kinetics.belt.BeltSlicer;
 import com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
 import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
@@ -34,6 +37,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -425,6 +429,117 @@ public final class ShaftCompatibilityGameTests {
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredPulleyDirectMiningReturnsUpgradedShaft(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        BlockPos middle = createPlainMiddleBelt(helper);
+        Player player = makeSurvivalPlayer(helper);
+        ItemStack upgraded = TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier);
+        addPulley(helper, middle, player, upgraded);
+
+        BlockState pulleyState = helper.getLevel().getBlockState(middle);
+        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
+        java.util.List<ItemStack> drops = Block.getDrops(
+                pulleyState, helper.getLevel(), middle, pulleyEntity);
+
+        boolean upgradedRefund = drops.stream()
+                .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
+                        && tier.equals(TierUpgradeItemData.getTier(stack)));
+        boolean plainRefund = drops.stream()
+                .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
+                        && TierUpgradeItemData.getTier(stack) == null);
+        if (!upgradedRefund || plainRefund) {
+            helper.fail("Directly mining a registered-tier pulley did not refund exactly the upgraded shaft");
+        }
+
+        GameTestSupport.succeed(helper, "registered-pulley-direct-mining");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void intrinsicPulleyDirectMiningReturnsIntrinsicShaft(GameTestHelper helper) {
+        TieredShaftBlock shaft = requireTieredShaft(helper);
+        BlockPos middle = createPlainMiddleBelt(helper);
+        Player player = makeSurvivalPlayer(helper);
+        addPulley(helper, middle, player, shaft.asItem().getDefaultInstance());
+
+        BlockState pulleyState = helper.getLevel().getBlockState(middle);
+        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
+        java.util.List<ItemStack> drops = Block.getDrops(
+                pulleyState, helper.getLevel(), middle, pulleyEntity);
+
+        if (drops.stream().noneMatch(stack -> stack.is(shaft.asItem()))) {
+            helper.fail("Directly mining an intrinsic-tier pulley did not refund its source shaft");
+        }
+        if (drops.stream().anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem()))) {
+            helper.fail("Directly mining an intrinsic-tier pulley leaked a vanilla Create shaft");
+        }
+
+        GameTestSupport.succeed(helper, "intrinsic-pulley-direct-mining");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void registeredPulleyBeltSlicerShorteningPreservesSource(GameTestHelper helper) {
+        Tier tier = GameTestSupport.ensureAttachmentTier();
+        ShorteningSetup setup = createShorteningSetup(helper);
+        Player player = makeSurvivalPlayer(helper);
+        addPulley(helper, setup.inner(), player,
+                TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier));
+
+        shortenBelt(helper, setup, player);
+
+        BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
+        if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
+            helper.fail("BeltSlicer did not turn the adjacent pulley into the shortened belt endpoint");
+        }
+        assertAttachedTierAt(helper, setup.inner(), tier,
+                "BeltSlicer shortening lost the registered pulley tier");
+
+        BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
+        ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
+        if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
+                || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+            helper.fail("BeltSlicer shortening lost registered shaft source provenance");
+        }
+        if (!inventoryContainsTieredShaft(player, tier)) {
+            helper.fail("BeltSlicer shortening refunded a plain shaft instead of the registered upgraded shaft");
+        }
+
+        GameTestSupport.succeed(helper, "registered-pulley-slicer-shortening");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
+    public static void intrinsicPulleyBeltSlicerShorteningPreservesSource(GameTestHelper helper) {
+        TieredShaftBlock shaft = requireTieredShaft(helper);
+        Tier tier = shaft.getTier();
+        ShorteningSetup setup = createShorteningSetup(helper);
+        Player player = makeSurvivalPlayer(helper);
+        addPulley(helper, setup.inner(), player, shaft.asItem().getDefaultInstance());
+
+        shortenBelt(helper, setup, player);
+
+        BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
+        if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
+            helper.fail("BeltSlicer did not turn the intrinsic pulley into the shortened belt endpoint");
+        }
+
+        BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
+        ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
+        if (!(endpointEntity instanceof IAttachedTierBlockEntity attachable)
+                || !tier.equals(attachable.getTier())
+                || attachable.getAttachedTier() != null) {
+            helper.fail("BeltSlicer shortening lost the intrinsic pulley tier");
+        }
+        if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
+                || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
+            helper.fail("BeltSlicer shortening lost intrinsic shaft source provenance");
+        }
+        if (!inventoryContainsItem(player, shaft.asItem())) {
+            helper.fail("BeltSlicer shortening refunded the wrong shaft for an intrinsic pulley");
+        }
+
+        GameTestSupport.succeed(helper, "intrinsic-pulley-slicer-shortening");
+    }
+
+    @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void registeredShaftTierSurvivesBeltReplacement(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
         BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
@@ -546,6 +661,66 @@ public final class ShaftCompatibilityGameTests {
                 "Encased cogwheel -> vanilla cogwheel conversion silently lost the attached tier");
 
         GameTestSupport.succeed(helper, "registered-kinetic-encasing-tier-preservation");
+    }
+
+    private record ShorteningSetup(BlockPos end, BlockPos inner, BlockState endState) {
+    }
+
+    private static ShorteningSetup createShorteningSetup(GameTestHelper helper) {
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos start = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos end = helper.absolutePos(new BlockPos(1, 1, 5));
+        helper.getLevel().setBlock(start, shaftState, 3);
+        helper.getLevel().setBlock(end, shaftState, 3);
+        BeltConnectorItem.createBelts(helper.getLevel(), start, end);
+
+        BlockState endState = helper.getLevel().getBlockState(end);
+        if (!AllBlocks.BELT.has(endState)
+                || (endState.getValue(BeltBlock.PART) != BeltPart.END
+                && endState.getValue(BeltBlock.PART) != BeltPart.START)) {
+            helper.fail("GameTest setup did not create a belt endpoint for shortening");
+        }
+
+        BlockPos vector = BlockPos.containing(BeltHelper.getBeltVector(endState));
+        BlockPos inner = endState.getValue(BeltBlock.PART) == BeltPart.END
+                ? end.subtract(vector)
+                : end.offset(vector);
+        BlockState innerState = helper.getLevel().getBlockState(inner);
+        if (!AllBlocks.BELT.has(innerState) || innerState.getValue(BeltBlock.PART) != BeltPart.MIDDLE) {
+            helper.fail("GameTest setup did not create a middle segment adjacent to the belt endpoint");
+        }
+
+        return new ShorteningSetup(end, inner, endState);
+    }
+
+    private static void addPulley(
+            GameTestHelper helper, BlockPos pos, Player player, ItemStack sourceStack) {
+        BlockState state = helper.getLevel().getBlockState(pos);
+        if (!TieredBeltPulleyInteraction.tryAddPulley(
+                sourceStack, state, helper.getLevel(), pos, player)) {
+            helper.fail("GameTest setup could not add a tier-aware pulley");
+        }
+        if (helper.getLevel().getBlockState(pos).getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+            helper.fail("GameTest setup did not produce a pulley");
+        }
+    }
+
+    private static void shortenBelt(
+            GameTestHelper helper, ShorteningSetup setup, Player player) {
+        BlockState endState = helper.getLevel().getBlockState(setup.end());
+        Vec3 beltVector = BeltHelper.getBeltVector(endState);
+        double direction = endState.getValue(BeltBlock.PART) == BeltPart.END ? 0.49 : -0.49;
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(setup.end()).add(beltVector.scale(direction)),
+                Direction.UP, setup.end(), false);
+
+        BeltSlicer.useWrench(
+                endState, helper.getLevel(), setup.end(), player,
+                InteractionHand.MAIN_HAND, hit, new BeltSlicer.Feedback());
+    }
+
+    private static Player makeSurvivalPlayer(GameTestHelper helper) {
+        return helper.makeMockPlayer();
     }
 
     private static BlockPos createPlainMiddleBelt(GameTestHelper helper) {
