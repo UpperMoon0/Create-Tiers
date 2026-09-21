@@ -735,7 +735,7 @@ public final class ShaftCompatibilityGameTests {
     }
 
     private static Player makeSurvivalPlayer(GameTestHelper helper) {
-        return helper.makeMockPlayer();
+        return helper.makeMockSurvivalPlayer();
     }
 
     private static BlockPos createPlainMiddleBelt(GameTestHelper helper) {
