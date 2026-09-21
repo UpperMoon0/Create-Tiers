@@ -431,24 +431,28 @@ public final class ShaftCompatibilityGameTests {
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void registeredPulleyDirectMiningReturnsUpgradedShaft(GameTestHelper helper) {
         Tier tier = GameTestSupport.ensureAttachmentTier();
-        BlockPos middle = createPlainMiddleBelt(helper);
+        BeltPositions belt = createRegisteredSourceBelt(helper, tier);
         Player player = makeSurvivalPlayer(helper);
-        ItemStack upgraded = TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier);
-        addPulley(helper, middle, player, upgraded);
+        addPulley(helper, belt.middle(), player,
+                TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier));
 
-        BlockState pulleyState = helper.getLevel().getBlockState(middle);
-        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
-        java.util.List<ItemStack> drops = Block.getDrops(
-                pulleyState, helper.getLevel(), middle, pulleyEntity);
+        for (BlockPos pos : new BlockPos[]{belt.start(), belt.middle(), belt.end()}) {
+            BlockState state = helper.getLevel().getBlockState(pos);
+            BeltPart part = state.getValue(BeltBlock.PART);
+            BlockEntity blockEntity = helper.getLevel().getBlockEntity(pos);
+            java.util.List<ItemStack> drops = Block.getDrops(
+                    state, helper.getLevel(), pos, blockEntity);
 
-        boolean upgradedRefund = drops.stream()
-                .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
-                        && tier.equals(TierUpgradeItemData.getTier(stack)));
-        boolean plainRefund = drops.stream()
-                .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
-                        && TierUpgradeItemData.getTier(stack) == null);
-        if (!upgradedRefund || plainRefund) {
-            helper.fail("Directly mining a registered-tier pulley did not refund exactly the upgraded shaft");
+            boolean upgradedRefund = drops.stream()
+                    .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
+                            && tier.equals(TierUpgradeItemData.getTier(stack)));
+            boolean plainRefund = drops.stream()
+                    .anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem())
+                            && TierUpgradeItemData.getTier(stack) == null);
+            if (!upgradedRefund || plainRefund) {
+                helper.fail("Directly mining registered-tier belt part " + part
+                        + " did not refund exactly the upgraded shaft");
+            }
         }
 
         GameTestSupport.succeed(helper, "registered-pulley-direct-mining");
@@ -457,20 +461,25 @@ public final class ShaftCompatibilityGameTests {
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void intrinsicPulleyDirectMiningReturnsIntrinsicShaft(GameTestHelper helper) {
         TieredShaftBlock shaft = requireTieredShaft(helper);
-        BlockPos middle = createPlainMiddleBelt(helper);
+        BeltPositions belt = createIntrinsicSourceBelt(helper, shaft);
         Player player = makeSurvivalPlayer(helper);
-        addPulley(helper, middle, player, shaft.asItem().getDefaultInstance());
+        addPulley(helper, belt.middle(), player, shaft.asItem().getDefaultInstance());
 
-        BlockState pulleyState = helper.getLevel().getBlockState(middle);
-        BlockEntity pulleyEntity = helper.getLevel().getBlockEntity(middle);
-        java.util.List<ItemStack> drops = Block.getDrops(
-                pulleyState, helper.getLevel(), middle, pulleyEntity);
+        for (BlockPos pos : new BlockPos[]{belt.start(), belt.middle(), belt.end()}) {
+            BlockState state = helper.getLevel().getBlockState(pos);
+            BeltPart part = state.getValue(BeltBlock.PART);
+            BlockEntity blockEntity = helper.getLevel().getBlockEntity(pos);
+            java.util.List<ItemStack> drops = Block.getDrops(
+                    state, helper.getLevel(), pos, blockEntity);
 
-        if (drops.stream().noneMatch(stack -> stack.is(shaft.asItem()))) {
-            helper.fail("Directly mining an intrinsic-tier pulley did not refund its source shaft");
-        }
-        if (drops.stream().anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem()))) {
-            helper.fail("Directly mining an intrinsic-tier pulley leaked a vanilla Create shaft");
+            if (drops.stream().noneMatch(stack -> stack.is(shaft.asItem()))) {
+                helper.fail("Directly mining intrinsic-tier belt part " + part
+                        + " did not refund its source shaft");
+            }
+            if (drops.stream().anyMatch(stack -> stack.is(AllBlocks.SHAFT.get().asItem()))) {
+                helper.fail("Directly mining intrinsic-tier belt part " + part
+                        + " leaked a vanilla Create shaft");
+            }
         }
 
         GameTestSupport.succeed(helper, "intrinsic-pulley-direct-mining");
@@ -478,78 +487,77 @@ public final class ShaftCompatibilityGameTests {
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void registeredPulleyBeltSlicerShorteningPreservesSource(GameTestHelper helper) {
-        Tier tier = GameTestSupport.ensureAttachmentTier();
-        ShorteningSetup setup = createShorteningSetup(helper);
+        Tier endpointTier = GameTestSupport.ensureAttachmentTier();
+        TieredShaftBlock overwrittenPulleyShaft = requireTieredShaft(helper);
+        BlockState endpointShaftState = AllBlocks.SHAFT.getDefaultState()
+                .setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        ShorteningSetup setup = createShorteningSetup(helper, endpointShaftState, endpointTier);
         Player player = makeSurvivalPlayer(helper);
-        addPulley(helper, setup.inner(), player,
-                TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), tier));
-
-        // Create initializes belt controller/length metadata on BeltBlockEntity#tick.
-        // BeltSlicer depends on that metadata, so exercise the real interaction only
-        // after the newly-created belt chain has received server ticks.
+        addPulley(helper, setup.inner(), player, overwrittenPulleyShaft.asItem().getDefaultInstance());
         helper.runAfterDelay(2, () -> {
             if (BeltHelper.getControllerBE(helper.getLevel(), setup.end()) == null) {
                 helper.fail("Create belt controller metadata was not initialized before shortening");
             }
-
             shortenBelt(helper, setup, player);
-
             BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
             if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
                 helper.fail("BeltSlicer did not turn the adjacent pulley into the shortened belt endpoint");
             }
-            assertAttachedTierAt(helper, setup.inner(), tier,
-                    "BeltSlicer shortening lost the registered pulley tier");
-
+            assertAttachedTierAt(helper, setup.inner(), endpointTier,
+                    "BeltSlicer shortening did not move the registered old-endpoint tier inward");
             BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
             ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(AllBlocks.SHAFT.get());
             if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
                     || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
-                helper.fail("BeltSlicer shortening lost registered shaft source provenance");
+                helper.fail("BeltSlicer shortening did not move registered old-endpoint provenance inward");
             }
-            if (!inventoryContainsTieredShaft(player, tier)) {
-                helper.fail("BeltSlicer shortening refunded a plain shaft instead of the registered upgraded shaft");
+            if (!inventoryContainsItem(player, overwrittenPulleyShaft.asItem())) {
+                helper.fail("BeltSlicer shortening did not refund the overwritten intrinsic pulley source");
             }
-
+            if (inventoryContainsTieredShaft(player, endpointTier)) {
+                helper.fail("BeltSlicer shortening duplicated the registered old-endpoint source into inventory");
+            }
             GameTestSupport.succeed(helper, "registered-pulley-slicer-shortening");
         });
     }
 
     @GameTest(template = GameTestSupport.TEMPLATE, timeoutTicks = 40)
     public static void intrinsicPulleyBeltSlicerShorteningPreservesSource(GameTestHelper helper) {
-        TieredShaftBlock shaft = requireTieredShaft(helper);
-        Tier tier = shaft.getTier();
-        ShorteningSetup setup = createShorteningSetup(helper);
+        TieredShaftBlock endpointShaft = requireTieredShaft(helper);
+        Tier endpointTier = endpointShaft.getTier();
+        Tier overwrittenPulleyTier = GameTestSupport.ensureAttachmentTier();
+        BlockState endpointShaftState = endpointShaft.defaultBlockState()
+                .setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        ShorteningSetup setup = createShorteningSetup(helper, endpointShaftState, null);
         Player player = makeSurvivalPlayer(helper);
-        addPulley(helper, setup.inner(), player, shaft.asItem().getDefaultInstance());
-
+        addPulley(helper, setup.inner(), player,
+                TierUpgradeItemData.upgradedCopy(AllBlocks.SHAFT.asStack(), overwrittenPulleyTier));
         helper.runAfterDelay(2, () -> {
             if (BeltHelper.getControllerBE(helper.getLevel(), setup.end()) == null) {
                 helper.fail("Create belt controller metadata was not initialized before shortening");
             }
-
             shortenBelt(helper, setup, player);
-
             BlockState endpoint = helper.getLevel().getBlockState(setup.inner());
             if (!AllBlocks.BELT.has(endpoint) || endpoint.getValue(BeltBlock.PART) == BeltPart.PULLEY) {
-                helper.fail("BeltSlicer did not turn the intrinsic pulley into the shortened belt endpoint");
+                helper.fail("BeltSlicer did not turn the adjacent pulley into the shortened belt endpoint");
             }
-
             BlockEntity endpointEntity = helper.getLevel().getBlockEntity(setup.inner());
-            ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(shaft);
+            ResourceLocation shaftId = BuiltInRegistries.BLOCK.getKey(endpointShaft);
             if (!(endpointEntity instanceof IAttachedTierBlockEntity attachable)
-                    || !tier.equals(attachable.getTier())
+                    || !endpointTier.equals(attachable.getTier())
                     || attachable.getAttachedTier() != null) {
-                helper.fail("BeltSlicer shortening lost the intrinsic pulley tier");
+                helper.fail("BeltSlicer shortening did not move the intrinsic old-endpoint tier inward");
             }
             if (!(endpointEntity instanceof IReplacementSourceBlockEntity source)
                     || !shaftId.equals(source.getCreateTiersReplacementSourceBlockId())) {
-                helper.fail("BeltSlicer shortening lost intrinsic shaft source provenance");
+                helper.fail("BeltSlicer shortening did not move intrinsic old-endpoint provenance inward");
             }
-            if (!inventoryContainsItem(player, shaft.asItem())) {
-                helper.fail("BeltSlicer shortening refunded the wrong shaft for an intrinsic pulley");
+            if (!inventoryContainsTieredShaft(player, overwrittenPulleyTier)) {
+                helper.fail("BeltSlicer shortening did not refund the overwritten registered pulley source");
             }
-
+            if (inventoryContainsItem(player, endpointShaft.asItem())) {
+                helper.fail("BeltSlicer shortening duplicated the intrinsic old-endpoint source into inventory");
+            }
             GameTestSupport.succeed(helper, "intrinsic-pulley-slicer-shortening");
         });
     }
@@ -678,24 +686,79 @@ public final class ShaftCompatibilityGameTests {
         GameTestSupport.succeed(helper, "registered-kinetic-encasing-tier-preservation");
     }
 
-    private record ShorteningSetup(BlockPos end, BlockPos inner, BlockState endState) {
+    private record BeltPositions(BlockPos start, BlockPos middle, BlockPos end) {
     }
 
-    private static ShorteningSetup createShorteningSetup(GameTestHelper helper) {
-        BlockState shaftState = AllBlocks.SHAFT.getDefaultState().setValue(ShaftBlock.AXIS, Direction.Axis.X);
+    private static BeltPositions createRegisteredSourceBelt(GameTestHelper helper, Tier tier) {
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState()
+                .setValue(ShaftBlock.AXIS, Direction.Axis.X);
         BlockPos start = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos middle = helper.absolutePos(new BlockPos(1, 1, 3));
+        BlockPos end = helper.absolutePos(new BlockPos(1, 1, 5));
+        helper.getLevel().setBlock(start, shaftState, 3);
+        helper.getLevel().setBlock(end, shaftState, 3);
+        attachTier(helper, start, tier,
+                "GameTest setup could not attach the registered start source");
+        attachTier(helper, end, tier,
+                "GameTest setup could not attach the registered end source");
+        BeltConnectorItem.createBelts(helper.getLevel(), start, end);
+        assertBeltEndpoints(helper, start, middle, end);
+        return new BeltPositions(start, middle, end);
+    }
+
+    private static BeltPositions createIntrinsicSourceBelt(
+            GameTestHelper helper, TieredShaftBlock shaft) {
+        BlockState shaftState = shaft.defaultBlockState()
+                .setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos start = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos middle = helper.absolutePos(new BlockPos(1, 1, 3));
         BlockPos end = helper.absolutePos(new BlockPos(1, 1, 5));
         helper.getLevel().setBlock(start, shaftState, 3);
         helper.getLevel().setBlock(end, shaftState, 3);
         BeltConnectorItem.createBelts(helper.getLevel(), start, end);
+        assertBeltEndpoints(helper, start, middle, end);
+        return new BeltPositions(start, middle, end);
+    }
 
+    private static void assertBeltEndpoints(
+            GameTestHelper helper, BlockPos start, BlockPos middle, BlockPos end) {
+        BlockState startState = helper.getLevel().getBlockState(start);
+        BlockState middleState = helper.getLevel().getBlockState(middle);
+        BlockState endState = helper.getLevel().getBlockState(end);
+        if (!AllBlocks.BELT.has(startState)
+                || !AllBlocks.BELT.has(endState)
+                || (startState.getValue(BeltBlock.PART) != BeltPart.START
+                && startState.getValue(BeltBlock.PART) != BeltPart.END)
+                || (endState.getValue(BeltBlock.PART) != BeltPart.START
+                && endState.getValue(BeltBlock.PART) != BeltPart.END)
+                || !AllBlocks.BELT.has(middleState)
+                || middleState.getValue(BeltBlock.PART) != BeltPart.MIDDLE) {
+            helper.fail("GameTest setup did not create START/END endpoints with a middle segment");
+        }
+    }
+
+    private record ShorteningSetup(BlockPos end, BlockPos inner, BlockState endState) {
+    }
+
+    private static ShorteningSetup createShorteningSetup(
+            GameTestHelper helper, BlockState endShaftState, Tier endAttachedTier) {
+        BlockState shaftState = AllBlocks.SHAFT.getDefaultState()
+                .setValue(ShaftBlock.AXIS, Direction.Axis.X);
+        BlockPos start = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos end = helper.absolutePos(new BlockPos(1, 1, 5));
+        helper.getLevel().setBlock(start, shaftState, 3);
+        helper.getLevel().setBlock(end, endShaftState, 3);
+        if (endAttachedTier != null) {
+            attachTier(helper, end, endAttachedTier,
+                    "GameTest setup could not attach the old endpoint tier before belt creation");
+        }
+        BeltConnectorItem.createBelts(helper.getLevel(), start, end);
         BlockState endState = helper.getLevel().getBlockState(end);
         if (!AllBlocks.BELT.has(endState)
                 || (endState.getValue(BeltBlock.PART) != BeltPart.END
                 && endState.getValue(BeltBlock.PART) != BeltPart.START)) {
             helper.fail("GameTest setup did not create a belt endpoint for shortening");
         }
-
         BlockPos vector = BlockPos.containing(BeltHelper.getBeltVector(endState));
         BlockPos inner = endState.getValue(BeltBlock.PART) == BeltPart.END
                 ? end.subtract(vector)
@@ -704,7 +767,6 @@ public final class ShaftCompatibilityGameTests {
         if (!AllBlocks.BELT.has(innerState) || innerState.getValue(BeltBlock.PART) != BeltPart.MIDDLE) {
             helper.fail("GameTest setup did not create a middle segment adjacent to the belt endpoint");
         }
-
         return new ShorteningSetup(end, inner, endState);
     }
 

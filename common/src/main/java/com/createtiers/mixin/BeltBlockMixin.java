@@ -86,8 +86,11 @@ public abstract class BeltBlockMixin {
     @Inject(method = "getDrops", at = @At("RETURN"), cancellable = true)
     private void createtiers$replacePulleyShaftDrop(
             BlockState state, LootParams.Builder builder, CallbackInfoReturnable<List<ItemStack>> cir) {
-        if (!state.hasProperty(BeltBlock.PART)
-                || state.getValue(BeltBlock.PART) != BeltPart.PULLEY) {
+        if (!state.hasProperty(BeltBlock.PART)) {
+            return;
+        }
+        BeltPart part = state.getValue(BeltBlock.PART);
+        if (part != BeltPart.PULLEY && part != BeltPart.START && part != BeltPart.END) {
             return;
         }
 
