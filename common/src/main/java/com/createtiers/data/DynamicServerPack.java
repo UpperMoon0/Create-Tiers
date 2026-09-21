@@ -5,6 +5,8 @@ import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
+import com.createtiers.registry.CreateEncasingVariants;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -22,336 +24,369 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * A dynamic server-side resource pack that generates tags and loot tables at runtime.
- * This ensures dynamically registered tiered blocks have proper mining tags and loot tables.
- */
+/** Dynamic Forge 1.20.1 server data for registered tier components. */
 public class DynamicServerPack implements PackResources {
 
     private static final String NAME = "createtiers:dynamic_server";
-    
-    // Storage for dynamically generated server resources
     private static final Map<ResourceLocation, JsonObject> TAGS = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, JsonObject> LOOT_TABLES = new ConcurrentHashMap<>();
-    
-    // Track if resources have been generated
+    private static final Map<ResourceLocation, JsonObject> RECIPES = new ConcurrentHashMap<>();
     private static volatile boolean resourcesGenerated = false;
-    
+
     private final PackMetadataSection metadata;
-    
+
     public DynamicServerPack() {
         this.metadata = new PackMetadataSection(
-            net.minecraft.network.chat.Component.literal("Dynamic server data for Create Tiers"), 
-            CreateTiers.SERVER_PACK_FORMAT
-        );
+                net.minecraft.network.chat.Component.literal("Dynamic server data for Create Tiers"),
+                CreateTiers.SERVER_PACK_FORMAT);
     }
-    
-    /**
-     * Generate all server-side resources for registered tiers
-     */
+
     public static void generateResources() {
-        if (resourcesGenerated) {
+        if (resourcesGenerated || !TierRegistry.isFrozen() || !TierUpgradeRegistry.isFrozen()) {
             return;
         }
-        
-        // Don't generate if no tiers are registered yet (KubeJS may not have run)
-        if (TierRegistry.size() == 0) {
-            CreateTiers.LOGGER.debug("TierRegistry is empty - skipping server data generation for now");
-            return;
-        }
-        
-        CreateTiers.LOGGER.info("Generating Create-Tiers dynamic server data...");
-        
-        generateMiningTags();
-        generateLootTables();
-        
-        resourcesGenerated = true;
-        CreateTiers.LOGGER.info("Dynamic server data generated. Tags: {}, Loot Tables: {}", 
-            TAGS.size(), LOOT_TABLES.size());
-    }
-    
-    /**
-     * Ensure resources are generated before attempting to retrieve them.
-     * This is called lazily when resources are requested.
-     */
-    private static void ensureResourcesGenerated() {
-        if (!resourcesGenerated && TierRegistry.size() > 0) {
-            synchronized (DynamicServerPack.class) {
-                if (!resourcesGenerated && TierRegistry.size() > 0) {
-                    generateResources();
-                }
+
+        synchronized (DynamicServerPack.class) {
+            if (resourcesGenerated || !TierRegistry.isFrozen() || !TierUpgradeRegistry.isFrozen()) {
+                return;
             }
+
+            TAGS.clear();
+            LOOT_TABLES.clear();
+            RECIPES.clear();
+            if (TierRegistry.size() > 0) {
+                generateBlockTags();
+                generateLootTables();
+                generateDefaultTierUpgradeRecipes();
+            }
+            resourcesGenerated = true;
+            CreateTiers.LOGGER.info(
+                    "Dynamic server data generated from {} finalized tiers and {} tier upgrades. Tags: {}, Loot Tables: {}, Recipes: {}",
+                    TierRegistry.size(), TierUpgradeRegistry.size(), TAGS.size(), LOOT_TABLES.size(), RECIPES.size());
         }
     }
-    
-    /**
-     * Generate block tags for mining with pickaxe
-     */
-    private static void generateMiningTags() {
+
+    private static void ensureResourcesGenerated() {
+        if (!resourcesGenerated && TierRegistry.isFrozen()) {
+            generateResources();
+        }
+    }
+
+    private static void generateBlockTags() {
         JsonObject mineablePickaxe = new JsonObject();
         mineablePickaxe.addProperty("replace", false);
-        var blocksArray = new com.google.gson.JsonArray();
-        
+        var blocks = new com.google.gson.JsonArray();
+
         for (Tier tier : TierRegistry.getAllTiers()) {
-            blocksArray.add("createtiers:shaft_" + tier.getName());
-            blocksArray.add("createtiers:cogwheel_" + tier.getName());
-            blocksArray.add("createtiers:large_cogwheel_" + tier.getName());
-            blocksArray.add("createtiers:andesite_encased_shaft_" + tier.getName());
-            blocksArray.add("createtiers:brass_encased_shaft_" + tier.getName());
-            blocksArray.add("createtiers:andesite_encased_cogwheel_" + tier.getName());
-            blocksArray.add("createtiers:brass_encased_cogwheel_" + tier.getName());
-            blocksArray.add("createtiers:andesite_encased_large_cogwheel_" + tier.getName());
-            blocksArray.add("createtiers:brass_encased_large_cogwheel_" + tier.getName());
+            addTierBlocks(blocks, tier);
         }
-        
-        mineablePickaxe.add("values", blocksArray);
-        // Put in minecraft namespace for vanilla mining tag
-        TAGS.put(
-            Compat.rl("minecraft", "tags/blocks/mineable/pickaxe"),
-            mineablePickaxe
-        );
-        
-        // Also generate individual tier tags for shafts (useful for recipes)
+
+        mineablePickaxe.add("values", blocks);
+        TAGS.put(Compat.rl("minecraft", "tags/blocks/mineable/pickaxe"), mineablePickaxe);
+
+        JsonObject mineableAxe = new JsonObject();
+        mineableAxe.addProperty("replace", false);
+        var axeBlocks = new com.google.gson.JsonArray();
         for (Tier tier : TierRegistry.getAllTiers()) {
-            JsonObject tierShaftTag = new JsonObject();
-            tierShaftTag.addProperty("replace", false);
-            var tierArray = new com.google.gson.JsonArray();
-            tierArray.add("createtiers:shaft_" + tier.getName());
-            tierShaftTag.add("values", tierArray);
-            TAGS.put(
-                Compat.rl(CreateTiers.MOD_ID, "tags/blocks/" + tier.getName() + "_shafts"),
-                tierShaftTag
-            );
+            addAxeOrPickaxeTierBlocks(axeBlocks, tier);
         }
-        
-        CreateTiers.LOGGER.debug("Generated mining tags for {} tiers", TierRegistry.size());
+        mineableAxe.add("values", axeBlocks);
+        TAGS.put(Compat.rl("minecraft", "tags/blocks/mineable/axe"), mineableAxe);
+
+        JsonObject safeNbt = new JsonObject();
+        safeNbt.addProperty("replace", false);
+        var safeNbtBlocks = new com.google.gson.JsonArray();
+        for (Tier tier : TierRegistry.getAllTiers()) {
+            safeNbtBlocks.add("createtiers:rotation_speed_controller_" + tier.getName());
+        }
+        safeNbt.add("values", safeNbtBlocks);
+        TAGS.put(Compat.rl("create", "tags/blocks/safe_nbt"), safeNbt);
+
+        for (Tier tier : TierRegistry.getAllTiers()) {
+            JsonObject shaftTag = new JsonObject();
+            shaftTag.addProperty("replace", false);
+            var values = new com.google.gson.JsonArray();
+            values.add("createtiers:shaft_" + tier.getName());
+            values.add("createtiers:powered_shaft_" + tier.getName());
+            shaftTag.add("values", values);
+            TAGS.put(Compat.rl(CreateTiers.MOD_ID, "tags/blocks/" + tier.getName() + "_shafts"), shaftTag);
+        }
     }
-    
-    /**
-     * Generate loot tables for all tiered blocks
-     */
+
+    private static void addTierBlocks(com.google.gson.JsonArray blocks, Tier tier) {
+        String name = tier.getName();
+        blocks.add("createtiers:shaft_" + name);
+        blocks.add("createtiers:powered_shaft_" + name);
+        blocks.add("createtiers:cogwheel_" + name);
+        blocks.add("createtiers:large_cogwheel_" + name);
+        blocks.add("createtiers:gearbox_" + name);
+
+        CreateEncasingVariants.shaftVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.cogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.largeCogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+
+        blocks.add("createtiers:clutch_" + name);
+        blocks.add("createtiers:gearshift_" + name);
+        blocks.add("createtiers:encased_chain_drive_" + name);
+        blocks.add("createtiers:adjustable_chain_gearshift_" + name);
+        blocks.add("createtiers:rotation_speed_controller_" + name);
+        blocks.add("createtiers:metal_girder_encased_shaft_" + name);
+    }
+
+    private static void addAxeOrPickaxeTierBlocks(com.google.gson.JsonArray blocks, Tier tier) {
+        String name = tier.getName();
+
+        // Mirror the corresponding upstream Create registrations using axeOrPickaxe().
+        blocks.add("createtiers:cogwheel_" + name);
+        blocks.add("createtiers:large_cogwheel_" + name);
+        blocks.add("createtiers:gearbox_" + name);
+
+        CreateEncasingVariants.shaftVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.cogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+        CreateEncasingVariants.largeCogwheelVariants()
+                .forEach(variant -> blocks.add("createtiers:" + variant.sourcePath() + "_" + name));
+
+        blocks.add("createtiers:clutch_" + name);
+        blocks.add("createtiers:gearshift_" + name);
+        blocks.add("createtiers:encased_chain_drive_" + name);
+        blocks.add("createtiers:adjustable_chain_gearshift_" + name);
+        blocks.add("createtiers:rotation_speed_controller_" + name);
+    }
+
     private static void generateLootTables() {
         for (Tier tier : TierRegistry.getAllTiers()) {
-            generateBlockLootTable("shaft_" + tier.getName());
-            generateBlockLootTable("cogwheel_" + tier.getName());
-            generateBlockLootTable("large_cogwheel_" + tier.getName());
+            String name = tier.getName();
+            generateBlockLootTable("shaft_" + name);
+            generateBlockLootTable("cogwheel_" + name);
+            generateBlockLootTable("large_cogwheel_" + name);
+            generateBlockLootTable("gearbox_" + name);
 
-            generateEncasedBlockLootTable("andesite_encased_shaft_" + tier.getName(), "shaft_" + tier.getName());
-            generateEncasedBlockLootTable("brass_encased_shaft_" + tier.getName(), "shaft_" + tier.getName());
-            generateEncasedBlockLootTable("andesite_encased_cogwheel_" + tier.getName(), "cogwheel_" + tier.getName());
-            generateEncasedBlockLootTable("brass_encased_cogwheel_" + tier.getName(), "cogwheel_" + tier.getName());
-            generateEncasedBlockLootTable("andesite_encased_large_cogwheel_" + tier.getName(), "large_cogwheel_" + tier.getName());
-            generateEncasedBlockLootTable("brass_encased_large_cogwheel_" + tier.getName(), "large_cogwheel_" + tier.getName());
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.shaftVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "shaft_" + name);
+            }
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.cogwheelVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "cogwheel_" + name);
+            }
+            for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.largeCogwheelVariants()) {
+                generateEncasedBlockLootTable(variant.sourcePath() + "_" + name, "large_cogwheel_" + name);
+            }
+
+            generateBlockLootTable("clutch_" + name);
+            generateBlockLootTable("gearshift_" + name);
+            generateBlockLootTable("encased_chain_drive_" + name);
+            generateBlockLootTable("adjustable_chain_gearshift_" + name);
+            generateBlockLootTable("rotation_speed_controller_" + name);
+            generateMultiDropLootTable("metal_girder_encased_shaft_" + name,
+                    "create:metal_girder", CreateTiers.MOD_ID + ":shaft_" + name);
         }
-        
-        CreateTiers.LOGGER.debug("Generated loot tables for {} tiers", TierRegistry.size());
     }
-    
-    /**
-     * Generate a simple block loot table that drops the item
-     */
+
+    private static void generateDefaultTierUpgradeRecipes() {
+        for (TierUpgradeRegistry.Registration upgrade : TierUpgradeRegistry.getAll()) {
+            if (!upgrade.defaultRecipe()) {
+                continue;
+            }
+            Tier tier = TierRegistry.get(upgrade.tierId());
+            if (tier == null) {
+                throw new IllegalStateException("Tier upgrade references missing finalized tier: " + upgrade.tierId());
+            }
+
+            JsonObject recipe = new JsonObject();
+            recipe.addProperty("type", CreateTiers.MOD_ID + ":tier_upgrade");
+            recipe.addProperty("tier", upgrade.tierId().toString());
+            recipe.addProperty("input", upgrade.itemId().toString());
+
+            var ingredients = new com.google.gson.JsonArray();
+            JsonObject shaft = new JsonObject();
+            shaft.addProperty("item", CreateTiers.MOD_ID + ":shaft_" + tier.getName());
+            ingredients.add(shaft);
+            recipe.add("ingredients", ingredients);
+
+            String path = "recipes/tier_upgrade/"
+                    + upgrade.tierId().getNamespace() + "/" + upgrade.tierId().getPath() + "/"
+                    + upgrade.itemId().getNamespace() + "/" + upgrade.itemId().getPath();
+            RECIPES.put(Compat.rl(CreateTiers.MOD_ID, path), recipe);
+        }
+    }
+
     private static void generateBlockLootTable(String blockName) {
-        JsonObject lootTable = new JsonObject();
-        lootTable.addProperty("type", "minecraft:block");
-        
-        var pools = new com.google.gson.JsonArray();
-        var pool = new JsonObject();
-        pool.addProperty("rolls", 1);
-        pool.addProperty("bonus_rolls", 0);
-        
-        var entries = new com.google.gson.JsonArray();
-        var entry = new JsonObject();
-        entry.addProperty("type", "minecraft:item");
-        entry.addProperty("name", CreateTiers.MOD_ID + ":" + blockName);
-        entries.add(entry);
-        pool.add("entries", entries);
-        
-        var conditions = new com.google.gson.JsonArray();
-        var condition = new JsonObject();
-        condition.addProperty("condition", "minecraft:survives_explosion");
-        conditions.add(condition);
-        pool.add("conditions", conditions);
-        
-        pools.add(pool);
-        lootTable.add("pools", pools);
-        
         LOOT_TABLES.put(
-            Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
-            lootTable
-        );
+                Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
+                createSingleDropLootTable(CreateTiers.MOD_ID + ":" + blockName));
     }
 
     private static void generateEncasedBlockLootTable(String encasedBlockName, String dropBlockName) {
+        LOOT_TABLES.put(
+                Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + encasedBlockName),
+                createSingleDropLootTable(CreateTiers.MOD_ID + ":" + dropBlockName));
+    }
+
+    private static void generateMultiDropLootTable(String blockName, String... itemIds) {
+        LOOT_TABLES.put(
+                Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + blockName),
+                createMultiDropLootTable(itemIds));
+    }
+
+    private static JsonObject createSingleDropLootTable(String itemId) {
+        return createMultiDropLootTable(itemId);
+    }
+
+    private static JsonObject createMultiDropLootTable(String... itemIds) {
         JsonObject lootTable = new JsonObject();
         lootTable.addProperty("type", "minecraft:block");
 
         var pools = new com.google.gson.JsonArray();
-        var pool = new JsonObject();
-        pool.addProperty("rolls", 1);
-        pool.addProperty("bonus_rolls", 0);
+        for (String itemId : itemIds) {
+            var pool = new JsonObject();
+            pool.addProperty("rolls", 1);
+            pool.addProperty("bonus_rolls", 0);
 
-        var entries = new com.google.gson.JsonArray();
-        var entry = new JsonObject();
-        entry.addProperty("type", "minecraft:item");
-        entry.addProperty("name", CreateTiers.MOD_ID + ":" + dropBlockName);
-        entries.add(entry);
-        pool.add("entries", entries);
+            var entries = new com.google.gson.JsonArray();
+            var entry = new JsonObject();
+            entry.addProperty("type", "minecraft:item");
+            entry.addProperty("name", itemId);
+            entries.add(entry);
+            pool.add("entries", entries);
 
-        var conditions = new com.google.gson.JsonArray();
-        var condition = new JsonObject();
-        condition.addProperty("condition", "minecraft:survives_explosion");
-        conditions.add(condition);
-        pool.add("conditions", conditions);
+            var conditions = new com.google.gson.JsonArray();
+            var condition = new JsonObject();
+            condition.addProperty("condition", "minecraft:survives_explosion");
+            conditions.add(condition);
+            pool.add("conditions", conditions);
+            pools.add(pool);
+        }
 
-        pools.add(pool);
         lootTable.add("pools", pools);
-
-        LOOT_TABLES.put(
-            Compat.rl(CreateTiers.MOD_ID, "loot_tables/blocks/" + encasedBlockName),
-            lootTable
-        );
+        return lootTable;
     }
-    
-    /**
-     * Clear all dynamic resources (called on reload)
-     */
+
     public static void clear() {
         TAGS.clear();
         LOOT_TABLES.clear();
+        RECIPES.clear();
         resourcesGenerated = false;
     }
-    
+
     public static boolean isResourcesGenerated() {
         return resourcesGenerated;
     }
-    
-    /**
-     * Get all generated tags (for debugging/dumping)
-     */
+
     public static Map<ResourceLocation, JsonObject> getTags() {
         return TAGS;
     }
-    
-    /**
-     * Get all generated loot tables (for debugging/dumping)
-     */
+
     public static Map<ResourceLocation, JsonObject> getLootTables() {
         return LOOT_TABLES;
     }
-    
+
+    public static Map<ResourceLocation, JsonObject> getRecipes() {
+        return RECIPES;
+    }
+
     @Override
     public @NotNull String packId() {
         return NAME;
     }
-    
+
     @Nullable
     @Override
-    public IoSupplier<InputStream> getRootResource(String... pElements) {
+    public IoSupplier<InputStream> getRootResource(String... elements) {
         return null;
     }
-    
+
     @Override
     public @Nullable IoSupplier<InputStream> getResource(@NotNull PackType type, @NotNull ResourceLocation location) {
         if (type != PackType.SERVER_DATA) {
             return null;
         }
-        
-        // Ensure resources are generated (lazy generation)
-        ensureResourcesGenerated();
-        
+
         String namespace = location.getNamespace();
         String path = location.getPath();
-        
-        // Handle pack.mcmeta
         if (path.equals(PackResources.PACK_META)) {
             JsonObject packJson = new JsonObject();
             JsonObject packMeta = new JsonObject();
             packMeta.addProperty("description", "Dynamic server data for Create Tiers");
             packMeta.addProperty("pack_format", CreateTiers.SERVER_PACK_FORMAT);
             packJson.add("pack", packMeta);
-            return () -> new ByteArrayInputStream(packJson.toString().getBytes(StandardCharsets.UTF_8));
+            return () -> stream(packJson);
         }
-        
-        // Only handle createtiers and minecraft namespaces
-        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft")) {
+
+        ensureResourcesGenerated();
+
+        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft") && !namespace.equals("create")) {
             return null;
         }
-        
-        // Handle tags
+
         if (path.startsWith("tags/") && path.endsWith(".json")) {
-            String tagPath = path.substring(0, path.length() - 5);
-            ResourceLocation tagLoc = Compat.rl(namespace, tagPath);
-            JsonObject tagJson = TAGS.get(tagLoc);
-            if (tagJson != null) {
-                return () -> new ByteArrayInputStream(tagJson.toString().getBytes(StandardCharsets.UTF_8));
-            }
+            JsonObject json = TAGS.get(Compat.rl(namespace, path.substring(0, path.length() - 5)));
+            return json == null ? null : () -> stream(json);
         }
-        
-        // Handle loot tables (only for createtiers namespace)
         if (namespace.equals(CreateTiers.MOD_ID) && path.startsWith("loot_tables/") && path.endsWith(".json")) {
-            String lootPath = path.substring(0, path.length() - 5);
-            ResourceLocation lootLoc = Compat.rl(namespace, lootPath);
-            JsonObject lootJson = LOOT_TABLES.get(lootLoc);
-            if (lootJson != null) {
-                return () -> new ByteArrayInputStream(lootJson.toString().getBytes(StandardCharsets.UTF_8));
-            }
+            JsonObject json = LOOT_TABLES.get(Compat.rl(namespace, path.substring(0, path.length() - 5)));
+            return json == null ? null : () -> stream(json);
         }
-        
+        if (namespace.equals(CreateTiers.MOD_ID) && path.startsWith("recipes/") && path.endsWith(".json")) {
+            JsonObject json = RECIPES.get(Compat.rl(namespace, path.substring(0, path.length() - 5)));
+            return json == null ? null : () -> stream(json);
+        }
         return null;
     }
-    
+
     @Override
     public void listResources(@NotNull PackType type, @NotNull String namespace, @NotNull String path,
             @NotNull ResourceOutput output) {
         if (type != PackType.SERVER_DATA) {
             return;
         }
-        
-        // Ensure resources are generated (lazy generation)
         ensureResourcesGenerated();
-        
-        // Handle both createtiers and minecraft namespaces
-        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft")) {
+
+        if (!namespace.equals(CreateTiers.MOD_ID) && !namespace.equals("minecraft") && !namespace.equals("create")) {
             return;
         }
-        
-        // List tags (for both namespaces)
+
         if (path.startsWith("tags/") || path.equals("tags")) {
             TAGS.forEach((loc, json) -> {
                 if (loc.getNamespace().equals(namespace) && loc.getPath().startsWith(path)) {
-                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
-                    output.accept(outputLoc, 
-                        () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
+                    output.accept(Compat.withSuffix(loc, ".json"), () -> stream(json));
                 }
             });
         }
-        
-        // List loot tables (only for createtiers namespace)
         if (namespace.equals(CreateTiers.MOD_ID) && (path.startsWith("loot_tables/") || path.equals("loot_tables"))) {
             LOOT_TABLES.forEach((loc, json) -> {
                 if (loc.getPath().startsWith(path)) {
-                    ResourceLocation outputLoc = Compat.withSuffix(loc, ".json");
-                    output.accept(outputLoc, 
-                        () -> new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8)));
+                    output.accept(Compat.withSuffix(loc, ".json"), () -> stream(json));
+                }
+            });
+        }
+        if (namespace.equals(CreateTiers.MOD_ID) && (path.startsWith("recipes/") || path.equals("recipes"))) {
+            RECIPES.forEach((loc, json) -> {
+                if (loc.getPath().startsWith(path)) {
+                    output.accept(Compat.withSuffix(loc, ".json"), () -> stream(json));
                 }
             });
         }
     }
-    
+
+    private static ByteArrayInputStream stream(JsonObject json) {
+        return new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
     @Override
     public @NotNull Set<String> getNamespaces(@NotNull PackType type) {
-        return type == PackType.SERVER_DATA ? Set.of(CreateTiers.MOD_ID, "minecraft") : Set.of();
+        return type == PackType.SERVER_DATA ? Set.of(CreateTiers.MOD_ID, "minecraft", "create") : Set.of();
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public @Nullable <T> T getMetadataSection(@NotNull MetadataSectionSerializer<T> serializer) throws IOException {
-        if (serializer == PackMetadataSection.TYPE) {
-            return (T) this.metadata;
-        }
-        return null;
+        return serializer == PackMetadataSection.TYPE ? (T) metadata : null;
     }
-    
+
     @Override
     public void close() {
     }

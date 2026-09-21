@@ -3,12 +3,14 @@ package com.createtiers.client;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TierUpgradeRegistry;
 import com.createtiers.content.kinetics.TieredCogwheelBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
 import com.createtiers.content.kinetics.TieredEncasedCogwheelBlock;
 import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.createtiers.content.kinetics.TieredPoweredShaftBlockEntity;
 import com.createtiers.registry.ModBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllPartialModels;
@@ -38,6 +40,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -47,7 +51,9 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -62,6 +68,7 @@ public class ModClient {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TIERED_SHAFT.get(), TieredKineticBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.TIERED_POWERED_SHAFT.get(), TieredKineticBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TIERED_COGWHEEL.get(), TieredKineticBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TIERED_GEARBOX.get(), TieredKineticBlockEntityRenderer::new);
     }
@@ -87,12 +94,33 @@ public class ModClient {
                 }
             });
         }
+        wrapTierUpgradeItemModels(modelRegistry);
+    }
+
+    private static void wrapTierUpgradeItemModels(Map<ModelResourceLocation, BakedModel> modelRegistry) {
+        Set<ResourceLocation> wrappedIds = new LinkedHashSet<>();
+        for (TierUpgradeRegistry.Registration registration : TierUpgradeRegistry.getAll()) {
+            ResourceLocation itemId = registration.itemId();
+            if (!wrappedIds.add(itemId)) continue;
+            Item item = BuiltInRegistries.ITEM.get(itemId);
+            if (!(item instanceof BlockItem blockItem)) continue;
+            ModelResourceLocation modelId = new ModelResourceLocation(itemId, "inventory");
+            BakedModel original = modelRegistry.get(modelId);
+            if (original == null || original instanceof TierUpgradeTintedItemModel) continue;
+            TierUpgradeItemTintPolicy.Mode mode = TierUpgradeItemTintPolicy.forBlock(blockItem.getBlock());
+            modelRegistry.put(modelId, new TierUpgradeTintedItemModel(original, mode));
+        }
     }
 
     @SubscribeEvent
     public static void registerVisualizers(EntityRenderersEvent.RegisterRenderers event) {
         SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_SHAFT.get())
                 .factory(TieredShaftVisual::create)
+                .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
+                .apply();
+
+        SimpleBlockEntityVisualizer.builder(ModBlocks.TIERED_POWERED_SHAFT.get())
+                .factory(TieredPoweredShaftVisual::create)
                 .skipVanillaRender(be -> VisualizationManager.supportsVisualization(be.getLevel()))
                 .apply();
 
@@ -114,6 +142,11 @@ public class ModClient {
         ModBlocks.ENCASED_SHAFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
         ModBlocks.ENCASED_LARGE_COGWHEEL_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CLUTCH_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.GEARSHIFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CHAIN_DRIVE_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.CHAIN_GEARSHIFT_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
+        ModBlocks.SPEED_CONTROLLER_ITEMS.forEach(item -> TooltipModifier.REGISTRY.register(item, kineticStats));
     }
 
     @org.jetbrains.annotations.Nullable
@@ -132,6 +165,44 @@ public class ModClient {
         if (block instanceof TieredCogwheelBlock cog) return cog.getTier();
         if (block instanceof TieredEncasedCogwheelBlock encasedCog) return encasedCog.getTier();
         return null;
+    }
+
+    public static class TieredPoweredShaftVisual
+            extends SingleAxisRotatingVisual<TieredPoweredShaftBlockEntity> {
+        private final Tier tier;
+
+        public static BlockEntityVisual<TieredPoweredShaftBlockEntity> create(VisualizationContext context,
+                TieredPoweredShaftBlockEntity blockEntity, float partialTick) {
+            Tier tier = blockEntity.getTier();
+            if (tier == null) return null;
+            Model model = safePartial(AllTieredPartialModels.forTier(tier).POWERED_SHAFT);
+            if (model == null) return null;
+            return new TieredPoweredShaftVisual(context, blockEntity, partialTick, model, tier);
+        }
+
+        private TieredPoweredShaftVisual(VisualizationContext context,
+                TieredPoweredShaftBlockEntity blockEntity, float partialTick, Model model, Tier tier) {
+            super(context, blockEntity, partialTick, model);
+            this.tier = tier;
+            applyTierColor();
+        }
+
+        private void applyTierColor() {
+            rotatingModel.setColor(new Color(tier.getShaftColor()));
+            rotatingModel.setChanged();
+        }
+
+        @Override
+        public void update(float pt) {
+            super.update(pt);
+            applyTierColor();
+        }
+
+        @Override
+        public void tick(Context context) {
+            super.tick(context);
+            applyTierColor();
+        }
     }
 
     public static class TieredShaftVisual {

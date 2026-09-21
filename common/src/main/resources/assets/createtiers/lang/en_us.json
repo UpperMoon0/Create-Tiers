@@ -1,4 +1,18 @@
 {
+  "itemGroup.createtiers": "Create Tiers",
   "createtiers.tooltip.tiered_max_rpm": "Maximum Speed",
-  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity"
+  "createtiers.tooltip.tiered_max_su": "Maximum Stress Capacity",
+  "createtiers.tooltip.tiered_network_su": "Connected Network Stress Limit",
+  "createtiers.speed_controller.input.title": "Targeted Speed in RPM",
+  "createtiers.speed_controller.input.field": "RPM",
+  "createtiers.speed_controller.input.hint": "Enter a signed speed up to \u00b1%s RPM",
+  "createtiers.speed_controller.input.invalid": "Enter a whole-number RPM value",
+  "createtiers.speed_controller.input.range": "Speed must be non-zero and at most \u00b1%s RPM",
+  "createtiers.speed_controller.input.controls": "Enter: Apply   Esc: Cancel",
+  "createtiers.jade.tier": "Tier: %s",
+  "createtiers.jade.max_rpm": "Max RPM: %s RPM",
+  "createtiers.jade.max_su": "Max SU: %s SU",
+  "config.jade.plugin_createtiers": "Create Tiers",
+  "config.jade.plugin_createtiers.tier_info": "Tier Information",
+  "createtiers.tooltip.upgraded_tier": "Tier: %s"
 }

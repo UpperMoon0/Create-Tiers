@@ -1,51 +1,59 @@
-name: Release
+name: Build and Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: create-tiers-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
+  core:
+    name: Core verification
+    uses: ./.github/workflows/pr-tests.yml
+
+  runtime:
+    name: Runtime verification
+    uses: ./.github/workflows/runtime-tests.yml
+
+  publish:
+    name: Publish exact verified head
+    needs: [core, runtime]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
         with:
-          distribution: 'temurin'
+          ref: ${{ github.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
           java-version: '21'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build Forge 1.20.1
-        run: ./gradlew :forge-1.20.1:build
-
-      - name: Build NeoForge 1.21.1
-        run: ./gradlew :neoforge-1.21.1:build
-
-      - name: Get version
-        id: get_version
+      - uses: gradle/actions/setup-gradle@v6
+      - run: chmod +x gradlew
+      - name: Package both loaders
+        run: ./gradlew buildAllTargets -x test --stacktrace --no-daemon
+      - name: Read mod version
+        id: version
+        shell: bash
         run: |
-          echo "version=$(grep 'mod_version' gradle.properties | cut -d'=' -f2 | xargs)" >> $GITHUB_OUTPUT
-
-      - name: Publish Release
+          value="$(sed -n 's/^mod_version[[:space:]]*=[[:space:]]*//p' gradle.properties | head -n1 | tr -d '\r' | xargs)"
+          test -n "$value"
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: "Create: Tiers v${{ steps.get_version.outputs.version }}"
+          tag_name: v${{ steps.version.outputs.value }}
+          name: "Create: Tiers v${{ steps.version.outputs.value }}"
           draft: false
           prerelease: false
           files: |
-            forge-1.20.1/build/libs/create-tiers-forge-1.20.1-${{ steps.get_version.outputs.version }}.jar
-            neoforge-1.21.1/build/libs/create-tiers-neoforge-1.21.1-${{ steps.get_version.outputs.version }}.jar
+            forge-1.20.1/build/libs/create-tiers-forge-1.20.1-${{ steps.version.outputs.value }}.jar
+            neoforge-1.21.1/build/libs/create-tiers-neoforge-1.21.1-${{ steps.version.outputs.value }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

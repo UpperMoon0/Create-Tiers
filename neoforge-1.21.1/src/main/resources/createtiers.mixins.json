@@ -6,13 +6,35 @@
   "refmap": "createtiers-refmap.json",
   "mixins": [
     "RotationPropagatorMixin",
+    "BlockEntityTypeMixin",
+    "CogWheelBlockSpeedControllerMixin",
+    "GirderBlockTieredShaftMixin",
+    "KineticBlockEntityTierMixin",
+    "TierUpgradeBlockDropsMixin",
+    "ArmBlockEntityMixin",
     "SpeedGaugeBlockEntityMixin",
+    "SpeedControllerTierRangeMixin",
     "KineticBlockEntityAccessor",
     "KineticEffectHandlerAccessor",
-    "KineticNetworkMixin"
+    "KineticNetworkMixin",
+    "ShaftBlockMixin",
+    "BeltConnectorItemMixin",
+    "BeltBlockMixin",
+    "BeltSlicerMixin",
+    "PoweredShaftBlockMixin",
+    "SteamEngineBlockMixin",
+    "SteamEnginePlacementHelperMixin",
+    "PlacementOffsetTierDataMixin",
+    "BeltTieredShaftInteractionMixin"
   ],
   "client": [
-    "ModelManagerMixin"
+    "AbstractBlockEntityVisualAccessor",
+    "BeltVisualMixin",
+    "KineticBlockEntityRendererTierColorMixin",
+    "ModelManagerMixin",
+    "RotatingInstanceTierColorMixin",
+    "SafeBlockEntityRendererTierAccentMixin",
+    "ValueSettingsClientTierInputMixin"
   ],
   "injectors": {
     "defaultRequire": 1

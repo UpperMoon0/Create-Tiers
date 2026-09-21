@@ -4,11 +4,16 @@ import com.createtiers.Compat;
 import com.createtiers.CreateTiers;
 import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TieredNativeKineticBlock;
+import com.createtiers.registry.CreateEncasingVariants;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.InputStreamReader;
@@ -47,34 +52,127 @@ public class TieredModelGenerator {
             Map<ResourceLocation, JsonObject> blockstates, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
         String tierName = tier.getName();
         generateShaftModels(tierName, models, resourceManager);
+        generatePoweredShaftModel(tierName, models, resourceManager);
         generateCogwheelShaftModel(tierName, models, resourceManager);
         generateCogwheelModels(tierName, false, models, resourceManager);
         generateCogwheelModels(tierName, true, models, resourceManager);
         generateItemModels(tierName, models);
         generateShaftBlockstate(tierName, blockstates);
+        generatePoweredShaftBlockstate(tierName, blockstates);
         generateCogwheelBlockstate(tierName, false, blockstates);
         generateCogwheelBlockstate(tierName, true, blockstates);
 
-        generateEncasedShaftModels(tierName, "andesite", models, resourceManager);
-        generateEncasedShaftModels(tierName, "brass", models, resourceManager);
-        generateEncasedCogwheelModels(tierName, "andesite", false, models, resourceManager);
-        generateEncasedCogwheelModels(tierName, "brass", false, models, resourceManager);
-        generateEncasedCogwheelModels(tierName, "andesite", true, models, resourceManager);
-        generateEncasedCogwheelModels(tierName, "brass", true, models, resourceManager);
-
-        generateEncasedShaftBlockstate(tierName, "andesite", blockstates);
-        generateEncasedShaftBlockstate(tierName, "brass", blockstates);
-        generateEncasedCogwheelBlockstate(tierName, "andesite", false, blockstates);
-        generateEncasedCogwheelBlockstate(tierName, "brass", false, blockstates);
-        generateEncasedCogwheelBlockstate(tierName, "andesite", true, blockstates);
-        generateEncasedCogwheelBlockstate(tierName, "brass", true, blockstates);
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.shaftVariants()) {
+            generateEncasedShaftModels(tierName, variant.casingKey(), models, resourceManager);
+            generateEncasedShaftBlockstate(tierName, variant.casingKey(), blockstates);
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.cogwheelVariants()) {
+            generateEncasedCogwheelModels(tierName, variant.casingKey(), false, models, resourceManager);
+            generateEncasedCogwheelBlockstate(tierName, variant.casingKey(), false, blockstates);
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.largeCogwheelVariants()) {
+            generateEncasedCogwheelModels(tierName, variant.casingKey(), true, models, resourceManager);
+            generateEncasedCogwheelBlockstate(tierName, variant.casingKey(), true, blockstates);
+        }
 
         generateGearboxModels(tierName, models, resourceManager);
         generateGearboxBlockstate(tierName, blockstates);
 
         generateEncasedItemModels(tierName, models);
         generateGearboxItemModels(tierName, models, resourceManager);
+        generateNativeRelayAssets(tier, models, blockstates, resourceManager);
         generateTierLanguages(tier);
+    }
+
+    private static void generateNativeRelayAssets(Tier tier, Map<ResourceLocation, JsonElement> models,
+            Map<ResourceLocation, JsonObject> blockstates,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        for (Block block : BuiltInRegistries.BLOCK) {
+            if (!(block instanceof TieredNativeKineticBlock nativeBlock) || !nativeBlock.getTier().equals(tier)) {
+                continue;
+            }
+
+            ResourceLocation outputId = BuiltInRegistries.BLOCK.getKey(block);
+            ResourceLocation baseId = nativeBlock.getBaseBlockId();
+            if (outputId == null || baseId == null) {
+                continue;
+            }
+
+            JsonObject inheritedBlockstate = readJsonObject(resourceManager,
+                    Compat.rl(baseId.getNamespace(), "blockstates/" + baseId.getPath() + ".json"));
+            if (inheritedBlockstate != null) {
+                blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/" + outputId.getPath()),
+                        inheritedBlockstate);
+            }
+
+            if (block.asItem() != Items.AIR) {
+                JsonObject tieredItemModel = createTieredNativeItemModel(baseId, resourceManager);
+                if (tieredItemModel != null) {
+                    models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
+                            tieredItemModel);
+                } else {
+                    JsonObject inheritedItemModel = readJsonObject(resourceManager,
+                            Compat.rl(baseId.getNamespace(), "models/item/" + baseId.getPath() + ".json"));
+                    if (inheritedItemModel != null) {
+                        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
+                                inheritedItemModel);
+                    } else {
+                        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + outputId.getPath()),
+                                createParentModel(baseId.getNamespace() + ":item/" + baseId.getPath()));
+                    }
+                }
+            }
+        }
+    }
+
+    private static JsonObject createTieredNativeItemModel(ResourceLocation baseId,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        String path = baseId.getPath();
+        ResourceLocation sourceModel;
+        Map<String, String> textures = new HashMap<>();
+
+        switch (path) {
+            case "clutch", "gearshift", "encased_chain_drive" -> {
+                sourceModel = Compat.rl("create", "block/" + path + "/item");
+                textures.put("1_0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("1_1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            case "adjustable_chain_gearshift" -> {
+                // Create reuses the encased-chain-drive item model and only swaps its side texture.
+                sourceModel = Compat.rl("create", "block/encased_chain_drive/item");
+                textures.put("side", "create:block/adjustable_chain_gearshift");
+                textures.put("1_0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("1_1", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            case "rotation_speed_controller" -> {
+                sourceModel = Compat.rl("create", "block/rotation_speed_controller/item");
+                textures.put("0", CreateTiers.MOD_ID + ":block/grayscale/axis");
+                textures.put("3", CreateTiers.MOD_ID + ":block/grayscale/axis_top");
+            }
+            default -> {
+                return null;
+            }
+        }
+
+        return mutateModel(sourceModel, textures, Map.of("Axis", 0), -1,
+                Collections.emptySet(), resourceManager);
+    }
+
+    private static JsonObject readJsonObject(net.minecraft.server.packs.resources.ResourceManager resourceManager,
+            ResourceLocation location) {
+        try {
+            var resource = resourceManager.getResource(location);
+            if (resource.isEmpty()) {
+                CreateTiers.LOGGER.warn("Could not inherit Create resource {}", location);
+                return null;
+            }
+            try (var reader = new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8)) {
+                return JsonParser.parseReader(reader).getAsJsonObject();
+            }
+        } catch (Exception e) {
+            CreateTiers.LOGGER.error("Failed to inherit Create resource " + location, e);
+            return null;
+        }
     }
 
     private static void generateTierLanguages(Tier tier) {
@@ -82,18 +180,40 @@ public class TieredModelGenerator {
         String displayName = tier.getDisplayName();
 
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.shaft_" + tierName, displayName + " Shaft");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.powered_shaft_" + tierName, displayName + " Powered Shaft");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.cogwheel_" + tierName, displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.large_cogwheel_" + tierName, "Large " + displayName + " Cogwheel");
         DynamicResourcePack.addTranslation("en_us", "block.createtiers.gearbox_" + tierName, displayName + " Gearbox");
         DynamicResourcePack.addTranslation("en_us", "item.createtiers.vertical_gearbox_" + tierName,
                 "Vertical " + displayName + " Gearbox");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.clutch_" + tierName,
+                displayName + " Clutch");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.gearshift_" + tierName,
+                displayName + " Gearshift");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.encased_chain_drive_" + tierName,
+                displayName + " Encased Chain Drive");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.adjustable_chain_gearshift_" + tierName,
+                displayName + " Adjustable Chain Gearshift");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.rotation_speed_controller_" + tierName,
+                displayName + " Rotation Speed Controller");
+        DynamicResourcePack.addTranslation("en_us", "block.createtiers.metal_girder_encased_shaft_" + tierName,
+                "Metal Girder Encased " + displayName + " Shaft");
 
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_shaft_" + tierName, "Andesite Encased " + displayName + " Shaft");
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_shaft_" + tierName, "Brass Encased " + displayName + " Shaft");
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_cogwheel_" + tierName, "Andesite Encased " + displayName + " Cogwheel");
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_cogwheel_" + tierName, "Brass Encased " + displayName + " Cogwheel");
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.andesite_encased_large_cogwheel_" + tierName, "Andesite Encased Large " + displayName + " Cogwheel");
-        DynamicResourcePack.addTranslation("en_us", "block.createtiers.brass_encased_large_cogwheel_" + tierName, "Brass Encased Large " + displayName + " Cogwheel");
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.shaftVariants()) {
+            DynamicResourcePack.addTranslation("en_us",
+                    "block.createtiers." + variant.sourcePath() + "_" + tierName,
+                    titleCase(variant.casingKey()) + " Encased " + displayName + " Shaft");
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.cogwheelVariants()) {
+            DynamicResourcePack.addTranslation("en_us",
+                    "block.createtiers." + variant.sourcePath() + "_" + tierName,
+                    titleCase(variant.casingKey()) + " Encased " + displayName + " Cogwheel");
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.largeCogwheelVariants()) {
+            DynamicResourcePack.addTranslation("en_us",
+                    "block.createtiers." + variant.sourcePath() + "_" + tierName,
+                    titleCase(variant.casingKey()) + " Encased Large " + displayName + " Cogwheel");
+        }
     }
 
     private static void generateGearboxItemModels(String tierName, Map<ResourceLocation, JsonElement> models,
@@ -131,18 +251,30 @@ public class TieredModelGenerator {
     }
 
     private static void generateEncasedItemModels(String tierName, Map<ResourceLocation, JsonElement> models) {
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_shaft_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_shaft"));
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_shaft_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_shaft"));
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_cogwheel_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_cogwheel"));
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_cogwheel_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_cogwheel"));
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/andesite_encased_large_cogwheel_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/andesite_encased_large_cogwheel"));
-        models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/brass_encased_large_cogwheel_" + tierName),
-                createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/brass_encased_large_cogwheel"));
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.shaftVariants()) {
+            String name = variant.sourcePath();
+            models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + name + "_" + tierName),
+                    createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/" + name));
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.cogwheelVariants()) {
+            String name = variant.sourcePath();
+            models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + name + "_" + tierName),
+                    createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/" + name));
+        }
+        for (CreateEncasingVariants.Variant variant : CreateEncasingVariants.largeCogwheelVariants()) {
+            String name = variant.sourcePath();
+            models.put(Compat.rl(CreateTiers.MOD_ID, "models/item/" + name + "_" + tierName),
+                    createParentModel(CreateTiers.MOD_ID + ":block/" + tierName + "/" + name));
+        }
+    }
+    private static String titleCase(String id) {
+        StringBuilder result = new StringBuilder();
+        for (String part : id.split("_")) {
+            if (part.isEmpty()) continue;
+            if (!result.isEmpty()) result.append(' ');
+            result.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return result.toString();
     }
 
     private static JsonObject createParentModel(String parent) {
@@ -163,6 +295,17 @@ public class TieredModelGenerator {
         models.put(
                 Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/shaft_half"),
                 mutateModel(Compat.rl("create", "block/shaft_half"), textures, tintMap, 0, Collections.emptySet(), resourceManager));
+    }
+
+    private static void generatePoweredShaftModel(String tierName, Map<ResourceLocation, JsonElement> models,
+            net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        Map<String, String> textures = Map.of(
+                "2", CreateTiers.MOD_ID + ":block/grayscale/axis_top",
+                "3", CreateTiers.MOD_ID + ":block/grayscale/axis",
+                "particle", CreateTiers.MOD_ID + ":block/grayscale/axis");
+        models.put(Compat.rl(CreateTiers.MOD_ID, "models/block/" + tierName + "/powered_shaft"),
+                mutateModel(Compat.rl("create", "block/powered_shaft"), textures, Map.of(), 0,
+                        Collections.emptySet(), resourceManager));
     }
 
     private static void generateCogwheelShaftModel(String tierName, Map<ResourceLocation, JsonElement> models, net.minecraft.server.packs.resources.ResourceManager resourceManager) {
@@ -348,7 +491,9 @@ public class TieredModelGenerator {
             JsonObject model = JsonParser.parseReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))
                     .getAsJsonObject();
 
-            JsonObject texturesObj = new JsonObject();
+            JsonObject texturesObj = model.has("textures")
+                    ? model.getAsJsonObject("textures").deepCopy()
+                    : new JsonObject();
             textures.forEach(texturesObj::addProperty);
             model.add("textures", texturesObj);
 
@@ -386,6 +531,32 @@ public class TieredModelGenerator {
                 "block/" + tierName + "/shaft");
         blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/shaft_" + tierName),
                 createAxisBlockstate(modelLocation));
+    }
+
+    private static void generatePoweredShaftBlockstate(String tierName,
+            Map<ResourceLocation, JsonObject> blockstates) {
+        ResourceLocation model = Compat.rl(CreateTiers.MOD_ID, "block/" + tierName + "/powered_shaft");
+        JsonObject root = new JsonObject();
+        JsonObject variants = new JsonObject();
+
+        JsonObject x = new JsonObject();
+        x.addProperty("model", model.toString());
+        x.addProperty("x", 90);
+        x.addProperty("y", 90);
+        variants.add("axis=x", x);
+
+        JsonObject y = new JsonObject();
+        y.addProperty("model", model.toString());
+        variants.add("axis=y", y);
+
+        JsonObject z = new JsonObject();
+        z.addProperty("model", model.toString());
+        z.addProperty("x", 90);
+        z.addProperty("y", 180);
+        variants.add("axis=z", z);
+
+        root.add("variants", variants);
+        blockstates.put(Compat.rl(CreateTiers.MOD_ID, "blockstates/powered_shaft_" + tierName), root);
     }
 
     private static void generateCogwheelBlockstate(String tierName, boolean isLarge,

@@ -1,0 +1,243 @@
+package com.createtiers.mixin;
+
+import com.createtiers.api.IAttachedTierBlockEntity;
+import com.createtiers.api.IReplacementSourceBlockEntity;
+import com.createtiers.api.Tier;
+import com.createtiers.api.TierRegistry;
+import com.createtiers.api.TieredNativeKineticBlock;
+import com.createtiers.content.kinetics.TieredShaftBlock;
+import com.createtiers.foundation.utility.AdjustableKineticTierPolicy;
+import com.createtiers.foundation.utility.AttachedTierAuthorization;
+import com.createtiers.foundation.utility.AttachedTierTransfer;
+import com.createtiers.foundation.utility.ReplacementSourcePolicy;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/** Adds optional persisted tier state to every Create kinetic block entity. */
+@Mixin(value = KineticBlockEntity.class, remap = false)
+public abstract class KineticBlockEntityTierMixin implements IAttachedTierBlockEntity, IReplacementSourceBlockEntity {
+
+    @Unique
+    private static final String CREATETIERS$TIER_KEY = "CreateTiersTier";
+
+    @Unique
+    private static final String CREATETIERS$SOURCE_BLOCK_KEY = "CreateTiersReplacementSourceBlock";
+
+    @Unique
+    private ResourceLocation createtiers$attachedTierId;
+
+    @Unique
+    private Tier createtiers$attachedTier;
+
+    @Unique
+    private ResourceLocation createtiers$replacementSourceBlockId;
+
+    @Override
+    public ResourceLocation getCreateTiersReplacementSourceBlockId() {
+        if (createtiers$replacementSourceBlockId == null) {
+            return null;
+        }
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        return ReplacementSourcePolicy.isLegal(self.getBlockState(), createtiers$replacementSourceBlockId)
+                ? createtiers$replacementSourceBlockId
+                : null;
+    }
+
+    @Override
+    public void setCreateTiersReplacementSourceBlockId(ResourceLocation id) {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (!ReplacementSourcePolicy.isLegal(self.getBlockState(), id)) {
+            throw new IllegalArgumentException(
+                    "Illegal Create Tiers replacement source '" + id + "' for " + self.getBlockState());
+        }
+        if (java.util.Objects.equals(createtiers$replacementSourceBlockId, id)) {
+            return;
+        }
+        createtiers$replacementSourceBlockId = id;
+        AdjustableKineticTierPolicy.refresh(self, getTier());
+        createtiers$rebuildKinetics();
+    }
+
+    @Override
+    public void clearCreateTiersReplacementSourceBlockId() {
+        if (createtiers$replacementSourceBlockId == null) {
+            return;
+        }
+        createtiers$replacementSourceBlockId = null;
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        AdjustableKineticTierPolicy.refresh(self, getTier());
+        createtiers$rebuildKinetics();
+    }
+
+    @Override
+    public Tier getTier() {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock nativeBlock) {
+            return nativeBlock.getTier();
+        }
+        Tier replacementTier = createtiers$getReplacementSourceTier();
+        return replacementTier != null ? replacementTier : createtiers$attachedTier;
+    }
+
+    @Unique
+    private Tier createtiers$getReplacementSourceTier() {
+        ResourceLocation sourceId = getCreateTiersReplacementSourceBlockId();
+        if (sourceId == null) {
+            return null;
+        }
+        net.minecraft.world.level.block.Block source = BuiltInRegistries.BLOCK.get(sourceId);
+        return source instanceof TieredShaftBlock shaft ? shaft.getTier() : null;
+    }
+
+    @Override
+    public ResourceLocation getAttachedTierId() {
+        return createtiers$attachedTierId;
+    }
+
+    @Override
+    public Tier getAttachedTier() {
+        return createtiers$attachedTier;
+    }
+
+    @Override
+    public void setAttachedTier(Tier tier) {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock) {
+            throw new IllegalStateException("Native Create Tiers relay blocks already have an intrinsic tier");
+        }
+        if (createtiers$getReplacementSourceTier() != null) {
+            throw new IllegalStateException("Replacement kinetic inherits an intrinsic tier from its source block");
+        }
+
+        ResourceLocation id = TierRegistry.getId(tier);
+        if (id == null) {
+            throw new IllegalArgumentException("Cannot attach an unregistered Create Tiers tier");
+        }
+        if (!AttachedTierAuthorization.canCarry(self, tier)) {
+            throw new IllegalArgumentException(
+                    "Tier '" + id + "' is not registered for this Create kinetic or its replacement source");
+        }
+        if (id.equals(createtiers$attachedTierId)) {
+            return;
+        }
+
+        createtiers$attachedTierId = id;
+        createtiers$attachedTier = tier;
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, tier);
+        createtiers$rebuildKinetics();
+    }
+
+    @Override
+    public void clearAttachedTier() {
+        if (createtiers$attachedTierId == null && createtiers$attachedTier == null) {
+            return;
+        }
+
+        createtiers$attachedTierId = null;
+        createtiers$attachedTier = null;
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
+        createtiers$rebuildKinetics();
+    }
+
+    @Unique
+    private void createtiers$rebuildKinetics() {
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        self.setChanged();
+        if (self.getLevel() == null || self.getLevel().isClientSide) {
+            return;
+        }
+
+        self.detachKinetics();
+        self.removeSource();
+        self.updateSpeed = true;
+        self.networkDirty = true;
+        self.sendData();
+    }
+
+    @Inject(method = "switchToBlockState", at = @At("HEAD"))
+    private static void createtiers$captureAttachedTierBeforeStateReplacement(
+            Level level, BlockPos pos, BlockState state, CallbackInfo ci) {
+        AttachedTierTransfer.begin(level, pos);
+    }
+
+    @Inject(method = "switchToBlockState", at = @At("RETURN"))
+    private static void createtiers$restoreAttachedTierAfterStateReplacement(
+            Level level, BlockPos pos, BlockState state, CallbackInfo ci) {
+        AttachedTierTransfer.end(level, pos);
+    }
+
+    @Inject(method = "initialize", at = @At("TAIL"))
+    private void createtiers$refreshIntrinsicTierOnInitialize(CallbackInfo ci) {
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
+    }
+
+    @Inject(method = "write", at = @At("TAIL"))
+    private void createtiers$writeAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
+            boolean clientPacket, CallbackInfo ci) {
+        if (createtiers$attachedTierId != null) {
+            tag.putString(CREATETIERS$TIER_KEY, createtiers$attachedTierId.toString());
+        }
+        ResourceLocation sourceId = getCreateTiersReplacementSourceBlockId();
+        if (sourceId != null) {
+            tag.putString(CREATETIERS$SOURCE_BLOCK_KEY, sourceId.toString());
+        }
+    }
+
+    @Inject(method = "read", at = @At("RETURN"))
+    private void createtiers$readAttachedTier(CompoundTag tag, HolderLookup.Provider registries,
+            boolean clientPacket, CallbackInfo ci) {
+        createtiers$loadReplacementSource(tag);
+        createtiers$loadTier(tag);
+        AdjustableKineticTierPolicy.refresh((KineticBlockEntity) (Object) this, getTier());
+    }
+
+    @Unique
+    private void createtiers$loadReplacementSource(CompoundTag tag) {
+        createtiers$replacementSourceBlockId = null;
+        if (!tag.contains(CREATETIERS$SOURCE_BLOCK_KEY)) {
+            return;
+        }
+
+        ResourceLocation id = ResourceLocation.tryParse(tag.getString(CREATETIERS$SOURCE_BLOCK_KEY));
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (id != null && ReplacementSourcePolicy.isLegal(self.getBlockState(), id)) {
+            createtiers$replacementSourceBlockId = id;
+        }
+    }
+
+    @Unique
+    private void createtiers$loadTier(CompoundTag tag) {
+        createtiers$attachedTierId = null;
+        createtiers$attachedTier = null;
+
+        KineticBlockEntity self = (KineticBlockEntity) (Object) this;
+        if (self.getBlockState().getBlock() instanceof TieredNativeKineticBlock) {
+            return;
+        }
+
+        if (!tag.contains(CREATETIERS$TIER_KEY)) {
+            return;
+        }
+
+        ResourceLocation id = ResourceLocation.tryParse(tag.getString(CREATETIERS$TIER_KEY));
+        if (id == null) {
+            return;
+        }
+        Tier tier = TierRegistry.get(id);
+        if (tier != null && AttachedTierAuthorization.canCarry(self, tier)) {
+            createtiers$attachedTierId = id;
+            createtiers$attachedTier = tier;
+        }
+    }
+}

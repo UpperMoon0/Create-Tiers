@@ -7,6 +7,7 @@ import com.createtiers.content.kinetics.TieredEncasedShaftBlock;
 import com.createtiers.content.kinetics.TieredGearboxBlock;
 import com.createtiers.content.kinetics.TieredShaftBlock;
 import com.createtiers.content.kinetics.TieredShaftBlockEntity;
+import com.createtiers.content.kinetics.TieredPoweredShaftBlock;
 import com.createtiers.content.kinetics.TieredCogwheelBlockEntity;
 import com.createtiers.mixin.KineticBlockEntityAccessor;
 import com.createtiers.mixin.KineticEffectHandlerAccessor;
@@ -55,6 +56,8 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
             renderEncasedCogwheel(be, encasedCog, ms, buffer, light);
         } else if (state.getBlock() instanceof TieredShaftBlock shaftBlock) {
             renderShaft(be, shaftBlock, ms, buffer, light);
+        } else if (state.getBlock() instanceof TieredPoweredShaftBlock poweredShaft) {
+            renderPoweredShaft(be, poweredShaft, ms, buffer, light);
         } else if (state.getBlock() instanceof TieredCogwheelBlock cogBlock) {
             renderCogwheel(be, cogBlock, ms, buffer, light);
         } else {
@@ -100,6 +103,18 @@ public class TieredKineticBlockEntityRenderer<T extends KineticBlockEntity> exte
         float angle = getAngleForBe(be, pos, axis);
 
         transformAndRender(be, superBuffer, axis, angle, light, block.getTier().getShaftColor(), ms, buffer.getBuffer(getRenderType(be, be.getBlockState())));
+    }
+
+    private void renderPoweredShaft(T be, TieredPoweredShaftBlock block, PoseStack ms,
+            MultiBufferSource buffer, int light) {
+        AllTieredPartialModels.TieredPartials partials = AllTieredPartialModels.forTier(block.getTier());
+        SuperByteBuffer superBuffer = CachedBuffers.partial(partials.POWERED_SHAFT, be.getBlockState());
+        Direction.Axis axis = getRotationAxisOf(be);
+        BlockPos pos = be.getBlockPos();
+        if (pos == null) return;
+        float angle = getAngleForBe(be, pos, axis);
+        transformAndRender(be, superBuffer, axis, angle, light, block.getTier().getShaftColor(), ms,
+                buffer.getBuffer(getRenderType(be, be.getBlockState())));
     }
 
     private void renderCogwheel(T be, TieredCogwheelBlock block, PoseStack ms, MultiBufferSource buffer, int light) {

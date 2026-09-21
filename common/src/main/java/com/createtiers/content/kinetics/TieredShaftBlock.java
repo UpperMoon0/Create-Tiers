@@ -2,6 +2,9 @@ package com.createtiers.content.kinetics;
 
 import com.createtiers.PlatformHelper;
 import com.createtiers.api.Tier;
+import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.decoration.girder.GirderEncasedShaftBlock;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.ShaftBlock;
@@ -62,6 +65,23 @@ public class TieredShaftBlock extends ShaftBlock {
         ItemStack stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown() || !player.mayBuild())
             return InteractionResult.PASS;
+
+        if (AllBlocks.METAL_GIRDER.isIn(stack) && state.getValue(AXIS) != Direction.Axis.Y) {
+            Block girder = PlatformHelper.get().getGirderEncasedShafts().stream()
+                    .filter(block -> block instanceof TieredGirderEncasedShaftBlock tiered
+                            && tiered.getTier().equals(tier))
+                    .findFirst()
+                    .orElse(null);
+            if (girder instanceof TieredGirderEncasedShaftBlock) {
+                KineticBlockEntity.switchToBlockState(level, pos, girder.defaultBlockState()
+                        .setValue(GirderEncasedShaftBlock.HORIZONTAL_AXIS,
+                                state.getValue(AXIS) == Direction.Axis.Z ? Direction.Axis.Z : Direction.Axis.X));
+                if (!level.isClientSide && !player.isCreative()) {
+                    stack.shrink(1);
+                }
+                return InteractionResult.SUCCESS;
+            }
+        }
 
         IPlacementHelper helper = PlacementHelpers.get(placementHelperId);
         if (helper.matchesItem(stack) && helper.matchesState(state))

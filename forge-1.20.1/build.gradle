@@ -35,6 +35,7 @@ minecraft {
             arg '--nogui'
         }
         gameTestServer {
+            workingDirectory project.file('run-gametest')
             property 'forge.enabledGameTestNamespaces', 'createtiers'
         }
         data {
@@ -53,10 +54,23 @@ sourceSets {
             srcDir 'src/generated/resources'
         }
     }
+    test {
+        java {
+            srcDir '../common/src/test/java'
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
 }
 
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+        content { includeGroup 'org.spongepowered' }
+    }
     flatDir {
         dir 'libs'
     }
@@ -117,10 +131,15 @@ dependencies {
     implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
     implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
     implementation fg.deobf("dev.latvian.mods:kubejs-create-forge:${kubejs_create_version}") { transitive = false }
+    compileOnly fg.deobf("curse.maven:jade-324717:${jade_version}")
     runtimeOnly fg.deobf("curse.maven:jade-324717:${jade_version}")
     runtimeOnly fg.deobf("curse.maven:spark-361579:${spark_version}")
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
     implementation fg.deobf("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}")
+
+    testImplementation platform('org.junit:junit-bom:5.10.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 mixin {
     add sourceSets.main, "createtiers-refmap.json"
@@ -147,16 +166,34 @@ tasks.named('processResources', ProcessResources).configure {
             forge_version          : forge_version,
             forge_version_range    : "[47,)",
             loader_version_range   : "[47,)",
-            mod_id                 : "createtiers",
-            mod_name               : "Create Tiers",
-            mod_license            : "MIT",
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
             mod_version            : mod_version,
-            mod_authors            : "NsTut",
-            mod_description        : "A mod for Create that introduces a dynamic tiering system for kinetic components (shafts and cogwheels). It provides a flexible way to customize Max RPM and Stress Units. Tiers can be fully customized via KubeJS or datapacks, with automatic resource generation for all registered tiers.",
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
     ]
     inputs.properties replaceProperties
 
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
     }
+}
+
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+
+def prepareGameTestKubeJs = tasks.register('prepareGameTestKubeJs', Copy) {
+    from rootProject.file('tools/gametest/kubejs/startup_scripts')
+    into layout.projectDirectory.dir('run-gametest/kubejs/startup_scripts')
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    dependsOn prepareGameTestKubeJs
 }

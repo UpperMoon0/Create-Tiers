@@ -28,3 +28,10 @@ run
 forge*changelog.txt
 
 .worktrees
+build_log.txt
+build_output.txt
+/forge-1.20.1/logs/
+__pycache__/
+*.pyc
+
+run-gametest

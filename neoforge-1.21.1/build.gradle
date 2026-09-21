@@ -47,12 +47,12 @@ sourceSets {
             srcDir 'src/main/resources'
             srcDir 'src/generated/resources'
             exclude 'pack.mcmeta'
-            exclude 'assets/createtiers/lang/**'
             exclude 'createtiers.png'
         }
     }
     test {
         java {
+            srcDir '../common/src/test/java'
             srcDir 'src/test/java'
         }
         resources {
@@ -154,6 +154,7 @@ neoForge {
 
         gameTestServer {
             type = "gameTestServer"
+            gameDirectory = project.file('run-gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -173,6 +174,11 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
 }
 
 configurations {
@@ -183,6 +189,8 @@ configurations {
 dependencies {
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
     implementation "dev.latvian.mods:kubejs-neoforge:2101.7.2-build.363"
+    compileOnly "curse.maven:jade-324717:${jade_version}"
+    localRuntime "curse.maven:jade-324717:${jade_version}"
 
     testLocal "org.junit.jupiter:junit-jupiter-api:5.10.0"
     testLocal "org.junit.jupiter:junit-jupiter-engine:5.10.0"
@@ -227,18 +235,19 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-tasks.register('testUnit', Test) {
-    testClassesDirs = sourceSets.test.output
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
-}
-
 idea {
     module {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+
+
+def prepareGameTestKubeJs = tasks.register('prepareGameTestKubeJs', Copy) {
+    from rootProject.file('tools/gametest/kubejs/startup_scripts')
+    into layout.projectDirectory.dir('run-gametest/kubejs/startup_scripts')
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    dependsOn prepareGameTestKubeJs
 }
