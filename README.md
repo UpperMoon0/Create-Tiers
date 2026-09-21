@@ -237,7 +237,7 @@ Standard Create encasings are discovered from Create's own encasing registry rat
 
 ## Compatibility credit
 
-Thanks to **MoonScenty** and [CreateTiersEngineCompat](https://github.com/MoonScenty/CreateTiersEngineCompat) for independently identifying and documenting the tiered-shaft belt/Steam-Engine compatibility gap that led to the native fix in Create Tiers.
+Thanks to [@MoonScenty](https://github.com/MoonScenty) for creating [CreateTiersEngineCompat](https://github.com/MoonScenty/CreateTiersEngineCompat), sharing the tiered-shaft belt/Steam-Engine compatibility work, and explicitly giving permission for that work to be integrated or adapted into Create Tiers. The final compatibility implementation in Create Tiers is native and independently maintained; this credit acknowledges the reference work and permission rather than implying the current code is a direct copy.
 
 ## License
 

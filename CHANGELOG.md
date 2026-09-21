@@ -52,6 +52,7 @@
 - Validate persisted replacement-source provenance against the live Create replacement state, preventing unrelated kinetic block entities from borrowing registered or intrinsic shaft tiers through forged NBT.
 - Clear tier/source state when a tiered belt pulley is wrenched back to a middle belt and return the correct intrinsic or registered-upgrade shaft item.
 - Let native tiered shaft items use Create's normal middle-belt pulley interaction, with the same parity for registered upgraded vanilla shaft items.
+- Preserve exact shaft provenance through direct mining of `START`/`END`/`PULLEY` belt parts and BeltSlicer shortening: the old endpoint source moves inward, while only an overwritten adjacent pulley source is refunded.
 
 ### Changed
 
@@ -66,7 +67,6 @@
 
 - Added regression coverage for tier registry invariants, freeze behavior, valid/invalid atomic batches, KubeJS defaults and exact numeric parsing, and NeoForge 1.21 dynamic pack `getResource`/`listResources` behavior.
 - Added Forge and NeoForge GameTests for receiver-scoped tiered/untiered RPM enforcement, lowest-tier connected-network Max SU/overspeed behavior, generic tier attachment on ordinary Create kinetic block entities, tier-upgraded item placement/drop round-tripping, adjustable kinetic components, native relay/control default registration, and native tiered-shaft belt/steam-engine interoperability.
-- Compatibility investigation for #2 was informed by MoonScenty's CreateTiersEngineCompat report/reference project; the native implementation is maintained directly in Create Tiers.
 - Add Forge and NeoForge regression coverage for ordinary attached-tier belt/steam/encasing round trips, intrinsic belt block-entity NBT serialize/recreate/reload, legacy attached-tier belt data, and generated mining-tag parity.
 - Make runtime receipts evidence-backed: every required scenario must be emitted by a successfully completed GameTest in the current run before an exact-head pass receipt can be written.
 - Add executable client/JVM coverage for signed high-RPM controller input and generic baked-item tint insertion/preservation, alongside resource contracts.
@@ -74,4 +74,8 @@
 - Add Forge and NeoForge runtime coverage for `PlacementOffset` shaft/Steam-Engine placement, forged replacement-source NBT, and registered/intrinsic middle-belt pulley add/wrench round trips.
 - Add documentation-contract tests that pin supported-version guidance, startup ordering/deployment rules, target-vs-compatibility distinctions, progression/data semantics, checked-in KubeJS examples, and the public KubeJS binding signatures.
 
-- Preserve exact shaft provenance for direct belt-pulley mining and BeltSlicer shortening, including registered-upgraded vanilla shafts and intrinsic tiered shafts.
+- Add Forge and NeoForge belt-lifecycle regressions covering source-aware direct mining for `START`/`END`/`PULLEY` and BeltSlicer shortening with distinct endpoint/adjacent source identities, preventing silent downgrade or duplication.
+
+### Credits
+
+- Thanks to [@MoonScenty](https://github.com/MoonScenty) for creating [CreateTiersEngineCompat](https://github.com/MoonScenty/CreateTiersEngineCompat), sharing the belt/Steam-Engine compatibility work, and explicitly permitting integration/adaptation into Create Tiers. The final implementation is native and independently maintained.
