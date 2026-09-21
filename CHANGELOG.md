@@ -60,7 +60,7 @@
 - Clarify that tier definitions must be registered during startup (for example with KubeJS `startup_scripts`). Runtime datapacks cannot register new tier blocks after Minecraft freezes registries.
 - Clarify Max SU semantics: the lowest tier Max SU is the hard cap for the connected Create kinetic network.
 - Expose every registered tier-upgrade output in the Create Tiers creative tab while keeping generated encased shaft/cogwheel variants out of the tab to avoid duplicate transmission entries.
-- Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; releases remain push-to-main only.
+- Run shared/core verification plus required Forge 1.20.1 and NeoForge 1.21.1 GameTest matrices on pull requests, with exact-head runtime receipts gating the final result; release publication now runs only when `mod_version` changes on `main`.
 - Rework the pack-author documentation around the actual startup lifecycle: tiers before upgrades, full-restart/client+server deployment rules, supported version baselines, direct upgrade-target validation vs belt/Steam-Engine compatibility states, fallback-progression semantics, item-data preservation, and a complete KubeJS API reference.
 
 ### Tests

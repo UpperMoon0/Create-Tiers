@@ -74,8 +74,10 @@ The direct loader commands remain available:
 pr-tests.yml runs the harness self-tests first, then both loader JVM tests and
 builds. runtime-tests.yml runs a two-cell fail-fast:false matrix, preserves
 logs/evidence on failures, writes exact-head receipts on success, and finishes
-with Required runtime verification. release.yml is push/dispatch-only and reuses
-the same core and runtime workflows before packaging and publishing.
+with Required runtime verification. release.yml is version-driven: pushes that touch
+gradle.properties first compare mod_version with the previous main revision, and only an
+actual version bump may reuse the same core/runtime gates before packaging and publishing
+to CurseForge and GitHub Releases.
 
 The merge rule is simple: Required core verification and Required runtime
 verification must both be green for the exact final PR head. A green result from
