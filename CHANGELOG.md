@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+### Fixed
+
+- Prevent a secondary Create Tiers model-reload crash when another mod fails during construction before Create block registration completes, preserving the original NeoForge loading error (#4).
+
 ## 0.2.4
 
 ### Added
