@@ -166,5 +166,21 @@ class ResourceContractTests(unittest.TestCase):
             self.assertIn("CreateEncasingVariants.largeCogwheelVariants()", source)
 
 
+    def test_incomplete_create_registry_cannot_mask_original_mod_construction_failure(self):
+        readiness = (ROOT / "common/src/main/java/com/createtiers/registry/CreateRegistryReadiness.java").read_text(encoding="utf-8")
+        self.assertIn("BuiltInRegistries.BLOCK.containsKey", readiness)
+        self.assertIn("shaft", readiness)
+        self.assertNotIn("AllBlocks.SHAFT.get()", readiness)
+
+        for generator in (FORGE_MODEL_GENERATOR, NEO_MODEL_GENERATOR):
+            source = generator.read_text(encoding="utf-8")
+            guard = source.index("CreateRegistryReadiness.canGenerateModels()")
+            first_generation = source.index("Generating tiered models with grayscale textures")
+            self.assertLess(guard, first_generation)
+
+        neo_mixin = (ROOT / "neoforge-1.21.1/src/main/java/com/createtiers/mixin/ModelManagerMixin.java").read_text(encoding="utf-8")
+        self.assertNotIn("DynamicResourcePack.clear()", neo_mixin)
+
+
 if __name__ == "__main__":
     unittest.main()

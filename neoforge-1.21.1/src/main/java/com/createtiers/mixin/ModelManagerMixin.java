@@ -1,7 +1,6 @@
 package com.createtiers.mixin;
 
 import com.createtiers.CreateTiers;
-import com.createtiers.client.DynamicResourcePack;
 import com.createtiers.client.TieredModelGenerator;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -27,8 +26,6 @@ public class ModelManagerMixin {
                                 Executor executor2,
                                 CallbackInfoReturnable<CompletableFuture<Void>> cir) {
         CreateTiers.LOGGER.info("Reinitializing Create-Tiers dynamic resources...");
-
-        DynamicResourcePack.clear();
 
         TieredModelGenerator.generateAllModels(resourceManager);
 

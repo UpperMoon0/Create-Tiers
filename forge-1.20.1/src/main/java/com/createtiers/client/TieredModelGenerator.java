@@ -6,6 +6,7 @@ import com.createtiers.api.Tier;
 import com.createtiers.api.TierRegistry;
 import com.createtiers.api.TieredNativeKineticBlock;
 import com.createtiers.registry.CreateEncasingVariants;
+import com.createtiers.registry.CreateRegistryReadiness;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,6 +30,10 @@ import java.util.Collections;
 public class TieredModelGenerator {
 
     public static void generateAllModels(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+        if (!CreateRegistryReadiness.canGenerateModels()) {
+            CreateTiers.LOGGER.debug("Skipping dynamic model generation: Create block registration is incomplete");
+            return;
+        }
         CreateTiers.LOGGER.info("Generating tiered models with grayscale textures and tinting...");
 
         Map<ResourceLocation, JsonElement> models = new HashMap<>();
