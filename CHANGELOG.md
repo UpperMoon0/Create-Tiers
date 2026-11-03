@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0
+
+### Compatibility
+
+- Accept Create 6.0 or newer on Forge 1.20.1 without the previous arbitrary `<7.0` ceiling, matching NeoForge's minimum-only version policy.
+- Keep loader and Minecraft requirements unchanged and retain the existing kinetic tier and upgrade behavior.
+- Future Create major versions remain subject to real compatibility checks; accepting a version in metadata does not certify its API.
+
+### Verification
+
+- Require both target builds and isolated Runtime GameTests to pass following restoration of trusted HTTPS access to Create Maven. No TLS verification bypass is permitted.
+
+
 ## 0.2.4
 
 ### Added
